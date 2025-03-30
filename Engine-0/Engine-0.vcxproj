@@ -164,6 +164,7 @@
     <ClInclude Include="src\modules\texture.h" />
     <ClInclude Include="src\modules\uniformbuffer.h" />
     <ClInclude Include="src\modules\utils.h" />
+    <ClInclude Include="src\windows\window.h" />
     <ClInclude Include="vendor\imgui\imconfig.h" />
     <ClInclude Include="vendor\imgui\imgui.h" />
     <ClInclude Include="vendor\imgui\imgui_impl_glfw.h" />

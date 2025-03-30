@@ -13,6 +13,8 @@
 #include "modules/light_types.h"
 #include "modules/texture.h"
 
+#include "windows/window.h"
+
 constexpr int W_WIDTH = 1600;
 constexpr int W_HEIGHT = 1200;
 
@@ -64,8 +66,10 @@ int main()
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init("#version 330");
 
-	
 	float my_color[4] = { 1.0, 1.0, 1.0, 1.0 };
+	static bool my_tool_active = true;
+	static bool properties_active = true;
+	ImVec2 properties_size = ImVec2(300.0f, 300.0f);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -75,8 +79,6 @@ int main()
 			continue;
 		}
 
-		static bool my_tool_active = true;
-
 		processInput(window);
 		glClearColor(0.2, 0.2, 0.2, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -85,17 +87,15 @@ int main()
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		if (my_tool_active)
-			ImGui::ShowDemoWindow(&my_tool_active);
+		ImguiMainLayer();
+		if (properties_active)
+			ImguiPropertyWindow(&properties_size, &properties_active);
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
+		
 		glfwPollEvents();
 
-		// Update and Render additional Platform Windows
-		// (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
-		//  For this specific demo app we could also call glfwMakeContextCurrent(window) directly)
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
 			GLFWwindow* backup_current_context = glfwGetCurrentContext();
