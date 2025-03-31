@@ -13,6 +13,7 @@
 #include "modules/light_types.h"
 #include "modules/texture.h"
 
+#include "windows/deprecated-window.h"
 #include "windows/window.h"
 
 constexpr int W_WIDTH = 1600;
@@ -71,6 +72,8 @@ int main()
 	static bool properties_active = true;
 	ImVec2 properties_size = ImVec2(300.0f, 300.0f);
 
+	MainDockWindow mainWindow;
+
 	while (!glfwWindowShouldClose(window))
 	{
 		if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0)
@@ -87,9 +90,13 @@ int main()
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		ImguiMainLayer();
+		/*ImguiMainLayer();
 		if (properties_active)
-			ImguiPropertyWindow(&properties_size, &properties_active);
+			ImguiPropertyWindow(&properties_size, &properties_active);*/
+
+		mainWindow.BeginRender();
+		mainWindow.EndRender();
+
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -1,55 +1,74 @@
 #pragma once
 #include "imgui.h"
+#include <iostream>
+#include <string>
 
-void ImguiMainLayer()
+class Window
 {
-	static bool window_open = true;
-	static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+public:
+	std::string title;
+	bool window_open;
+	ImGuiWindowFlags window_flags;
+	
+	Window(const std::string& title, bool window_open, ImGuiWindowFlags window_flags = 0) : title(title), window_open(window_open), window_flags(window_flags) {}
 
-	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+	virtual void BeginRender() = 0;
+	virtual void EndRender() = 0;
+};
 
-	const ImGuiViewport* viewport = ImGui::GetMainViewport();
-	ImGui::SetNextWindowPos(viewport->WorkPos);
-	ImGui::SetNextWindowSize(viewport->WorkSize);
-	ImGui::SetNextWindowViewport(viewport->ID);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-	window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-	window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-
-	if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-		window_flags |= ImGuiWindowFlags_NoBackground;
-
-	ImGui::Begin("##Main Window", &window_open, window_flags);
-
-	ImGui::PopStyleVar(2);
-
-	ImGuiIO& io = ImGui::GetIO();
-	if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+class MainDockWindow : public Window
+{
+public:
+	ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+	MainDockWindow() : Window("##MainWindow", true)
 	{
-		ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
-		ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+		window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 	}
 
-	if (ImGui::BeginMenuBar())
+	void BeginRender() override
 	{
-		if (ImGui::BeginMenu("File"))
+		const ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->WorkPos);
+		ImGui::SetNextWindowSize(viewport->WorkSize);
+		ImGui::SetNextWindowViewport(viewport->ID);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+
+		ImGui::Begin(title.c_str(), &window_open, window_flags);
+		ImGui::PopStyleVar(2);
+
+		ImGuiIO& io = ImGui::GetIO();
+		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
 		{
-
-			if (ImGui::MenuItem("Save", NULL, false)) {}
-			ImGui::EndMenu();
+			ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
+			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 		}
-		ImGui::EndMenuBar();
-	}
-	ImGui::End();
-}
+		else
+		{
+			std::cout << "Docking not enabled" << std::endl;
+		}
 
-void ImguiPropertyWindow(ImVec2* properties_size, bool* properties_active)
-{
-	ImGui::SetNextWindowSize(*properties_size, ImGuiCond_Once);
-	if (ImGui::Begin("Properties", properties_active, ImGuiWindowFlags_NoCollapse))
+		if (ImGui::BeginMenuBar())
+		{
+			if (ImGui::BeginMenu("File"))
+			{
+				if (ImGui::MenuItem("Save", NULL, false)) {}
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("Window"))
+			{
+
+				if (ImGui::MenuItem("Properties", NULL, false)) {}
+				ImGui::EndMenu();
+			}
+			ImGui::EndMenuBar();
+		}
+	}
+
+	void EndRender() override
 	{
-
+		ImGui::End();
 	}
-	ImGui::End();
-}
+};
