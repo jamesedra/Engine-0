@@ -72,3 +72,40 @@ public:
 		ImGui::End();
 	}
 };
+
+class PropertiesWindow : public Window
+{
+public:
+	PropertiesWindow() : Window("Properties", true, ImGuiWindowFlags_NoCollapse) { }
+
+	void BeginRender() override 
+	{
+		if (ImGui::Begin(title.c_str(), &window_open, window_flags))
+		{
+
+		}
+	}
+
+	void EndRender() override 
+	{
+		ImGui::End();
+	}
+};
+
+class ViewportWindow : public Window
+{
+public:
+	ViewportWindow() : Window("Viewport", true, ImGuiWindowFlags_NoCollapse) {}
+	void BeginRender() override
+	{
+		if (ImGui::Begin(title.c_str(), &window_open, window_flags))
+		{
+
+		}
+	}
+
+	void EndRender() override
+	{
+		ImGui::End();
+	}
+};
