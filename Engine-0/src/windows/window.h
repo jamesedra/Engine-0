@@ -12,7 +12,7 @@ public:
 	
 	Window(const std::string& title, bool window_open, ImGuiWindowFlags window_flags = 0) : title(title), window_open(window_open), window_flags(window_flags) {}
 
-	virtual void BeginRender() = 0;
+	virtual bool BeginRender() = 0;
 	virtual void EndRender() = 0;
 };
 
@@ -27,8 +27,10 @@ public:
 		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 	}
 
-	void BeginRender() override
+	bool BeginRender() override
 	{
+		if (!window_open) return false;
+
 		const ImGuiViewport* viewport = ImGui::GetMainViewport();
 		ImGui::SetNextWindowPos(viewport->WorkPos);
 		ImGui::SetNextWindowSize(viewport->WorkSize);
@@ -65,6 +67,8 @@ public:
 			}
 			ImGui::EndMenuBar();
 		}
+
+		return true;
 	}
 
 	void EndRender() override
@@ -78,12 +82,16 @@ class PropertiesWindow : public Window
 public:
 	PropertiesWindow() : Window("Properties", true, ImGuiWindowFlags_NoCollapse) { }
 
-	void BeginRender() override 
+	bool BeginRender() override 
 	{
-		if (ImGui::Begin(title.c_str(), &window_open, window_flags))
-		{
+		if (!window_open) return false;
 
+		bool renderContent = (ImGui::Begin(title.c_str(), &window_open, window_flags));
+		if (renderContent)
+		{
+			// prepare default window
 		}
+		return true;
 	}
 
 	void EndRender() override 
@@ -96,12 +104,17 @@ class ViewportWindow : public Window
 {
 public:
 	ViewportWindow() : Window("Viewport", true, ImGuiWindowFlags_NoCollapse) {}
-	void BeginRender() override
+	bool BeginRender() override
 	{
-		if (ImGui::Begin(title.c_str(), &window_open, window_flags))
-		{
+		if (!window_open) return false;
 
+		bool renderContent = (ImGui::Begin(title.c_str(), &window_open, window_flags));
+		if (renderContent)
+		{
+			// prepare default window
 		}
+		return true;
+
 	}
 
 	void EndRender() override

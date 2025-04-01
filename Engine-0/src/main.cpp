@@ -48,6 +48,29 @@ int main()
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 	glfwSwapInterval(1); // Enable vsync
+
+	// Camera settings
+	//Camera camera(
+	//	glm::vec3(8.0f, 8.0f, 8.0f),
+	//	glm::vec3(-1.0f, -1.0f, -1.0f),
+	//	glm::vec3(0.0f, 1.0f, 0.0f),
+	//	45.0f
+	//);
+	//glfwSetWindowUserPointer(window, &camera);
+
+	//Framebuffer viewportFrame(W_WIDTH, W_HEIGHT);
+	//Texture viewportOutTexture(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
+	//viewportOutTexture.setTexFilter(GL_NEAREST);
+	//viewportOutTexture.setTexWrap(GL_CLAMP_TO_EDGE);
+	//viewportFrame.attachTexture2D(viewportOutTexture, GL_COLOR_ATTACHMENT0);
+	//viewportFrame.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+
+	//unsigned int cubeVAO = createCubeVAO();
+	//unsigned int frameVAO = createFrameVAO();
+
+	//Shader outShader("shaders/default.vert", "shaders/default.frag");
+	//Shader outputFrame("shaders/frame_out.vert", "shaders/frame_out.frag");
+
 	// Setup imgui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -67,12 +90,14 @@ int main()
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init("#version 330");
 
-	float my_color[4] = { 1.0, 1.0, 1.0, 1.0 };
-	static bool my_tool_active = true;
-	static bool properties_active = true;
-	ImVec2 properties_size = ImVec2(300.0f, 300.0f);
-
+	// Windows
 	MainDockWindow mainWindow;
+	PropertiesWindow propertiesWindow;
+	ViewportWindow viewportWindow;
+
+	float my_color[4] = { 1.0, 1.0, 1.0, 1.0 };
+	static bool viewport_active;
+	static bool properties_active;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -90,18 +115,28 @@ int main()
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		/*ImguiMainLayer();
-		if (properties_active)
-			ImguiPropertyWindow(&properties_size, &properties_active);*/
-
 		mainWindow.BeginRender();
 		mainWindow.EndRender();
+		viewport_active = viewportWindow.BeginRender();
+		if (viewport_active) 
+		{ 
+			// additional rendering 
+			viewportWindow.EndRender();
+		}
+			
+		
 
+		properties_active = propertiesWindow.BeginRender();
+		if (properties_active)
+		{
+			// additional rendering
+			propertiesWindow.EndRender();
+		}
+			
+		
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-		
-		glfwPollEvents();
 
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
@@ -110,7 +145,7 @@ int main()
 			ImGui::RenderPlatformWindowsDefault();
 			glfwMakeContextCurrent(backup_current_context);
 		}
-
+		glfwPollEvents();
 		glfwSwapBuffers(window);
 	}
 
