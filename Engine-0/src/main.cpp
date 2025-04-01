@@ -59,9 +59,7 @@ int main()
 	glfwSetWindowUserPointer(window, &camera);
 
 	Framebuffer viewportFrame(W_WIDTH, W_HEIGHT);
-	Texture viewportOutTexture(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
-	viewportOutTexture.setTexFilter(GL_NEAREST);
-	viewportOutTexture.setTexWrap(GL_CLAMP_TO_EDGE);
+	Texture viewportOutTexture(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
 	viewportFrame.attachTexture2D(viewportOutTexture, GL_COLOR_ATTACHMENT0);
 	viewportFrame.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
@@ -98,6 +96,7 @@ int main()
 	float my_color[4] = { 1.0, 1.0, 1.0, 1.0 };
 	static bool viewport_active;
 	static bool properties_active;
+	static ImVec4 color = ImVec4(114.0f / 255.0f, 144.0f / 255.0f, 154.0f / 255.0f, 200.0f / 255.0f);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -108,9 +107,63 @@ int main()
 		}
 
 		processInput(window);
+		
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+
+		// Docking Main Window
+		mainWindow.BeginRender();
+		mainWindow.EndRender();
+
+		// Viewport window
+		viewport_active = viewportWindow.BeginRender();
+		if (viewport_active) 
+		{ 
+			// additional rendering 
+			const float window_width = ImGui::GetContentRegionAvail().x;
+			const float window_height = ImGui::GetContentRegionAvail().y;
+			ImVec2 pos = ImGui::GetCursorScreenPos();
+
+			ImU32 bg_color = IM_COL32(0.2*255, 0.2*255, 0.2*255, 1.0*255);
+			ImGui::GetWindowDrawList()->AddRectFilled(
+				pos,
+				ImVec2(pos.x + window_width, pos.y + window_height),
+				bg_color
+			);
+			const float fb_aspect = W_WIDTH / (float)W_HEIGHT;
+			float win_aspect = window_width / window_height;
+
+			float display_width, display_height;
+			if (win_aspect > fb_aspect)
+			{
+				display_height = window_height;
+				display_width = window_height * fb_aspect;
+			}
+			else
+			{
+				display_width = window_width;
+				display_height = window_width / fb_aspect;
+			}
+
+			float offset_x = (window_width - display_width) * 0.5f;
+			float offset_y = (window_height - display_height) * 0.5f;
+
+			ImGui::GetWindowDrawList()->AddImage(
+				viewportOutTexture.id,           
+				ImVec2(pos.x + offset_x, pos.y + offset_y),
+				ImVec2(pos.x + offset_x + display_width, pos.y + offset_y + display_height),
+				ImVec2(0, 1),
+				ImVec2(1, 0)
+			);
+			
+			viewportWindow.EndRender();
+		}
+
+		// Prepare viewport texture
+		viewportFrame.bind();
 		glClearColor(0.2, 0.2, 0.2, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 		outShader.use();
 		outShader.setMat4("projection", glm::perspective(glm::radians(45.0f), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 10.0f));
 		glm::vec3 cameraPos(5.0f, 2.5f, 5.0f);
@@ -119,34 +172,22 @@ int main()
 		glm::mat4 view = glm::lookAt(cameraPos, target, up);
 		outShader.setMat4("view", view);
 		outShader.setMat4("model", glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
+		outShader.setVec3("Color",  color.x, color.y, color.z);
 		glBindVertexArray(cubeVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
-
-
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
-
-		// mainWindow.BeginRender();
-		// mainWindow.EndRender();
-		viewport_active = viewportWindow.BeginRender();
-		if (viewport_active) 
-		{ 
-			// additional rendering 
-			viewportWindow.EndRender();
-		}
-			
+		viewportFrame.unbind();
 		
-
+		// Property window
 		properties_active = propertiesWindow.BeginRender();
 		if (properties_active)
 		{
 			// additional rendering
+			
+			static ImGuiColorEditFlags base_flags = ImGuiColorEditFlags_None;
+			ImGui::ColorPicker4("##picker", (float*)&color, base_flags | ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview);
 			propertiesWindow.EndRender();
 		}
-			
 		
-
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 

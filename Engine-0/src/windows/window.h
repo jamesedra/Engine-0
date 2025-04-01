@@ -85,12 +85,15 @@ public:
 	bool BeginRender() override 
 	{
 		if (!window_open) return false;
-
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 		bool renderContent = (ImGui::Begin(title.c_str(), &window_open, window_flags));
+		ImGui::PopStyleVar(2);
 		if (renderContent)
 		{
 			// prepare default window
 		}
+		
 		return true;
 	}
 
@@ -107,8 +110,10 @@ public:
 	bool BeginRender() override
 	{
 		if (!window_open) return false;
-
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 		bool renderContent = (ImGui::Begin(title.c_str(), &window_open, window_flags));
+		ImGui::PopStyleVar(2);
 		if (renderContent)
 		{
 			// prepare default window
