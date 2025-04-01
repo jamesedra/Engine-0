@@ -50,26 +50,26 @@ int main()
 	glfwSwapInterval(1); // Enable vsync
 
 	// Camera settings
-	//Camera camera(
-	//	glm::vec3(8.0f, 8.0f, 8.0f),
-	//	glm::vec3(-1.0f, -1.0f, -1.0f),
-	//	glm::vec3(0.0f, 1.0f, 0.0f),
-	//	45.0f
-	//);
-	//glfwSetWindowUserPointer(window, &camera);
+	Camera camera(
+		glm::vec3(8.0f, 8.0f, 8.0f),
+		glm::vec3(-1.0f, -1.0f, -1.0f),
+		glm::vec3(0.0f, 1.0f, 0.0f),
+		45.0f
+	);
+	glfwSetWindowUserPointer(window, &camera);
 
-	//Framebuffer viewportFrame(W_WIDTH, W_HEIGHT);
-	//Texture viewportOutTexture(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
-	//viewportOutTexture.setTexFilter(GL_NEAREST);
-	//viewportOutTexture.setTexWrap(GL_CLAMP_TO_EDGE);
-	//viewportFrame.attachTexture2D(viewportOutTexture, GL_COLOR_ATTACHMENT0);
-	//viewportFrame.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+	Framebuffer viewportFrame(W_WIDTH, W_HEIGHT);
+	Texture viewportOutTexture(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
+	viewportOutTexture.setTexFilter(GL_NEAREST);
+	viewportOutTexture.setTexWrap(GL_CLAMP_TO_EDGE);
+	viewportFrame.attachTexture2D(viewportOutTexture, GL_COLOR_ATTACHMENT0);
+	viewportFrame.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
-	//unsigned int cubeVAO = createCubeVAO();
-	//unsigned int frameVAO = createFrameVAO();
+	unsigned int cubeVAO = createCubeVAO();
+	unsigned int frameVAO = createFrameVAO();
 
-	//Shader outShader("shaders/default.vert", "shaders/default.frag");
-	//Shader outputFrame("shaders/frame_out.vert", "shaders/frame_out.frag");
+	Shader outShader("shaders/default.vert", "shaders/default.frag");
+	Shader outputFrame("shaders/frame_out.vert", "shaders/frame_out.frag");
 
 	// Setup imgui context
 	IMGUI_CHECKVERSION();
@@ -109,14 +109,26 @@ int main()
 
 		processInput(window);
 		glClearColor(0.2, 0.2, 0.2, 1.0);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		outShader.use();
+		outShader.setMat4("projection", glm::perspective(glm::radians(45.0f), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 10.0f));
+		glm::vec3 cameraPos(5.0f, 2.5f, 5.0f);
+		glm::vec3 target(0.0f, 0.0f, 0.0f);
+		glm::vec3 up(0.0f, 1.0f, 0.0f);
+		glm::mat4 view = glm::lookAt(cameraPos, target, up);
+		outShader.setMat4("view", view);
+		outShader.setMat4("model", glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
+		glBindVertexArray(cubeVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
 
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		mainWindow.BeginRender();
-		mainWindow.EndRender();
+		// mainWindow.BeginRender();
+		// mainWindow.EndRender();
 		viewport_active = viewportWindow.BeginRender();
 		if (viewport_active) 
 		{ 
