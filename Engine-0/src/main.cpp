@@ -58,16 +58,41 @@ int main()
 	);
 	glfwSetWindowUserPointer(window, &camera);
 
+	// Viewport framebuffer (this is a test framebuffer)
 	Framebuffer viewportFrame(W_WIDTH, W_HEIGHT);
 	Texture viewportOutTexture(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
 	viewportFrame.attachTexture2D(viewportOutTexture, GL_COLOR_ATTACHMENT0);
 	viewportFrame.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+
+	// G-Buffer
+	Framebuffer gBuffer(W_WIDTH, W_HEIGHT);
+	// position color buffer
+	Texture gPosition(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA);
+	gPosition.setTexFilter(GL_NEAREST);
+	gBuffer.attachTexture2D(gPosition, GL_COLOR_ATTACHMENT0);
+	// normal color buffer
+	Texture gNormal(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA);
+	gNormal.setTexFilter(GL_NEAREST);
+	gBuffer.attachTexture2D(gNormal, GL_COLOR_ATTACHMENT1);
+	// specular color buffer
+	Texture gAlbedoSpec(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
+	gAlbedoSpec.setTexFilter(GL_NEAREST);
+	gBuffer.attachTexture2D(gAlbedoSpec, GL_COLOR_ATTACHMENT2);
+	// texture and renderbuffer attachments
+	gBuffer.bind();
+	unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+	glDrawBuffers(3, attachments);
+	gBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+
+	unsigned int tex_diff = loadTexture("resources/textures/brickwall.jpg", true, TextureColorSpace::sRGB);
+	unsigned int tex_spec = createDefaultTexture();
 
 	unsigned int cubeVAO = createCubeVAO();
 	unsigned int frameVAO = createFrameVAO();
 
 	Shader outShader("shaders/default.vert", "shaders/default.frag");
 	Shader outputFrame("shaders/frame_out.vert", "shaders/frame_out.frag");
+	Shader gBufferShader("shaders/gbuffer/gbuffer.vert", "shaders/gbuffer/gbuffer.frag");
 
 	// Setup imgui context
 	IMGUI_CHECKVERSION();
@@ -150,7 +175,7 @@ int main()
 			float offset_y = (window_height - display_height) * 0.5f;
 
 			ImGui::GetWindowDrawList()->AddImage(
-				viewportOutTexture.id,           
+				gAlbedoSpec.id,           
 				ImVec2(pos.x + offset_x, pos.y + offset_y),
 				ImVec2(pos.x + offset_x + display_width, pos.y + offset_y + display_height),
 				ImVec2(0, 1),
@@ -161,22 +186,44 @@ int main()
 		}
 
 		// Prepare viewport texture
-		viewportFrame.bind();
+		//viewportFrame.bind();
+		//glClearColor(0.2, 0.2, 0.2, 1.0);
+		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//outShader.use();
+		//outShader.setMat4("projection", glm::perspective(glm::radians(45.0f), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 10.0f));
+		//glm::vec3 cameraPos(5.0f, 2.5f, 5.0f);
+		//glm::vec3 target(0.0f, 0.0f, 0.0f);
+		//glm::vec3 up(0.0f, 1.0f, 0.0f);
+		//glm::mat4 view = glm::lookAt(cameraPos, target, up);
+		//outShader.setMat4("view", view);
+		//outShader.setMat4("model", glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
+		//outShader.setVec3("Color",  color.x, color.y, color.z);
+		//glBindVertexArray(cubeVAO);
+		//glDrawArrays(GL_TRIANGLES, 0, 36);
+		//viewportFrame.unbind();
+
+		// GBuffer pass
+		gBuffer.bind();
 		glClearColor(0.2, 0.2, 0.2, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		outShader.use();
-		outShader.setMat4("projection", glm::perspective(glm::radians(45.0f), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 10.0f));
+		gBufferShader.use();
+		gBufferShader.setMat4("projection", glm::perspective(glm::radians(45.0f), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 10.0f));
 		glm::vec3 cameraPos(5.0f, 2.5f, 5.0f);
 		glm::vec3 target(0.0f, 0.0f, 0.0f);
 		glm::vec3 up(0.0f, 1.0f, 0.0f);
 		glm::mat4 view = glm::lookAt(cameraPos, target, up);
-		outShader.setMat4("view", view);
-		outShader.setMat4("model", glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
-		outShader.setVec3("Color",  color.x, color.y, color.z);
+		gBufferShader.setMat4("view", view);
+		gBufferShader.setMat4("model", glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
 		glBindVertexArray(cubeVAO);
+		gBufferShader.setInt("texture_diffuse1", 0);
+		gBufferShader.setInt("texture_specular1", 1);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, tex_diff);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, tex_spec);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
-		viewportFrame.unbind();
-		
+		gBuffer.unbind();
+
 		// Property window
 		properties_active = propertiesWindow.BeginRender();
 		if (properties_active)
