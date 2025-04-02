@@ -183,6 +183,8 @@
     <None Include="shaders\frame_out.vert" />
     <None Include="shaders\gbuffer\gbuffer.frag" />
     <None Include="shaders\gbuffer\gbuffer.vert" />
+    <None Include="shaders\gbuffer\gbuffer_debug_out.frag" />
+    <None Include="shaders\gbuffer\gbuffer_debug_out.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

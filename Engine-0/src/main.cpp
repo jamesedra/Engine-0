@@ -80,9 +80,29 @@ int main()
 	gBuffer.attachTexture2D(gAlbedoSpec, GL_COLOR_ATTACHMENT2);
 	// texture and renderbuffer attachments
 	gBuffer.bind();
-	unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-	glDrawBuffers(3, attachments);
+	unsigned int gbuffer_attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+	glDrawBuffers(3, gbuffer_attachments);
 	gBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+
+	// Debug G-Buffer (for display)
+	Framebuffer debugGBuffer(W_WIDTH, W_HEIGHT);
+	// position
+	Texture debugPosition(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
+	debugPosition.setTexFilter(GL_NEAREST);
+	debugGBuffer.attachTexture2D(debugPosition, GL_COLOR_ATTACHMENT0);
+	// normal
+	Texture debugNormal(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
+	debugNormal.setTexFilter(GL_NEAREST);
+	debugGBuffer.attachTexture2D(debugNormal, GL_COLOR_ATTACHMENT1);
+	// albedo
+	Texture debugAlbedo(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
+	debugAlbedo.setTexFilter(GL_NEAREST);
+	debugGBuffer.attachTexture2D(debugAlbedo, GL_COLOR_ATTACHMENT2);
+	
+	debugGBuffer.bind();
+	unsigned int debugbuffer_attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+	glDrawBuffers(3, debugbuffer_attachments);
+	debugGBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
 	unsigned int tex_diff = loadTexture("resources/textures/brickwall.jpg", true, TextureColorSpace::sRGB);
 	unsigned int tex_spec = createDefaultTexture();
@@ -93,6 +113,7 @@ int main()
 	Shader outShader("shaders/default.vert", "shaders/default.frag");
 	Shader outputFrame("shaders/frame_out.vert", "shaders/frame_out.frag");
 	Shader gBufferShader("shaders/gbuffer/gbuffer.vert", "shaders/gbuffer/gbuffer.frag");
+	Shader debugBufferShader("shaders/gbuffer/gbuffer_debug_out.vert", "shaders/gbuffer/gbuffer_debug_out.frag");
 
 	// Setup imgui context
 	IMGUI_CHECKVERSION();
@@ -175,7 +196,7 @@ int main()
 			float offset_y = (window_height - display_height) * 0.5f;
 
 			ImGui::GetWindowDrawList()->AddImage(
-				gAlbedoSpec.id,           
+				debugNormal.id,           
 				ImVec2(pos.x + offset_x, pos.y + offset_y),
 				ImVec2(pos.x + offset_x + display_width, pos.y + offset_y + display_height),
 				ImVec2(0, 1),
@@ -223,6 +244,26 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, tex_spec);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		gBuffer.unbind();
+
+		// Debug GBuffer pass
+		glDisable(GL_DEPTH_TEST);
+		debugGBuffer.bind();
+		glClearColor(0.2, 0.2, 0.2, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		debugBufferShader.use();
+		debugBufferShader.setInt("gPosition", 0);
+		debugBufferShader.setInt("gNormal", 1);
+		debugBufferShader.setInt("gAlbedoSpec", 2);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, gPosition.id);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, gNormal.id);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, gAlbedoSpec.id);
+		glBindVertexArray(frameVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		debugGBuffer.unbind();
+		glEnable(GL_DEPTH_TEST);
 
 		// Property window
 		properties_active = propertiesWindow.BeginRender();

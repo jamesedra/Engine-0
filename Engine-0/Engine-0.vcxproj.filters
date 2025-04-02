@@ -139,5 +139,7 @@
     <None Include="shaders\frame_out.frag" />
     <None Include="shaders\gbuffer\gbuffer.vert" />
     <None Include="shaders\gbuffer\gbuffer.frag" />
+    <None Include="shaders\gbuffer\gbuffer_debug_out.frag" />
+    <None Include="shaders\gbuffer\gbuffer_debug_out.vert" />
   </ItemGroup>
 </Project>
