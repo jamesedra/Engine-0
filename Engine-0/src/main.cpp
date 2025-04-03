@@ -155,6 +155,9 @@ int main()
 	static int tex_type = 0;
 	unsigned int tex_curr = 0;
 
+	static float lightPos[4] = { 0.10f, 0.20f, 0.30f, 0.44f };
+	glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+
 	while (!glfwWindowShouldClose(window))
 	{
 		if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0)
@@ -197,7 +200,7 @@ int main()
 			const float window_height = ImGui::GetContentRegionAvail().y;
 			ImVec2 pos = ImGui::GetCursorScreenPos();
 
-			ImU32 bg_color = IM_COL32(0.2*255, 0.2*255, 0.2*255, 1.0*255);
+			ImU32 bg_color = IM_COL32(0.0*255, 0.0*255, 0.0*255, 1.0*255);
 			ImGui::GetWindowDrawList()->AddRectFilled(
 				pos,
 				ImVec2(pos.x + window_width, pos.y + window_height),
@@ -234,7 +237,7 @@ int main()
 
 		// GBuffer pass
 		gBuffer.bind();
-		glClearColor(0.2, 0.2, 0.2, 1.0);
+		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gBufferShader.use();
 		gBufferShader.setMat4("projection", glm::perspective(glm::radians(45.0f), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 10.0f));
@@ -261,9 +264,11 @@ int main()
 		{
 			// Lit shading pass
 			litBuffer.bind();
-			glClearColor(0.2, 0.2, 0.2, 1.0);
+			glClearColor(0.0, 0.0, 0.0, 1.0);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			litBufferShader.use();
+			litBufferShader.setVec3("dirLight.Position", lightPos[0], lightPos[1], lightPos[2]);
+			litBufferShader.setVec3("dirLight.Color", lightColor);
 			litBufferShader.setInt("gPosition", 0);
 			litBufferShader.setInt("gNormal", 1);
 			litBufferShader.setInt("gAlbedoSpec", 2);
@@ -281,7 +286,7 @@ int main()
 		{
 			// Debug GBuffer pass
 			debugGBuffer.bind();
-			glClearColor(0.2, 0.2, 0.2, 1.0);
+			glClearColor(0.0, 0.0, 0.0, 1.0);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			debugBufferShader.use();
 			debugBufferShader.setInt("gPosition", 0);
@@ -296,8 +301,9 @@ int main()
 			glBindVertexArray(frameVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 			debugGBuffer.unbind();
-			glEnable(GL_DEPTH_TEST);
+			
 		}
+		glEnable(GL_DEPTH_TEST);
 		
 		// Property window
 		properties_active = propertiesWindow.BeginRender();
@@ -307,12 +313,12 @@ int main()
 			
 			static ImGuiColorEditFlags base_flags = ImGuiColorEditFlags_None;
 			ImGui::ColorPicker4("##picker", (float*)&color, base_flags | ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview);
-
-			
 			ImGui::RadioButton("World Position", &tex_type, 0);
 			ImGui::RadioButton("World Normal", &tex_type, 1);
 			ImGui::RadioButton("Base Color", &tex_type, 2);
 			ImGui::RadioButton("Lit", &tex_type, 3);
+
+			ImGui::DragFloat3("Light Position", lightPos);
 			propertiesWindow.EndRender();
 		}
 		
