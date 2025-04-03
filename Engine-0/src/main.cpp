@@ -84,6 +84,14 @@ int main()
 	glDrawBuffers(3, gbuffer_attachments);
 	gBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
+	// Lit Frame buffer
+	Framebuffer litBuffer(W_WIDTH, W_HEIGHT);
+	// lit output
+	Texture litBufferOut(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
+	litBufferOut.setTexFilter(GL_NEAREST);
+	litBuffer.attachTexture2D(litBufferOut, GL_COLOR_ATTACHMENT0);
+	litBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+
 	// Debug G-Buffer (for display)
 	Framebuffer debugGBuffer(W_WIDTH, W_HEIGHT);
 	// position
@@ -114,6 +122,7 @@ int main()
 	Shader outputFrame("shaders/frame_out.vert", "shaders/frame_out.frag");
 	Shader gBufferShader("shaders/gbuffer/gbuffer.vert", "shaders/gbuffer/gbuffer.frag");
 	Shader debugBufferShader("shaders/gbuffer/gbuffer_debug_out.vert", "shaders/gbuffer/gbuffer_debug_out.frag");
+	Shader litBufferShader("shaders/NPR/npr_def.vert", "shaders/NPR/blinn_shading.frag");
 
 	// Setup imgui context
 	IMGUI_CHECKVERSION();
@@ -143,6 +152,8 @@ int main()
 	static bool viewport_active;
 	static bool properties_active;
 	static ImVec4 color = ImVec4(114.0f / 255.0f, 144.0f / 255.0f, 154.0f / 255.0f, 200.0f / 255.0f);
+	static int tex_type = 0;
+	unsigned int tex_curr = 0;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -150,6 +161,21 @@ int main()
 		{
 			ImGui_ImplGlfw_Sleep(10);
 			continue;
+		}
+
+		switch (tex_type)
+		{
+		case 0:
+			tex_curr = debugPosition.id;
+			break;
+		case 1:
+			tex_curr = debugNormal.id;
+			break;
+		case 2:
+			tex_curr = debugAlbedo.id;
+			break;
+		default:
+			tex_curr = litBufferOut.id;
 		}
 
 		processInput(window);
@@ -196,7 +222,7 @@ int main()
 			float offset_y = (window_height - display_height) * 0.5f;
 
 			ImGui::GetWindowDrawList()->AddImage(
-				debugNormal.id,           
+				tex_curr,           
 				ImVec2(pos.x + offset_x, pos.y + offset_y),
 				ImVec2(pos.x + offset_x + display_width, pos.y + offset_y + display_height),
 				ImVec2(0, 1),
@@ -205,23 +231,6 @@ int main()
 			
 			viewportWindow.EndRender();
 		}
-
-		// Prepare viewport texture
-		//viewportFrame.bind();
-		//glClearColor(0.2, 0.2, 0.2, 1.0);
-		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		//outShader.use();
-		//outShader.setMat4("projection", glm::perspective(glm::radians(45.0f), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 10.0f));
-		//glm::vec3 cameraPos(5.0f, 2.5f, 5.0f);
-		//glm::vec3 target(0.0f, 0.0f, 0.0f);
-		//glm::vec3 up(0.0f, 1.0f, 0.0f);
-		//glm::mat4 view = glm::lookAt(cameraPos, target, up);
-		//outShader.setMat4("view", view);
-		//outShader.setMat4("model", glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
-		//outShader.setVec3("Color",  color.x, color.y, color.z);
-		//glBindVertexArray(cubeVAO);
-		//glDrawArrays(GL_TRIANGLES, 0, 36);
-		//viewportFrame.unbind();
 
 		// GBuffer pass
 		gBuffer.bind();
@@ -245,26 +254,51 @@ int main()
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		gBuffer.unbind();
 
-		// Debug GBuffer pass
+		// deferred shading stage
 		glDisable(GL_DEPTH_TEST);
-		debugGBuffer.bind();
-		glClearColor(0.2, 0.2, 0.2, 1.0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		debugBufferShader.use();
-		debugBufferShader.setInt("gPosition", 0);
-		debugBufferShader.setInt("gNormal", 1);
-		debugBufferShader.setInt("gAlbedoSpec", 2);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, gPosition.id);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, gNormal.id);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, gAlbedoSpec.id);
-		glBindVertexArray(frameVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		debugGBuffer.unbind();
-		glEnable(GL_DEPTH_TEST);
 
+		if (tex_type > 2)
+		{
+			// Lit shading pass
+			litBuffer.bind();
+			glClearColor(0.2, 0.2, 0.2, 1.0);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			litBufferShader.use();
+			litBufferShader.setInt("gPosition", 0);
+			litBufferShader.setInt("gNormal", 1);
+			litBufferShader.setInt("gAlbedoSpec", 2);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, gPosition.id);
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, gNormal.id);
+			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_2D, gAlbedoSpec.id);
+			glBindVertexArray(frameVAO);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+			litBuffer.unbind();
+		}
+		else if (tex_type <= 2)
+		{
+			// Debug GBuffer pass
+			debugGBuffer.bind();
+			glClearColor(0.2, 0.2, 0.2, 1.0);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			debugBufferShader.use();
+			debugBufferShader.setInt("gPosition", 0);
+			debugBufferShader.setInt("gNormal", 1);
+			debugBufferShader.setInt("gAlbedoSpec", 2);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, gPosition.id);
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, gNormal.id);
+			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_2D, gAlbedoSpec.id);
+			glBindVertexArray(frameVAO);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+			debugGBuffer.unbind();
+			glEnable(GL_DEPTH_TEST);
+		}
+		
 		// Property window
 		properties_active = propertiesWindow.BeginRender();
 		if (properties_active)
@@ -273,6 +307,12 @@ int main()
 			
 			static ImGuiColorEditFlags base_flags = ImGuiColorEditFlags_None;
 			ImGui::ColorPicker4("##picker", (float*)&color, base_flags | ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview);
+
+			
+			ImGui::RadioButton("World Position", &tex_type, 0);
+			ImGui::RadioButton("World Normal", &tex_type, 1);
+			ImGui::RadioButton("Base Color", &tex_type, 2);
+			ImGui::RadioButton("Lit", &tex_type, 3);
 			propertiesWindow.EndRender();
 		}
 		
