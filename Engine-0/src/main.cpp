@@ -124,6 +124,26 @@ int main()
 	Shader debugBufferShader("shaders/gbuffer/gbuffer_debug_out.vert", "shaders/gbuffer/gbuffer_debug_out.frag");
 	Shader litBufferShader("shaders/NPR/npr_def.vert", "shaders/NPR/blinn_shading.frag");
 
+	// testing some shader stuff
+	//GLint uniformCount;
+	//glGetProgramiv(gBufferShader.ID, GL_ACTIVE_UNIFORMS, &uniformCount);
+	//GLint maxNameLength;
+	//glGetProgramiv(gBufferShader.ID, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxNameLength);
+
+	//for (unsigned int i = 0; i < uniformCount; i++)
+	//{
+	//	std::string data_name;
+	//	GLint length = 0;
+	//	GLenum type;
+	//	GLint size;
+	//	std::vector<GLchar> nameData(maxNameLength);
+	//	glGetActiveUniform(gBufferShader.ID, i, maxNameLength, &length, &size, &type, &nameData[0]);
+
+	//	data_name = std::string(nameData.data(), length);
+
+	//	std::cout << data_name << " : " << type <<  std::endl;
+	//}
+
 	// Setup imgui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();

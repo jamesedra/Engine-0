@@ -160,10 +160,12 @@
     <ClInclude Include="src\modules\light_types.h" />
     <ClInclude Include="src\modules\mesh.h" />
     <ClInclude Include="src\modules\model.h" />
+    <ClInclude Include="src\modules\RenderSystem.h" />
     <ClInclude Include="src\modules\shader.h" />
     <ClInclude Include="src\modules\texture.h" />
     <ClInclude Include="src\modules\uniformbuffer.h" />
     <ClInclude Include="src\modules\utils.h" />
+    <ClInclude Include="src\modules\worldcomponent.h" />
     <ClInclude Include="src\windows\deprecated-window.h" />
     <ClInclude Include="src\windows\window.h" />
     <ClInclude Include="vendor\imgui\imconfig.h" />
