@@ -155,7 +155,7 @@ int main()
 	static int tex_type = 0;
 	unsigned int tex_curr = 0;
 
-	static float lightPos[4] = { 0.10f, 0.20f, 0.30f, 0.44f };
+	static float lightPos[4] = { 2.5f, 5.0f, 2.5f, 0.0f };
 	glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	while (!glfwWindowShouldClose(window))
@@ -318,7 +318,7 @@ int main()
 			ImGui::RadioButton("Base Color", &tex_type, 2);
 			ImGui::RadioButton("Lit", &tex_type, 3);
 
-			ImGui::DragFloat3("Light Position", lightPos);
+			ImGui::DragFloat3("Light Position", lightPos, 0.5f, -50.0f, 50.0f);
 			propertiesWindow.EndRender();
 		}
 		
