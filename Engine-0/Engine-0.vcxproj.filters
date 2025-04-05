@@ -134,7 +134,13 @@
     <ClInclude Include="src\modules\worldcomponent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\RenderSystem.h">
+    <ClInclude Include="src\modules\rendersystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\worldcomponents.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\component_manager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

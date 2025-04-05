@@ -4,7 +4,7 @@
 
 #include "common.h"
 
-#include "modules/model.h"
+// #include "modules/model.h"
 #include "modules/utils.h"
 #include "modules/shader.h"
 #include "modules/camera.h"
@@ -15,6 +15,8 @@
 
 #include "windows/deprecated-window.h"
 #include "windows/window.h"
+
+#include "modules/rendersystem.h"
 
 constexpr int W_WIDTH = 1600;
 constexpr int W_HEIGHT = 1200;
@@ -123,6 +125,44 @@ int main()
 	Shader gBufferShader("shaders/gbuffer/gbuffer.vert", "shaders/gbuffer/gbuffer.frag");
 	Shader debugBufferShader("shaders/gbuffer/gbuffer_debug_out.vert", "shaders/gbuffer/gbuffer_debug_out.frag");
 	Shader litBufferShader("shaders/NPR/npr_def.vert", "shaders/NPR/blinn_shading.frag");
+
+	// Test the rendersystem
+	Mesh cubeMesh;
+	cubeMesh.VAO = cubeVAO;
+	cubeMesh.vertexCount = 36;
+	MeshComponent meshComp;
+	meshComp.mesh = &cubeMesh;
+
+	UniformValue tex_0(0);
+	UniformValue tex_1(1);
+
+	MaterialComponent materialComp;
+	materialComp.parameters["texture_diffuse1"] = tex_0;
+	materialComp.parameters["texture_diffuse0"] = tex_1;
+
+	ShaderComponent shaderComp;
+	shaderComp.shader = &gBufferShader;
+
+	TransformComponent transformComp;
+	transformComp.position = glm::vec3(0.0f, 0.0f, 0.0f);
+	transformComp.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+	transformComp.scale = glm::vec3(1.0f);
+
+	Entity cubeEntity = 0;
+
+	TransformManager transformManager;
+	transformManager.components[cubeEntity] = transformComp;
+
+	MeshManager meshManager;
+	meshManager.components[cubeEntity] = meshComp;
+
+	ShaderManager shaderManager;
+	shaderManager.components[cubeEntity] = shaderComp;
+
+	MaterialManager materialManager;
+	materialManager.components[cubeEntity] = materialComp;
+
+	RenderSystem renderSystem;
 
 	// testing some shader stuff
 	//GLint uniformCount;
@@ -259,7 +299,8 @@ int main()
 		gBuffer.bind();
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		gBufferShader.use();
+		renderSystem.Render(transformManager, meshManager, shaderManager, materialManager, camera);
+		/*gBufferShader.use();
 		gBufferShader.setMat4("projection", glm::perspective(glm::radians(45.0f), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 10.0f));
 		glm::vec3 cameraPos(5.0f, 2.5f, 5.0f);
 		glm::vec3 target(0.0f, 0.0f, 0.0f);
@@ -274,7 +315,7 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, tex_diff);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, tex_spec);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glDrawArrays(GL_TRIANGLES, 0, 36);*/
 		gBuffer.unbind();
 
 		// deferred shading stage
