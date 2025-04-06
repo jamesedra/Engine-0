@@ -31,6 +31,11 @@ public:
 
 	Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<MeshTexture> textures);
 	void Draw(Shader& shader);
+
+	// NOTE: this overloaded function is for testing as of now.
+	// to not break anything just in case this new implementation
+	// is not usable.
+	void Draw(Shader& shader, bool useUpdate);
 	void DrawInstanced(Shader& shader, unsigned int count);
 
 	const std::vector<unsigned int>& getIndices() const { return indices; }

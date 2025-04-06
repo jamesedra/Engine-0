@@ -2,6 +2,7 @@
 #include "../common.h"
 #include "shader.h"
 #include <unordered_map>
+#include "mesh.h"
 
 // NOTE: This is a temporary header file used to store all needed components in one place first.
 // As of the moment, this will mostly prioritize components that will be used for the render system I am building. Which is basically what OpenGL will render in the viewport window.
@@ -9,7 +10,7 @@
 
 // Object Structs (Note that some components (such as ShaderComponent do not need one)
 // mesh struct (different from the model class we have. May be changed and only used for testing)
-struct Mesh
+struct TestMesh
 {
     unsigned int VAO;
     unsigned int indexCount = 0;
@@ -65,6 +66,12 @@ struct TransformComponent
         : position(pos), rotation(rot), scale(scl)
     {
     }
+};
+
+// soon to be deprecated
+struct TestMeshComponent
+{
+    TestMesh* mesh;
 };
 
 struct MeshComponent

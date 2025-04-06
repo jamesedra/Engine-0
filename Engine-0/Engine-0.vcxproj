@@ -157,10 +157,13 @@
     <ClInclude Include="src\common.h" />
     <ClInclude Include="src\modules\camera.h" />
     <ClInclude Include="src\modules\component_manager.h" />
+    <ClInclude Include="src\modules\entity_manager.h" />
+    <ClInclude Include="src\modules\factory.h" />
     <ClInclude Include="src\modules\framebuffer.h" />
     <ClInclude Include="src\modules\light_types.h" />
     <ClInclude Include="src\modules\mesh.h" />
     <ClInclude Include="src\modules\model.h" />
+    <ClInclude Include="src\modules\loaders.h" />
     <ClInclude Include="src\modules\rendersystem.h" />
     <ClInclude Include="src\modules\shader.h" />
     <ClInclude Include="src\modules\texture.h" />

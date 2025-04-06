@@ -8,13 +8,25 @@ in vec2 TexCoords;
 in vec3 FragPos;
 in vec3 Normal;
 
-uniform sampler2D texture_diffuse1;
-uniform sampler2D texture_specular1;
+struct Material {
+	bool useDiffuseTexture;
+	bool useSpecularTexture;
+
+	vec3 diffuse;
+	float specular;
+
+	sampler2D texture_diffuse1;
+	sampler2D texture_specular1;
+};
+uniform Material material;
 
 void main() {
 	gPosition = FragPos;
 	gNormal = normalize(Normal);
-	// gAlbedoSpec.rgb = texture(texture_diffuse1, TexCoords).rgb;
-	gAlbedoSpec.rgb = vec3(1.0, 0.0, 1.0); // test
-	gAlbedoSpec.a = texture(texture_specular1, TexCoords).r;
+
+	vec3 diffuse = material.useDiffuseTexture ? texture(material.texture_diffuse1, TexCoords).rgb : material.diffuse;
+	float spec = material.useSpecularTexture ? texture(material.texture_specular1, TexCoords).r : material.specular;
+
+	gAlbedoSpec.rgb = diffuse;
+	gAlbedoSpec.a = spec;
 }

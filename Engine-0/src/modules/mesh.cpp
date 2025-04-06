@@ -34,6 +34,44 @@ void Mesh::Draw(Shader& shader)
 	glBindVertexArray(0);
 }
 
+// NOTE: this overloaded function is for testing as of now.
+// to not break anything just in case this new implementation
+// is not usable.
+void Mesh::Draw(Shader& shader, bool useUpdate)
+{
+	if (!useUpdate)
+	{
+		Draw(shader);
+		return;
+	}
+
+	unsigned int diffuseNr = 1;
+	unsigned int specularNr = 1;
+	unsigned int normalNr = 1;
+	for (unsigned int i = 0; i < textures.size(); i++)
+	{
+		glActiveTexture(GL_TEXTURE0 + i);
+		std::string number;
+		std::string name = textures[i].type;
+
+		if (name == "texture_diffuse") number = std::to_string(diffuseNr);
+		else if (name == "texture_specular") number = std::to_string(specularNr);
+		else if (name == "texture_normal") number = std::to_string(normalNr);
+
+		shader.setInt(("material." + name + number).c_str(), i);
+		glBindTexture(GL_TEXTURE_2D, textures[i].id);
+	}
+	glActiveTexture(GL_TEXTURE0);
+
+	// draw mesh
+	glBindVertexArray(VAO);
+	if (!indices.empty())
+		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+	else
+		glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+	glBindVertexArray(0);
+}
+
 void Mesh::DrawInstanced(Shader& shader, unsigned int count)
 {
 	unsigned int diffuseNr = 1;
@@ -64,15 +102,18 @@ void Mesh::setupMesh()
 {
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
 
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+	if (!indices.empty())
+	{
+		glGenBuffers(1, &EBO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+	}
 
 	// vertex positions
 	glEnableVertexAttribArray(0);
