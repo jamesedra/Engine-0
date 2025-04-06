@@ -128,7 +128,7 @@ int main()
 	Shader litBufferShader("shaders/NPR/npr_def.vert", "shaders/NPR/blinn_shading.frag");
 
 	// Test the rendersystem
-	Mesh cubeMesh = MeshLoader::CreateCube();
+	Mesh cubeMesh = MeshLoader::CreateCone(1.0f, 2.0f, 36, 18);
 	MeshComponent meshComp;
 	meshComp.mesh = &cubeMesh;
 

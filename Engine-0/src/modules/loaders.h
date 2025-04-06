@@ -3,6 +3,8 @@
 
 // NOTE: This is are functions for loaders or automated class creators. Mostly for default values and testing.
 
+const float PI = 3.1415926f;
+
 class MeshLoader
 {
 public:
@@ -12,7 +14,7 @@ public:
 		std::vector<unsigned int> indices;
 		std::vector<MeshTexture> textures;
 
-		float f_vertices[] = {
+		float baseVertexData[] = {
 			// back face (0,0,-1)
 			-0.5f, -0.5f, -0.5f,   0.0f,  0.0f, -1.0f,   0.0f, 0.0f,
 			 0.5f,  0.5f, -0.5f,   0.0f,  0.0f, -1.0f,   1.0f, 1.0f,
@@ -68,15 +70,214 @@ public:
 			 -0.5f,  0.5f,  0.5f,   0.0f,  1.0f,  0.0f,   0.0f, 0.0f
 		};
 
-		size_t vertexCount = sizeof(f_vertices) / (8 * sizeof(float));
+		size_t vertexArraySize = sizeof(baseVertexData) / (sizeof(float));
+
+		setMeshVertices(baseVertexData, vertexArraySize, vertices);
+		return Mesh(vertices, indices, textures);
+	}
+
+	static Mesh CreateSphere(float radius, unsigned int sectorCount, unsigned int stackCount)
+	{
+		std::vector<Vertex> vertices;
+		std::vector<unsigned int> indices;
+		std::vector<MeshTexture> textures;
+
+		std::vector<float> baseVertData;
+
+		// vertices (pos, normals, uvs)
+		for (unsigned int i = 0; i <= stackCount; i++)
+		{
+			float stackAngle = PI / 2.0f - i * (PI / (float)stackCount);
+			float xy = radius * cosf(stackAngle);
+			float z = radius * sinf(stackAngle);
+
+			for (unsigned int j = 0; j <= sectorCount; j++)
+			{
+				float sectorAngle = j * (2 * PI / (float)sectorCount);
+
+				// positions
+				float x = xy * cosf(sectorAngle);
+				float y = xy * sinf(sectorAngle);
+				baseVertData.push_back(x);
+				baseVertData.push_back(y);
+				baseVertData.push_back(z);
+
+				// normals
+				float lengthInv = 1.0 / radius;
+				baseVertData.push_back(x * lengthInv);
+				baseVertData.push_back(y * lengthInv);
+				baseVertData.push_back(z * lengthInv);
+
+				// uvs
+				float s = (float)j / (float)sectorCount;
+				float t = (float)i / (float)stackCount;
+				baseVertData.push_back(s);
+				baseVertData.push_back(t);
+
+			}
+		}
+
+		// indices
+		for (unsigned int i = 0; i < stackCount; i++)
+		{
+			for (unsigned int j = 0; j < sectorCount; j++)
+			{
+				unsigned int first = i * (sectorCount + 1) + j;
+				unsigned int second = first + sectorCount + 1;
+
+				if (i != 0)
+				{
+					indices.push_back(first);
+					indices.push_back(second);
+					indices.push_back(first + 1);
+				}
+				if (i != (stackCount - 1))
+				{
+					indices.push_back(first + 1);
+					indices.push_back(second);
+					indices.push_back(second + 1);
+				}
+			}
+		}
+
+		setMeshVertices(baseVertData, vertices, indices);
+		
+		return Mesh(vertices, indices, textures);
+	}
+
+	static Mesh CreateCone(float radius, float height, unsigned int sectorCount, unsigned int stackCount)
+	{
+		std::vector<Vertex> vertices;
+		std::vector<unsigned int> indices;
+		std::vector<MeshTexture> textures;
+		std::vector<float> baseVertData;
+
+		// --- Lateral Surface ---
+		// For stacks from 0 (base) to stackCount (apex)
+		// Each vertex consists of 8 floats: Position (3), Normal (3), TexCoords (2)
+		for (unsigned int i = 0; i <= stackCount; i++)
+		{
+			float t = (float)i / (float)stackCount;        // 0 at base, 1 at apex
+			float currentRadius = (1.0f - t) * radius;       // radius linearly decreases to 0 at apex
+			float y = t * height;                            // y goes from 0 (base) to height (apex)
+
+			for (unsigned int j = 0; j <= sectorCount; j++)
+			{
+				float sectorAngle = j * (2 * PI / (float)sectorCount);
+				float x = currentRadius * cosf(sectorAngle);
+				float z = currentRadius * sinf(sectorAngle);
+
+				// Position
+				baseVertData.push_back(x);
+				baseVertData.push_back(y);
+				baseVertData.push_back(z);
+
+				// Lateral Normal
+				float nx = cosf(sectorAngle) * height;
+				float ny = radius;
+				float nz = sinf(sectorAngle) * height;
+				glm::vec3 normal = glm::normalize(glm::vec3(nx, ny, nz));
+				baseVertData.push_back(normal.x);
+				baseVertData.push_back(normal.y);
+				baseVertData.push_back(normal.z);
+
+				// UVs
+				float u = (float)j / (float)sectorCount;
+				float v = t;
+				baseVertData.push_back(u);
+				baseVertData.push_back(v);
+			}
+		}
+
+		// Indices for lateral surface:
+		// Each quad on the lateral surface is composed of two triangles.
+		// There are (stackCount) rows and (sectorCount) columns.
+		for (unsigned int i = 0; i < stackCount; i++)
+		{
+			for (unsigned int j = 0; j < sectorCount; j++)
+			{
+				unsigned int first = i * (sectorCount + 1) + j;
+				unsigned int second = first + sectorCount + 1;
+
+				// First triangle
+				indices.push_back(first);
+				indices.push_back(second);
+				indices.push_back(first + 1);
+
+				// Second triangle
+				indices.push_back(first + 1);
+				indices.push_back(second);
+				indices.push_back(second + 1);
+			}
+		}
+
+		// --- Base of the Cone ---
+		// Add a center vertex for the base
+		unsigned int baseCenterIndex = (unsigned int)(baseVertData.size() / 8);
+		// Center position (0,0,0), normal (0,0,-1), uv (0.5,0.5)
+		baseVertData.push_back(0.0f);
+		baseVertData.push_back(0.0f);
+		baseVertData.push_back(0.0f);
+		baseVertData.push_back(0.0f);
+		baseVertData.push_back(0.0f);
+		baseVertData.push_back(-1.0f);
+		baseVertData.push_back(0.5f);
+		baseVertData.push_back(0.5f);
+
+		// Base perimeter vertices:
+		for (unsigned int j = 0; j <= sectorCount; j++)
+		{
+			float sectorAngle = j * (2 * PI / (float)sectorCount);
+			float x = radius * cosf(sectorAngle);
+			float y = 0.0f;
+			float z = radius * sinf(sectorAngle);
+
+			// Position
+			baseVertData.push_back(x);
+			baseVertData.push_back(y);
+			baseVertData.push_back(z);
+
+			// Normal for base: (0,0,-1)
+			baseVertData.push_back(0.0f);
+			baseVertData.push_back(0.0f);
+			baseVertData.push_back(-1.0f);
+
+			// UV: Map circle to [0,1], with center at (0.5,0.5)
+			float u = (x / radius + 1.0f) * 0.5f;
+			float v = (y / radius + 1.0f) * 0.5f;
+			baseVertData.push_back(u);
+			baseVertData.push_back(v);
+		}
+
+		// Indices for base (triangle fan)
+		unsigned int baseStartIndex = baseCenterIndex + 1;
+		for (unsigned int j = 0; j < sectorCount; j++)
+		{
+			indices.push_back(baseCenterIndex);
+			indices.push_back(baseStartIndex + j);
+			indices.push_back(baseStartIndex + j + 1);
+		}
+
+		setMeshVertices(baseVertData, vertices, indices);
+
+		return Mesh(vertices, indices, textures);
+	}
+
+private:
+	static void setMeshVertices(
+		float baseVertexData[],
+		size_t vertexArraySize,
+		std::vector<Vertex>& vertices)
+	{
+		size_t vertexCount = vertexArraySize / 8;
 		vertices.resize(vertexCount);
 
 		for (unsigned int i = 0; i < vertexCount; i++)
 		{
 			size_t offset = i * 8;
-			vertices[i].Position = glm::vec3(f_vertices[offset + 0], f_vertices[offset + 1], f_vertices[offset + 2]);
-			vertices[i].Normal = glm::vec3(f_vertices[offset + 3], f_vertices[offset + 4], f_vertices[offset + 5]);
-			vertices[i].TexCoords = glm::vec2(f_vertices[offset + 6], f_vertices[offset + 7]);
+			vertices[i].Position = glm::vec3(baseVertexData[offset + 0], baseVertexData[offset + 1], baseVertexData[offset + 2]);
+			vertices[i].Normal = glm::vec3(baseVertexData[offset + 3], baseVertexData[offset + 4], baseVertexData[offset + 5]);
+			vertices[i].TexCoords = glm::vec2(baseVertexData[offset + 6], baseVertexData[offset + 7]);
 
 			vertices[i].Tangent = glm::vec3(0.0f);
 			vertices[i].Bitangent = glm::vec3(0.0f);
@@ -96,11 +297,54 @@ public:
 			vertices[i + 1].Bitangent = tangentBitangent[1];
 			vertices[i + 2].Bitangent = tangentBitangent[1];
 		}
-
-		return Mesh(vertices, indices, textures);
 	}
 
-private:
+	static void setMeshVertices(
+		const std::vector<float>& baseVertexData,
+		std::vector<Vertex>& vertices, std::vector<unsigned int> indices)
+	{
+		size_t vertexCount = baseVertexData.size() / 8;
+		vertices.resize(vertexCount);
+
+		for (unsigned int i = 0; i < vertexCount; i++)
+		{
+			size_t offset = i * 8;
+			vertices[i].Position = glm::vec3(baseVertexData[offset + 0], baseVertexData[offset + 1], baseVertexData[offset + 2]);
+			vertices[i].Normal = glm::vec3(baseVertexData[offset + 3], baseVertexData[offset + 4], baseVertexData[offset + 5]);
+			vertices[i].TexCoords = glm::vec2(baseVertexData[offset + 6], baseVertexData[offset + 7]);
+
+			vertices[i].Tangent = glm::vec3(0.0f);
+			vertices[i].Bitangent = glm::vec3(0.0f);
+		}
+
+		for (size_t i = 0; i < indices.size(); i += 3)
+		{
+			unsigned int i0 = indices[i];
+			unsigned int i1 = indices[i + 1];
+			unsigned int i2 = indices[i + 2];
+
+			glm::vec3 positions[3] = { vertices[i0].Position, vertices[i1].Position, vertices[i2].Position };
+			glm::vec2 texCoords[3] = { vertices[i0].TexCoords, vertices[i1].TexCoords, vertices[i2].TexCoords };
+
+			glm::mat2x3 tangentBitangent = getTangentBitangentMatrix(positions, texCoords);
+
+			vertices[i0].Tangent += tangentBitangent[0];
+			vertices[i1].Tangent += tangentBitangent[0];
+			vertices[i2].Tangent += tangentBitangent[0];
+
+			vertices[i0].Bitangent += tangentBitangent[1];
+			vertices[i1].Bitangent += tangentBitangent[1];
+			vertices[i2].Bitangent += tangentBitangent[1];
+		}
+
+		for (size_t i = 0; i < vertices.size(); i++)
+		{
+			vertices[i].Tangent = glm::normalize(vertices[i].Tangent);
+			vertices[i].Bitangent = glm::normalize(vertices[i].Bitangent);
+		}
+
+	}
+
 	static glm::mat2x3 getTangentBitangentMatrix(glm::vec3 positions[3], glm::vec2 texCoords[3])
 	{
 		glm::vec3 edge1 = positions[1] - positions[0];
