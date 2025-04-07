@@ -28,7 +28,8 @@ public:
         meshManager.components[entity] = meshComp;
 
         ShaderComponent shaderComp;
-        shaderComp.shader = shader != nullptr ? shader : &ShaderLibrary::GetShader("Default");
+        shaderComp.shaderID = "Default Lit";
+        shaderComp.shader = shader != nullptr ? shader : &ShaderLibrary::GetShader("Default Lit");
         shaderManager.components[entity] = shaderComp;
 
         TransformComponent transformComp;

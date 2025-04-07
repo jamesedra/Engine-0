@@ -332,18 +332,59 @@ int main()
 					float scale[4] = { transformComp->scale.x, transformComp->scale.y, transformComp->scale.z, 1.0f };
 
 					std::string posLabel = "Position##" + std::to_string(entity);
-					ImGui::DragFloat3(posLabel.c_str(), position);
+					ImGui::DragFloat3(posLabel.c_str(), position, 0.5f);
 					transformComp->position = glm::vec3(position[0], position[1], position[2]);
 
 					std::string rotLabel = "Rotation##" + std::to_string(entity);
-					ImGui::DragFloat3(rotLabel.c_str(), rotation);
+					ImGui::DragFloat3(rotLabel.c_str(), rotation, 0.5f);
 					transformComp->rotation = glm::vec3(rotation[0], rotation[1], rotation[2]);
 
 					std::string scaleLabel = "Scale##" + std::to_string(entity);
-					ImGui::DragFloat3(scaleLabel.c_str(), scale);
+					ImGui::DragFloat3(scaleLabel.c_str(), scale, 0.5f);
 					transformComp->scale = glm::vec3(scale[0], scale[1], scale[2]);
 
 					// Material Values
+					ShaderComponent* shaderComp = shaderManager.GetComponent(entity);
+					std::string shaderID = shaderComp->shaderID;
+					std::vector<const char*> libShaders = ShaderLibrary::GetLibraryKeys();
+					auto shader_selected = std::find_if(libShaders.begin(), libShaders.end(), [&shaderID](const char* s)
+						{
+							return shaderID == s;
+						});
+					size_t shader_index = (shader_selected != libShaders.end()) ? std::distance(libShaders.begin(), shader_selected) : 0;
+					std::string shaderComboLabel = "Material##DropDown" + std::to_string(entity);
+
+					if (ImGui::BeginCombo(shaderComboLabel.c_str(), shaderID.c_str(), 0))
+					{
+						static ImGuiTextFilter filter;
+						if (ImGui::IsWindowAppearing())
+						{
+							ImGui::SetKeyboardFocusHere();
+							filter.Clear();
+						}
+						ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
+						std::string filterLabel = "##Filter" + std::to_string(entity);
+						filter.Draw(filterLabel.c_str(), -FLT_MIN);
+
+						for (int n = 0; n < libShaders.size(); n++)
+						{
+							const bool is_selected = (shader_index == n);
+							if (filter.PassFilter(libShaders[n]))
+							{
+								if (ImGui::Selectable(libShaders[n], is_selected))
+								{
+									if (shaderComp->shaderID != libShaders[n])
+									{
+										shader_index = n;
+										shaderComp->shaderID = libShaders[n];
+										shaderComp->shader = &ShaderLibrary::GetShader(shaderComp->shaderID);
+									}
+								}
+							}
+						}
+						ImGui::EndCombo();
+					}
+
 					MaterialComponent* materialComp = materialManager.GetComponent(entity);
 
 					if (materialComp)
@@ -376,7 +417,7 @@ int main()
 									uniformVec[1] = uniformValue.vec2Value.y;
 									uniformVec[2] = 0.0f;
 									uniformVec[3] = 0.0f;
-									ImGui::DragFloat2(uniformLabel.c_str(), uniformVec);
+									ImGui::DragFloat2(uniformLabel.c_str(), uniformVec, 0.5f);
 									uniformValue.vec2Value = glm::vec2(uniformVec[0], uniformVec[1]);
 									break;
 								case UniformValue::Type::Vec3:
@@ -385,7 +426,7 @@ int main()
 									uniformVec[1] = uniformValue.vec3Value.y;
 									uniformVec[2] = uniformValue.vec3Value.z;
 									uniformVec[3] = 0.0f;
-									ImGui::DragFloat3(uniformLabel.c_str(), uniformVec);
+									ImGui::DragFloat3(uniformLabel.c_str(), uniformVec, 0.5f);
 									uniformValue.vec3Value = glm::vec3(uniformVec[0], uniformVec[1], uniformVec[2]);
 									break;
 								case UniformValue::Type::Vec4:
@@ -394,7 +435,7 @@ int main()
 									uniformVec[1] = uniformValue.vec4Value.y;
 									uniformVec[2] = uniformValue.vec4Value.z;
 									uniformVec[3] = uniformValue.vec4Value.w;
-									ImGui::DragFloat4(uniformLabel.c_str(), uniformVec);
+									ImGui::DragFloat4(uniformLabel.c_str(), uniformVec, 0.5f);
 									uniformValue.vec4Value = glm::vec4(uniformVec[0], uniformVec[1], uniformVec[2], uniformVec[3]);
 									break;
 							}

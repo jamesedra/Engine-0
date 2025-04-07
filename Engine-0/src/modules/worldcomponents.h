@@ -57,6 +57,7 @@ struct MeshComponent
 
 struct ShaderComponent
 {
+    std::string shaderID;
     Shader* shader;
 };
 

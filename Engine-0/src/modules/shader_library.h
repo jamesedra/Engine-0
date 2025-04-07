@@ -15,6 +15,19 @@ public:
 		else
 			throw std::runtime_error("Shader not found: " + name);
 	}
+
+	static std::vector<const char*> GetLibraryKeys()
+	{
+		auto& lib = GetLibrary();
+		std::vector<const char*> keys;
+		keys.reserve(lib.size());
+		for (const auto& pair : lib)
+		{
+			keys.push_back(pair.first.c_str());
+		}
+		return keys;
+	}
+
 private:
 	static std::unordered_map<std::string, Shader>& GetLibrary()
 	{
@@ -25,6 +38,6 @@ private:
 	static void InitializeLibrary()
 	{
 		Shader defaultGShader = Shader("shaders/gbuffer/gbuffer.vert", "shaders/gbuffer/gbuffer.frag");
-		GetLibrary().emplace("Default", std::move(defaultGShader));
+		GetLibrary().emplace("Default Lit", std::move(defaultGShader));
 	}
 };
