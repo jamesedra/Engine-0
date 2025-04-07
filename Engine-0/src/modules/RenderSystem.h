@@ -6,6 +6,7 @@ class RenderSystem
 {
 public:
 	void Render(
+		SceneEntityRegistry& sceneRegistry,
 		TransformManager& transformManager,
 		MeshManager& meshManager,
 		ShaderManager& shaderManager,
@@ -13,10 +14,12 @@ public:
 		Camera& camera
 	)
 	{
-		for (const auto& pair : meshManager.components)
+		for (Entity entity : sceneRegistry.GetAll())
 		{
-			Entity entity = pair.first;
-			const MeshComponent& meshComp = pair.second;
+			auto meshIt = meshManager.components.find(entity);
+			if (meshIt == meshManager.components.end())
+				continue;
+			const MeshComponent& meshComp = meshIt->second;
 
 			ShaderComponent* shaderComp = shaderManager.GetComponent(entity);
 			MaterialComponent* materialComp = materialManager.GetComponent(entity);
@@ -55,21 +58,35 @@ public:
 
 					switch (uniformValue.type)
 					{
+						case UniformValue::Type::Bool:
+							shader->setBool(uniformName, uniformValue.boolValue);
+							break;
 						case UniformValue::Type::Int:
 							shader->setInt(uniformName, uniformValue.intValue);
 							break;
 						case UniformValue::Type::Float:
 							shader->setFloat(uniformName, uniformValue.floatValue);
 							break;
+						case UniformValue::Type::Vec2:
+							shader->setVec2(uniformName, uniformValue.vec2Value);
+							break;
 						case UniformValue::Type::Vec3:
 							shader->setVec3(uniformName, uniformValue.vec3Value);
+							break;
+						case UniformValue::Type::Vec4:
+							shader->setVec4(uniformName, uniformValue.vec4Value);
+							break;
+						case UniformValue::Type::Mat4:
+							shader->setMat4(uniformName, uniformValue.mat4Value);
 							break;
 					}
 				}
 			}
 
 			if (meshComp.mesh)
-				meshComp.mesh->Draw();
+				meshComp.mesh->Draw(*shader, true);
+
 		}
+		
 	}
 };

@@ -17,6 +17,9 @@
 #include "windows/window.h"
 
 #include "modules/rendersystem.h"
+#include "modules/loaders.h"
+#include "modules/shader_uniform.h"
+#include "modules/factory.h"
 
 constexpr int W_WIDTH = 1600;
 constexpr int W_HEIGHT = 1200;
@@ -122,67 +125,24 @@ int main()
 
 	Shader outShader("shaders/default.vert", "shaders/default.frag");
 	Shader outputFrame("shaders/frame_out.vert", "shaders/frame_out.frag");
-	Shader gBufferShader("shaders/gbuffer/gbuffer.vert", "shaders/gbuffer/gbuffer.frag");
+	//Shader gBufferShader("shaders/gbuffer/gbuffer.vert", "shaders/gbuffer/gbuffer.frag");
 	Shader debugBufferShader("shaders/gbuffer/gbuffer_debug_out.vert", "shaders/gbuffer/gbuffer_debug_out.frag");
 	Shader litBufferShader("shaders/NPR/npr_def.vert", "shaders/NPR/blinn_shading.frag");
 
-	// Test the rendersystem
-	Mesh cubeMesh;
-	cubeMesh.VAO = cubeVAO;
-	cubeMesh.vertexCount = 36;
-	MeshComponent meshComp;
-	meshComp.mesh = &cubeMesh;
-
-	UniformValue tex_0(0);
-	UniformValue tex_1(1);
-
-	MaterialComponent materialComp;
-	materialComp.parameters["texture_diffuse1"] = tex_0;
-	materialComp.parameters["texture_diffuse0"] = tex_1;
-
-	ShaderComponent shaderComp;
-	shaderComp.shader = &gBufferShader;
-
-	TransformComponent transformComp;
-	transformComp.position = glm::vec3(0.0f, 0.0f, 0.0f);
-	transformComp.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-	transformComp.scale = glm::vec3(1.0f);
-
-	Entity cubeEntity = 0;
-
+	EntityManager entityManager;
+	SceneEntityRegistry sceneRegistry;
 	TransformManager transformManager;
-	transformManager.components[cubeEntity] = transformComp;
-
 	MeshManager meshManager;
-	meshManager.components[cubeEntity] = meshComp;
-
 	ShaderManager shaderManager;
-	shaderManager.components[cubeEntity] = shaderComp;
-
 	MaterialManager materialManager;
-	materialManager.components[cubeEntity] = materialComp;
 
+	Entity entityTest = WorldObjectFactory::CreateWorldMesh(entityManager, transformManager, meshManager, shaderManager, materialManager);
+	sceneRegistry.Register(entityTest);
+
+	Entity another = WorldObjectFactory::CreateWorldMesh(entityManager, transformManager, meshManager, shaderManager, materialManager);
+	transformManager.components[another].position = glm::vec3(1.5f, 0.0f, 0.0f);
+	sceneRegistry.Register(another);
 	RenderSystem renderSystem;
-
-	// testing some shader stuff
-	//GLint uniformCount;
-	//glGetProgramiv(gBufferShader.ID, GL_ACTIVE_UNIFORMS, &uniformCount);
-	//GLint maxNameLength;
-	//glGetProgramiv(gBufferShader.ID, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxNameLength);
-
-	//for (unsigned int i = 0; i < uniformCount; i++)
-	//{
-	//	std::string data_name;
-	//	GLint length = 0;
-	//	GLenum type;
-	//	GLint size;
-	//	std::vector<GLchar> nameData(maxNameLength);
-	//	glGetActiveUniform(gBufferShader.ID, i, maxNameLength, &length, &size, &type, &nameData[0]);
-
-	//	data_name = std::string(nameData.data(), length);
-
-	//	std::cout << data_name << " : " << type <<  std::endl;
-	//}
 
 	// Setup imgui context
 	IMGUI_CHECKVERSION();
@@ -299,23 +259,7 @@ int main()
 		gBuffer.bind();
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		renderSystem.Render(transformManager, meshManager, shaderManager, materialManager, camera);
-		/*gBufferShader.use();
-		gBufferShader.setMat4("projection", glm::perspective(glm::radians(45.0f), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 10.0f));
-		glm::vec3 cameraPos(5.0f, 2.5f, 5.0f);
-		glm::vec3 target(0.0f, 0.0f, 0.0f);
-		glm::vec3 up(0.0f, 1.0f, 0.0f);
-		glm::mat4 view = glm::lookAt(cameraPos, target, up);
-		gBufferShader.setMat4("view", view);
-		gBufferShader.setMat4("model", glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
-		glBindVertexArray(cubeVAO);
-		gBufferShader.setInt("texture_diffuse1", 0);
-		gBufferShader.setInt("texture_specular1", 1);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, tex_diff);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, tex_spec);
-		glDrawArrays(GL_TRIANGLES, 0, 36);*/
+		renderSystem.Render(sceneRegistry, transformManager, meshManager, shaderManager, materialManager, camera);
 		gBuffer.unbind();
 
 		// deferred shading stage
@@ -371,9 +315,98 @@ int main()
 		if (properties_active)
 		{
 			// additional rendering
-			
-			static ImGuiColorEditFlags base_flags = ImGuiColorEditFlags_None;
-			ImGui::ColorPicker4("##picker", (float*)&color, base_flags | ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview);
+			for (Entity entity : sceneRegistry.GetAll())
+			{
+				auto meshIt = meshManager.components.find(entity);
+				if (meshIt == meshManager.components.end())
+					continue;
+
+				std::string propertyLabel = "World Object #" + std::to_string(entity);
+				if (ImGui::TreeNode(propertyLabel.c_str()))
+				{
+					// Transform Values
+					TransformComponent* transformComp = transformManager.GetComponent(entity);
+
+					float position[4] = { transformComp->position.x, transformComp->position.y, transformComp->position.z, 1.0f };
+					float rotation[4] = { transformComp->rotation.x, transformComp->rotation.y, transformComp->rotation.z, 1.0f };
+					float scale[4] = { transformComp->scale.x, transformComp->scale.y, transformComp->scale.z, 1.0f };
+
+					std::string posLabel = "Position##" + std::to_string(entity);
+					ImGui::DragFloat3(posLabel.c_str(), position);
+					transformComp->position = glm::vec3(position[0], position[1], position[2]);
+
+					std::string rotLabel = "Rotation##" + std::to_string(entity);
+					ImGui::DragFloat3(rotLabel.c_str(), rotation);
+					transformComp->rotation = glm::vec3(rotation[0], rotation[1], rotation[2]);
+
+					std::string scaleLabel = "Scale##" + std::to_string(entity);
+					ImGui::DragFloat3(scaleLabel.c_str(), scale);
+					transformComp->scale = glm::vec3(scale[0], scale[1], scale[2]);
+
+					// Material Values
+					MaterialComponent* materialComp = materialManager.GetComponent(entity);
+
+					if (materialComp)
+					{
+						for (auto& pair : materialComp->parameters)
+						{
+							std::string uniformName = pair.first;
+							UniformValue& uniformValue = pair.second;
+
+							std::string uniformLabel = uniformName + "##" + std::to_string(entity);
+							float uniformVec[4];
+
+							switch (uniformValue.type)
+							{
+								case UniformValue::Type::Bool:
+									uniformLabel += "bool";
+									ImGui::Checkbox(uniformLabel.c_str(), &uniformValue.boolValue);
+									break;
+								case UniformValue::Type::Int:
+									uniformLabel += "int";
+									ImGui::InputInt(uniformLabel.c_str(), &uniformValue.intValue);
+									break;
+								case UniformValue::Type::Float:
+									uniformLabel += "float";
+									ImGui::InputFloat(uniformLabel.c_str(), &uniformValue.floatValue);
+									break;
+								case UniformValue::Type::Vec2:
+									uniformLabel += "vec2";
+									uniformVec[0] = uniformValue.vec2Value.x;
+									uniformVec[1] = uniformValue.vec2Value.y;
+									uniformVec[2] = 0.0f;
+									uniformVec[3] = 0.0f;
+									ImGui::DragFloat2(uniformLabel.c_str(), uniformVec);
+									uniformValue.vec2Value = glm::vec2(uniformVec[0], uniformVec[1]);
+									break;
+								case UniformValue::Type::Vec3:
+									uniformLabel += "vec3";
+									uniformVec[0] = uniformValue.vec3Value.x;
+									uniformVec[1] = uniformValue.vec3Value.y;
+									uniformVec[2] = uniformValue.vec3Value.z;
+									uniformVec[3] = 0.0f;
+									ImGui::DragFloat3(uniformLabel.c_str(), uniformVec);
+									uniformValue.vec3Value = glm::vec3(uniformVec[0], uniformVec[1], uniformVec[2]);
+									break;
+								case UniformValue::Type::Vec4:
+									uniformLabel += "vec4";
+									uniformVec[0] = uniformValue.vec4Value.x;
+									uniformVec[1] = uniformValue.vec4Value.y;
+									uniformVec[2] = uniformValue.vec4Value.z;
+									uniformVec[3] = uniformValue.vec4Value.w;
+									ImGui::DragFloat4(uniformLabel.c_str(), uniformVec);
+									uniformValue.vec4Value = glm::vec4(uniformVec[0], uniformVec[1], uniformVec[2], uniformVec[3]);
+									break;
+							}
+						}
+					}
+					ImGui::TreePop();
+				}
+				
+
+			}
+			//static ImGuiColorEditFlags base_flags = ImGuiColorEditFlags_None;
+			//ImGui::ColorPicker4("##picker", (float*)&color, base_flags | ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview);
 			ImGui::RadioButton("World Position", &tex_type, 0);
 			ImGui::RadioButton("World Normal", &tex_type, 1);
 			ImGui::RadioButton("Base Color", &tex_type, 2);
