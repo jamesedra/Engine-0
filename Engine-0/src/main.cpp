@@ -18,6 +18,8 @@
 
 #include "modules/rendersystem.h"
 #include "modules/loaders.h"
+#include "modules/shader_uniform.h"
+#include "modules/factory.h"
 
 constexpr int W_WIDTH = 1600;
 constexpr int W_HEIGHT = 1200;
@@ -128,64 +130,52 @@ int main()
 	Shader litBufferShader("shaders/NPR/npr_def.vert", "shaders/NPR/blinn_shading.frag");
 
 	// Test the rendersystem
-	Mesh cubeMesh = MeshLoader::CreateCone(1.0f, 2.0f, 36, 18);
-	MeshComponent meshComp;
-	meshComp.mesh = &cubeMesh;
+	//Mesh cubeMesh = MeshLoader::CreateCone(1.0f, 2.0f, 36, 18);
+	//MeshComponent meshComp;
+	//meshComp.mesh = &cubeMesh;
 
-	UniformValue tex_0(0);
-	UniformValue tex_1(1);
-	UniformValue diffuse_val(glm::vec3(0.0f, 1.0f, 1.0f));
-	UniformValue use_diffuse_tex(false);
+	//UniformValue tex_0(0);
+	//UniformValue tex_1(1);
+	//UniformValue diffuse_val(glm::vec3(0.0f, 1.0f, 1.0f));
+	//UniformValue use_diffuse_tex(false);
 
-	MaterialComponent materialComp;
-	materialComp.parameters["material.texture_diffuse1"] = tex_0;
-	materialComp.parameters["material.texture_specular1"] = tex_1;
-	materialComp.parameters["material.diffuse"] = diffuse_val;
-	materialComp.parameters["material.useDiffuseTexture"] = use_diffuse_tex;
+	//MaterialComponent materialComp;
+	//materialComp.parameters["material.texture_diffuse1"] = tex_0;
+	//materialComp.parameters["material.texture_specular1"] = tex_1;
+	//materialComp.parameters["material.diffuse"] = diffuse_val;
+	//materialComp.parameters["material.useDiffuseTexture"] = use_diffuse_tex;
 
-	ShaderComponent shaderComp;
-	shaderComp.shader = &gBufferShader;
+	//ShaderComponent shaderComp;
+	//shaderComp.shader = &gBufferShader;
 
-	TransformComponent transformComp;
-	transformComp.position = glm::vec3(0.0f, 0.0f, 0.0f);
-	transformComp.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-	transformComp.scale = glm::vec3(1.0f);
+	//TransformComponent transformComp;
+	//transformComp.position = glm::vec3(0.0f, 0.0f, 0.0f);
+	//transformComp.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+	//transformComp.scale = glm::vec3(1.0f);
 
-	Entity cubeEntity = 0;
+	//Entity cubeEntity = 0;
 
+	//TransformManager transformManager;
+	//transformManager.components[cubeEntity] = transformComp;
+
+	//MeshManager meshManager;
+	//meshManager.components[cubeEntity] = meshComp;
+
+	//ShaderManager shaderManager;
+	//shaderManager.components[cubeEntity] = shaderComp;
+
+	//MaterialManager materialManager;
+	//materialManager.components[cubeEntity] = materialComp;
+
+	EntityManager entityManager;
 	TransformManager transformManager;
-	transformManager.components[cubeEntity] = transformComp;
-
 	MeshManager meshManager;
-	meshManager.components[cubeEntity] = meshComp;
-
 	ShaderManager shaderManager;
-	shaderManager.components[cubeEntity] = shaderComp;
-
 	MaterialManager materialManager;
-	materialManager.components[cubeEntity] = materialComp;
+
+	Entity entityTest = WorldObjectFactory::CreateWorldMesh(entityManager, transformManager, meshManager, shaderManager, materialManager);
 
 	RenderSystem renderSystem;
-
-	// testing some shader stuff
-	GLint uniformCount;
-	glGetProgramiv(gBufferShader.ID, GL_ACTIVE_UNIFORMS, &uniformCount);
-	GLint maxNameLength;
-	glGetProgramiv(gBufferShader.ID, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxNameLength);
-
-	for (unsigned int i = 0; i < uniformCount; i++)
-	{
-		std::string data_name;
-		GLint length = 0;
-		GLenum type;
-		GLint size;
-		std::vector<GLchar> nameData(maxNameLength);
-		glGetActiveUniform(gBufferShader.ID, i, maxNameLength, &length, &size, &type, &nameData[0]);
-
-		data_name = std::string(nameData.data(), length);
-
-		std::cout << data_name << " : " << type <<  std::endl;
-	}
 
 	// Setup imgui context
 	IMGUI_CHECKVERSION();

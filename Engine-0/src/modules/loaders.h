@@ -152,9 +152,8 @@ public:
 		std::vector<MeshTexture> textures;
 		std::vector<float> baseVertData;
 
-		// --- Lateral Surface ---
+		// Lateral Surface
 		// For stacks from 0 (base) to stackCount (apex)
-		// Each vertex consists of 8 floats: Position (3), Normal (3), TexCoords (2)
 		for (unsigned int i = 0; i <= stackCount; i++)
 		{
 			float t = (float)i / (float)stackCount;        // 0 at base, 1 at apex
@@ -189,7 +188,7 @@ public:
 			}
 		}
 
-		// Indices for lateral surface:
+		// Indices for lateral surface
 		// Each quad on the lateral surface is composed of two triangles.
 		// There are (stackCount) rows and (sectorCount) columns.
 		for (unsigned int i = 0; i < stackCount; i++)
@@ -211,7 +210,7 @@ public:
 			}
 		}
 
-		// --- Base of the Cone ---
+		// Base of the Cone
 		// Add a center vertex for the base
 		unsigned int baseCenterIndex = (unsigned int)(baseVertData.size() / 8);
 		// Center position (0,0,0), normal (0,0,-1), uv (0.5,0.5)

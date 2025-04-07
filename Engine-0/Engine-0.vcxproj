@@ -162,10 +162,13 @@
     <ClInclude Include="src\modules\framebuffer.h" />
     <ClInclude Include="src\modules\light_types.h" />
     <ClInclude Include="src\modules\mesh.h" />
+    <ClInclude Include="src\modules\mesh_library.h" />
     <ClInclude Include="src\modules\model.h" />
     <ClInclude Include="src\modules\loaders.h" />
     <ClInclude Include="src\modules\rendersystem.h" />
     <ClInclude Include="src\modules\shader.h" />
+    <ClInclude Include="src\modules\shader_library.h" />
+    <ClInclude Include="src\modules\shader_uniform.h" />
     <ClInclude Include="src\modules\texture.h" />
     <ClInclude Include="src\modules\uniformbuffer.h" />
     <ClInclude Include="src\modules\utils.h" />

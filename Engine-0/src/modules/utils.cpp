@@ -623,3 +623,5 @@ void DisplayFramebufferTexture(Shader shader, unsigned int frame, unsigned int t
 	glBindVertexArray(frame);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 }
+
+
