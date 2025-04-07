@@ -23,7 +23,7 @@ public:
         Entity entity = entityManager.CreateEntity();
 
         MeshComponent meshComp;
-        meshComp.mesh = mesh != nullptr ? mesh : &MeshLibrary::GetMesh("Cube");
+        meshComp.mesh = mesh != nullptr ? mesh : &MeshLibrary::GetMesh("Sphere");
         meshManager.components[entity] = meshComp;
 
         ShaderComponent shaderComp;

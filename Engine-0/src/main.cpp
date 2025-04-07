@@ -125,56 +125,23 @@ int main()
 
 	Shader outShader("shaders/default.vert", "shaders/default.frag");
 	Shader outputFrame("shaders/frame_out.vert", "shaders/frame_out.frag");
-	Shader gBufferShader("shaders/gbuffer/gbuffer.vert", "shaders/gbuffer/gbuffer.frag");
+	//Shader gBufferShader("shaders/gbuffer/gbuffer.vert", "shaders/gbuffer/gbuffer.frag");
 	Shader debugBufferShader("shaders/gbuffer/gbuffer_debug_out.vert", "shaders/gbuffer/gbuffer_debug_out.frag");
 	Shader litBufferShader("shaders/NPR/npr_def.vert", "shaders/NPR/blinn_shading.frag");
 
-	// Test the rendersystem
-	//Mesh cubeMesh = MeshLoader::CreateCone(1.0f, 2.0f, 36, 18);
-	//MeshComponent meshComp;
-	//meshComp.mesh = &cubeMesh;
-
-	//UniformValue tex_0(0);
-	//UniformValue tex_1(1);
-	//UniformValue diffuse_val(glm::vec3(0.0f, 1.0f, 1.0f));
-	//UniformValue use_diffuse_tex(false);
-
-	//MaterialComponent materialComp;
-	//materialComp.parameters["material.texture_diffuse1"] = tex_0;
-	//materialComp.parameters["material.texture_specular1"] = tex_1;
-	//materialComp.parameters["material.diffuse"] = diffuse_val;
-	//materialComp.parameters["material.useDiffuseTexture"] = use_diffuse_tex;
-
-	//ShaderComponent shaderComp;
-	//shaderComp.shader = &gBufferShader;
-
-	//TransformComponent transformComp;
-	//transformComp.position = glm::vec3(0.0f, 0.0f, 0.0f);
-	//transformComp.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-	//transformComp.scale = glm::vec3(1.0f);
-
-	//Entity cubeEntity = 0;
-
-	//TransformManager transformManager;
-	//transformManager.components[cubeEntity] = transformComp;
-
-	//MeshManager meshManager;
-	//meshManager.components[cubeEntity] = meshComp;
-
-	//ShaderManager shaderManager;
-	//shaderManager.components[cubeEntity] = shaderComp;
-
-	//MaterialManager materialManager;
-	//materialManager.components[cubeEntity] = materialComp;
-
 	EntityManager entityManager;
+	SceneEntityRegistry sceneRegistry;
 	TransformManager transformManager;
 	MeshManager meshManager;
 	ShaderManager shaderManager;
 	MaterialManager materialManager;
 
 	Entity entityTest = WorldObjectFactory::CreateWorldMesh(entityManager, transformManager, meshManager, shaderManager, materialManager);
+	sceneRegistry.Register(entityTest);
 
+	Entity another = WorldObjectFactory::CreateWorldMesh(entityManager, transformManager, meshManager, shaderManager, materialManager);
+	transformManager.components[another].position = glm::vec3(1.5f, 0.0f, 0.0f);
+	sceneRegistry.Register(another);
 	RenderSystem renderSystem;
 
 	// Setup imgui context
@@ -292,23 +259,7 @@ int main()
 		gBuffer.bind();
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		renderSystem.Render(transformManager, meshManager, shaderManager, materialManager, camera);
-		/*gBufferShader.use();
-		gBufferShader.setMat4("projection", glm::perspective(glm::radians(45.0f), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 10.0f));
-		glm::vec3 cameraPos(5.0f, 2.5f, 5.0f);
-		glm::vec3 target(0.0f, 0.0f, 0.0f);
-		glm::vec3 up(0.0f, 1.0f, 0.0f);
-		glm::mat4 view = glm::lookAt(cameraPos, target, up);
-		gBufferShader.setMat4("view", view);
-		gBufferShader.setMat4("model", glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
-		glBindVertexArray(cubeVAO);
-		gBufferShader.setInt("texture_diffuse1", 0);
-		gBufferShader.setInt("texture_specular1", 1);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, tex_diff);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, tex_spec);
-		glDrawArrays(GL_TRIANGLES, 0, 36);*/
+		renderSystem.Render(sceneRegistry, transformManager, meshManager, shaderManager, materialManager, camera);
 		gBuffer.unbind();
 
 		// deferred shading stage
@@ -364,7 +315,6 @@ int main()
 		if (properties_active)
 		{
 			// additional rendering
-			
 			static ImGuiColorEditFlags base_flags = ImGuiColorEditFlags_None;
 			ImGui::ColorPicker4("##picker", (float*)&color, base_flags | ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview);
 			ImGui::RadioButton("World Position", &tex_type, 0);

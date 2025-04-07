@@ -56,21 +56,21 @@ UniformValue UniformTypeToValue(GLenum type)
 {
 	switch (type)
 	{
-		case GL_FLOAT:             return UniformValue(0.0f);
-		case GL_FLOAT_VEC2:        return UniformValue(glm::vec2(0.0f, 0.0f));
-		case GL_FLOAT_VEC3:        return UniformValue(glm::vec3(0.0f, 0.0f, 0.0f));
-		case GL_FLOAT_VEC4:        return UniformValue(glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
+		case GL_FLOAT:             return UniformValue(1.0f);
+		case GL_FLOAT_VEC2:        return UniformValue(glm::vec2(1.0f));
+		case GL_FLOAT_VEC3:        return UniformValue(glm::vec3(1.0f));
+		case GL_FLOAT_VEC4:        return UniformValue(glm::vec4(1.0f));
 		case GL_INT:               return UniformValue(0);
 		//case GL_INT_VEC2:          return "GL_INT_VEC2";
 		//case GL_INT_VEC3:          return "GL_INT_VEC3";
 		//case GL_INT_VEC4:          return "GL_INT_VEC4";
-		case GL_BOOL:              return "GL_BOOL";
+		case GL_BOOL:              return UniformValue(false);
 		//case GL_BOOL_VEC2:         return "GL_BOOL_VEC2";
 		//case GL_BOOL_VEC3:         return "GL_BOOL_VEC3";
 		//case GL_BOOL_VEC4:         return "GL_BOOL_VEC4";
 		//case GL_FLOAT_MAT2:        return "GL_FLOAT_MAT2";
 		//case GL_FLOAT_MAT3:        return "GL_FLOAT_MAT3";
-		case GL_FLOAT_MAT4:        return UniformValue(0);
+		case GL_FLOAT_MAT4:        return UniformValue(glm::mat4(1.0f));
 		case GL_SAMPLER_2D:        return UniformValue(0);
 		case GL_SAMPLER_CUBE:      return UniformValue(0);
 		default:                   return "UNKNOWN";
@@ -121,7 +121,6 @@ std::unordered_map<std::string, UniformValue> InitializeMaterialComponent(unsign
 		
 		if ((includeTransformUniforms || !containsAnyForTransformUniforms(data_name)) && (includeTextureUniforms || !containsAnyForTextureUniforms(data_name)))
 		{
-			std::cout << data_name << " : " << UniformTypeToString(type) << std::endl;
 			uniforms[data_name] = UniformTypeToValue(type);
 		}			
 	}
