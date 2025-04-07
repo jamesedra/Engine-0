@@ -344,17 +344,18 @@ int main()
 					transformComp->scale = glm::vec3(scale[0], scale[1], scale[2]);
 
 					// Material Values
+					MaterialComponent* materialComp = materialManager.GetComponent(entity);
 					ShaderComponent* shaderComp = shaderManager.GetComponent(entity);
-					std::string shaderID = shaderComp->shaderID;
+					std::string shaderName = shaderComp->shaderName;
 					std::vector<const char*> libShaders = ShaderLibrary::GetLibraryKeys();
-					auto shader_selected = std::find_if(libShaders.begin(), libShaders.end(), [&shaderID](const char* s)
+					auto shader_selected = std::find_if(libShaders.begin(), libShaders.end(), [&shaderName](const char* s)
 						{
-							return shaderID == s;
+							return shaderName == s;
 						});
 					size_t shader_index = (shader_selected != libShaders.end()) ? std::distance(libShaders.begin(), shader_selected) : 0;
 					std::string shaderComboLabel = "Material##DropDown" + std::to_string(entity);
 
-					if (ImGui::BeginCombo(shaderComboLabel.c_str(), shaderID.c_str(), 0))
+					if (ImGui::BeginCombo(shaderComboLabel.c_str(), shaderName.c_str(), 0))
 					{
 						static ImGuiTextFilter filter;
 						if (ImGui::IsWindowAppearing())
@@ -373,19 +374,18 @@ int main()
 							{
 								if (ImGui::Selectable(libShaders[n], is_selected))
 								{
-									if (shaderComp->shaderID != libShaders[n])
+									if (shaderComp->shaderName != libShaders[n])
 									{
 										shader_index = n;
-										shaderComp->shaderID = libShaders[n];
-										shaderComp->shader = &ShaderLibrary::GetShader(shaderComp->shaderID);
+										shaderComp->shaderName = libShaders[n];
+										shaderComp->shader = &ShaderLibrary::GetShader(shaderComp->shaderName);
+										materialComp->parameters = InitializeMaterialComponent(shaderComp->shader->ID);
 									}
 								}
 							}
 						}
 						ImGui::EndCombo();
 					}
-
-					MaterialComponent* materialComp = materialManager.GetComponent(entity);
 
 					if (materialComp)
 					{
@@ -444,7 +444,7 @@ int main()
 
 					// Mesh Values
 					MeshComponent* meshComp = meshManager.GetComponent(entity);
-					std::string meshID = meshComp->meshID;
+					std::string meshID = meshComp->meshName;
 					std::vector<const char*> libMeshes = MeshLibrary::GetLibraryKeys();
 					auto mesh_selected = std::find_if(libMeshes.begin(), libMeshes.end(), [&meshID](const char* s)
 						{
@@ -472,11 +472,11 @@ int main()
 							{
 								if (ImGui::Selectable(libMeshes[n], is_selected))
 								{
-									if (meshComp->meshID != libMeshes[n])
+									if (meshComp->meshName != libMeshes[n])
 									{
 										mesh_index = n;
-										meshComp->meshID = libMeshes[n];
-										meshComp->mesh = &MeshLibrary::GetMesh(meshComp->meshID);
+										meshComp->meshName = libMeshes[n];
+										meshComp->mesh = &MeshLibrary::GetMesh(meshComp->meshName);
 									}
 								}
 							}

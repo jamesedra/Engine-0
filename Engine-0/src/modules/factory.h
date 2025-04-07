@@ -23,13 +23,13 @@ public:
         Entity entity = entityManager.CreateEntity();
 
         MeshComponent meshComp;
-        meshComp.meshID = "Cube";
+        meshComp.meshName = "Cube";
         meshComp.mesh = mesh != nullptr ? mesh : &MeshLibrary::GetMesh("Cube");
         meshManager.components[entity] = meshComp;
 
         ShaderComponent shaderComp;
-        shaderComp.shaderID = "Default Lit";
-        shaderComp.shader = shader != nullptr ? shader : &ShaderLibrary::GetShader("Default Lit");
+        shaderComp.shaderName = "Lit with Color Tint";
+        shaderComp.shader = shader != nullptr ? shader : &ShaderLibrary::GetShader("Lit with Color Tint");
         shaderManager.components[entity] = shaderComp;
 
         TransformComponent transformComp;

@@ -51,13 +51,13 @@ struct TestMeshComponent
 
 struct MeshComponent
 {
-    std::string meshID;
+    std::string meshName;
     Mesh* mesh;
 };
 
 struct ShaderComponent
 {
-    std::string shaderID;
+    std::string shaderName;
     Shader* shader;
 };
 

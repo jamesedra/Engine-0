@@ -39,5 +39,7 @@ private:
 	{
 		Shader defaultGShader = Shader("shaders/gbuffer/gbuffer.vert", "shaders/gbuffer/gbuffer.frag");
 		GetLibrary().emplace("Default Lit", std::move(defaultGShader));
+		Shader tintedGShader = Shader("shaders/gbuffer/gbuffer.vert", "shaders/gbuffer/gbuffer_tint.frag");
+		GetLibrary().emplace("Lit with Color Tint", std::move(tintedGShader));
 	}
 };
