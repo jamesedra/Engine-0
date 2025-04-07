@@ -23,6 +23,7 @@ public:
         Entity entity = entityManager.CreateEntity();
 
         MeshComponent meshComp;
+        meshComp.meshID = "Cube";
         meshComp.mesh = mesh != nullptr ? mesh : &MeshLibrary::GetMesh("Cube");
         meshManager.components[entity] = meshComp;
 

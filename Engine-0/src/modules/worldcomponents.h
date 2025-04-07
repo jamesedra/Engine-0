@@ -51,6 +51,7 @@ struct TestMeshComponent
 
 struct MeshComponent
 {
+    std::string meshID;
     Mesh* mesh;
 };
 

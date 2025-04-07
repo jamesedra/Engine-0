@@ -16,6 +16,19 @@ public:
 		else
 			throw std::runtime_error("Mesh not found: " + name);
 	}
+
+	static std::vector<const char*> GetLibraryKeys()
+	{
+		auto& lib = GetLibrary();
+		std::vector<const char*> keys;
+		keys.reserve(lib.size());
+		for (const auto& pair : lib)
+		{
+			keys.push_back(pair.first.c_str());
+		}
+		return keys;
+	}
+
 private:
 	static std::unordered_map<std::string, Mesh>& GetLibrary()
 	{

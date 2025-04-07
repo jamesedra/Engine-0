@@ -400,10 +400,50 @@ int main()
 							}
 						}
 					}
+
+					// Mesh Values
+					MeshComponent* meshComp = meshManager.GetComponent(entity);
+					std::string meshID = meshComp->meshID;
+					std::vector<const char*> libMeshes = MeshLibrary::GetLibraryKeys();
+					auto mesh_selected = std::find_if(libMeshes.begin(), libMeshes.end(), [&meshID](const char* s)
+						{
+							return meshID == s;
+						});
+					size_t mesh_index = (mesh_selected != libMeshes.end()) ? std::distance(libMeshes.begin(), mesh_selected) : 0;
+
+					std::string meshComboLabel = "Mesh##DropDown" + std::to_string(entity);
+					if (ImGui::BeginCombo(meshComboLabel.c_str(), meshID.c_str(), 0))
+					{
+						static ImGuiTextFilter filter;
+						if (ImGui::IsWindowAppearing())
+						{
+							ImGui::SetKeyboardFocusHere();
+							filter.Clear();
+						}
+						ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
+						std::string filterLabel = "##Filter" + std::to_string(entity);
+						filter.Draw(filterLabel.c_str(), -FLT_MIN);
+
+						for (int n = 0; n < libMeshes.size(); n++)
+						{
+							const bool is_selected = (mesh_index == n);
+							if (filter.PassFilter(libMeshes[n]))
+							{
+								if (ImGui::Selectable(libMeshes[n], is_selected))
+								{
+									if (meshComp->meshID != libMeshes[n])
+									{
+										mesh_index = n;
+										meshComp->meshID = libMeshes[n];
+										meshComp->mesh = &MeshLibrary::GetMesh(meshComp->meshID);
+									}
+								}
+							}
+						}
+						ImGui::EndCombo();
+					}
 					ImGui::TreePop();
 				}
-				
-
 			}
 			//static ImGuiColorEditFlags base_flags = ImGuiColorEditFlags_None;
 			//ImGui::ColorPicker4("##picker", (float*)&color, base_flags | ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview);
