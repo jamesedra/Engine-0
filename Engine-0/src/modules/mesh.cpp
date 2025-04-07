@@ -50,8 +50,8 @@ void Mesh::Draw(Shader& shader, bool useUpdate)
 	unsigned int normalNr = 1;
 
 	// Very prototype implementation. Please fix (this will not be fixed)
-	shader.setBool("material.useDiffuseTexture", !textures.empty());
-	shader.setBool("material.useSpecularTexture", !textures.empty());
+	// shader.setBool("material.useDiffuseTexture", !textures.empty());
+	// shader.setBool("material.useSpecularTexture", !textures.empty());
 
 	for (unsigned int i = 0; i < textures.size(); i++)
 	{
