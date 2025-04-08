@@ -157,6 +157,7 @@
     <ClInclude Include="src\common.h" />
     <ClInclude Include="src\modules\camera.h" />
     <ClInclude Include="src\modules\component_manager.h" />
+    <ClInclude Include="src\modules\contexts.h" />
     <ClInclude Include="src\modules\entity_manager.h" />
     <ClInclude Include="src\modules\factory.h" />
     <ClInclude Include="src\modules\framebuffer.h" />

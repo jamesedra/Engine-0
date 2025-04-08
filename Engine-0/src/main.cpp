@@ -20,6 +20,7 @@
 #include "modules/loaders.h"
 #include "modules/shader_uniform.h"
 #include "modules/factory.h"
+#include "modules/contexts.h"
 
 constexpr int W_WIDTH = 1600;
 constexpr int W_HEIGHT = 1200;
@@ -117,31 +118,43 @@ int main()
 	glDrawBuffers(3, debugbuffer_attachments);
 	debugGBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
+	// Textures
 	unsigned int tex_diff = loadTexture("resources/textures/brickwall.jpg", true, TextureColorSpace::sRGB);
 	unsigned int tex_spec = createDefaultTexture();
 
+	// Object tests
 	unsigned int cubeVAO = createCubeVAO();
 	unsigned int frameVAO = createFrameVAO();
 
+	// Shaders
 	Shader outShader("shaders/default.vert", "shaders/default.frag");
 	Shader outputFrame("shaders/frame_out.vert", "shaders/frame_out.frag");
-	//Shader gBufferShader("shaders/gbuffer/gbuffer.vert", "shaders/gbuffer/gbuffer.frag");
 	Shader debugBufferShader("shaders/gbuffer/gbuffer_debug_out.vert", "shaders/gbuffer/gbuffer_debug_out.frag");
 	Shader litBufferShader("shaders/NPR/npr_def.vert", "shaders/NPR/blinn_shading.frag");
 
+	// -------------------
+	// Component Managers
 	EntityManager entityManager;
+	IDManager idManager;
 	SceneEntityRegistry sceneRegistry;
 	TransformManager transformManager;
 	MeshManager meshManager;
 	ShaderManager shaderManager;
 	MaterialManager materialManager;
 
-	Entity entityTest = WorldObjectFactory::CreateWorldMesh(entityManager, transformManager, meshManager, shaderManager, materialManager);
-	sceneRegistry.Register(entityTest);
+	// Contexts
+	WorldContext worldContext(&entityManager, &transformManager, &meshManager, &shaderManager, &materialManager);
+	OutlinerContext outlinerContext(&entityManager, &idManager);
 
-	Entity another = WorldObjectFactory::CreateWorldMesh(entityManager, transformManager, meshManager, shaderManager, materialManager);
+	// Entity tests
+	Entity entityTest = WorldObjectFactory::CreateWorldMesh(worldContext, "Sphere");
+	idManager.components[entityTest].ID = "World Object";
+	sceneRegistry.Register(entityTest);
+	Entity another = WorldObjectFactory::CreateWorldMesh(worldContext, "Cone");
+	idManager.components[another].ID = "Another World Object";
 	transformManager.components[another].position = glm::vec3(1.5f, 0.0f, 0.0f);
 	sceneRegistry.Register(another);
+
 	RenderSystem renderSystem;
 
 	// Setup imgui context
@@ -321,7 +334,7 @@ int main()
 				if (meshIt == meshManager.components.end())
 					continue;
 
-				std::string propertyLabel = "World Object #" + std::to_string(entity);
+				std::string propertyLabel = idManager.components[entity].ID + "##" + std::to_string(entity);
 				if (ImGui::TreeNode(propertyLabel.c_str()))
 				{
 					// Transform Values

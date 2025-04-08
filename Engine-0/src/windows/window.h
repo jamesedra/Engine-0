@@ -77,6 +77,14 @@ public:
 	}
 };
 
+class OutlinerWindow : public Window
+{
+public:
+	OutlinerWindow() : Window("Outliner", true, ImGuiWindowFlags_NoCollapse) { }
+
+
+};
+
 class PropertiesWindow : public Window
 {
 public:

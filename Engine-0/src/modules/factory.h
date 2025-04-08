@@ -1,6 +1,6 @@
 #pragma once
 #include "../common.h"
-#include "component_manager.h"
+#include "contexts.h"
 #include "mesh_library.h"
 #include "shader_library.h"
 
@@ -11,6 +11,38 @@
 class WorldObjectFactory
 {
 public:
+    static Entity CreateWorldMesh(
+        WorldContext& worldContext, 
+        const std::string meshLibName = "",
+        const std::string shaderLibName = "")
+    {
+        Entity entity = worldContext.entityManager->CreateEntity();
+
+        MeshComponent meshComp;
+        meshComp.meshName = !meshLibName.empty() ? meshLibName : "Cube";
+        meshComp.mesh = &MeshLibrary::GetMesh(meshComp.meshName);
+        worldContext.meshManager->components[entity] = meshComp;
+
+        ShaderComponent shaderComp;
+        shaderComp.shaderName = !shaderLibName.empty() ? shaderLibName : "Default Lit";
+        shaderComp.shader = &ShaderLibrary::GetShader(shaderComp.shaderName);
+        worldContext.shaderManager->components[entity] = shaderComp;
+
+        TransformComponent transformComp;
+        transformComp.position = glm::vec3(0.0f, 0.0f, 0.0f);
+        transformComp.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+        transformComp.scale = glm::vec3(1.0f);
+        worldContext.transformManager->components[entity] = transformComp;
+
+        MaterialComponent materialComp;
+        materialComp.parameters = InitializeMaterialComponent(shaderComp.shader->ID);
+
+        worldContext.materialManager->components[entity] = materialComp;
+
+        return entity;
+    }
+
+    // will probably be less used, but just in case world context is not initialized
     static Entity CreateWorldMesh(
         EntityManager& entityManager,
         TransformManager& transformManager,
