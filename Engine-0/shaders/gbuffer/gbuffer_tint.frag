@@ -20,6 +20,7 @@ struct Material {
 };
 uniform Material material;
 uniform vec3 colorTint = vec3(1.0, 1.0, 1.0);
+uniform float tintStrength = 1.0f;
 
 void main() {
 	gPosition = FragPos;
@@ -28,6 +29,6 @@ void main() {
 	vec3 diffuse = material.useDiffuseTexture ? texture(material.texture_diffuse1, TexCoords).rgb : material.diffuse;
 	float spec = material.useSpecularTexture ? texture(material.texture_specular1, TexCoords).r : material.specular;
 
-	gAlbedoSpec.rgb = diffuse * colorTint;
+	gAlbedoSpec.rgb = mix(diffuse, colorTint, tintStrength);
 	gAlbedoSpec.a = spec;
 }

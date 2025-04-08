@@ -444,16 +444,16 @@ int main()
 
 					// Mesh Values
 					MeshComponent* meshComp = meshManager.GetComponent(entity);
-					std::string meshID = meshComp->meshName;
+					std::string meshName = meshComp->meshName;
 					std::vector<const char*> libMeshes = MeshLibrary::GetLibraryKeys();
-					auto mesh_selected = std::find_if(libMeshes.begin(), libMeshes.end(), [&meshID](const char* s)
+					auto mesh_selected = std::find_if(libMeshes.begin(), libMeshes.end(), [&meshName](const char* s)
 						{
-							return meshID == s;
+							return meshName == s;
 						});
 					size_t mesh_index = (mesh_selected != libMeshes.end()) ? std::distance(libMeshes.begin(), mesh_selected) : 0;
 
 					std::string meshComboLabel = "Mesh##DropDown" + std::to_string(entity);
-					if (ImGui::BeginCombo(meshComboLabel.c_str(), meshID.c_str(), 0))
+					if (ImGui::BeginCombo(meshComboLabel.c_str(), meshName.c_str(), 0))
 					{
 						static ImGuiTextFilter filter;
 						if (ImGui::IsWindowAppearing())
