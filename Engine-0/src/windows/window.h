@@ -1,6 +1,8 @@
 #pragma once
 #include "imgui.h"
 #include "../modules/component_manager.h"
+#include "../modules/shader_library.h"
+#include "../modules/mesh_library.h"
 
 #include <iostream>
 #include <string>
@@ -84,7 +86,7 @@ class OutlinerWindow : public Window
 private:
 	SceneEntityRegistry* sceneRegistry = nullptr;
 	IDManager* idManager = nullptr;
-	Entity selectedEntity = 9999999999;
+	Entity selectedEntity = INT16_MAX;
 public:
 	OutlinerWindow() : Window("Outliner", true, ImGuiWindowFlags_NoCollapse) { }
 	OutlinerWindow(SceneEntityRegistry* sceneRegistry, IDManager* idManager) : 
@@ -129,7 +131,7 @@ public:
 	}
 
 	// When other windows/elements can trigger the selected entity
-	void   SetSelectedEntity(Entity e)
+	void SetSelectedEntity(Entity e)
 	{
 		selectedEntity = e;
 	}
@@ -137,27 +139,224 @@ public:
 
 class PropertiesWindow : public Window
 {
+private:
+	TransformManager* transformManager = nullptr;
+	MeshManager* meshManager = nullptr;
+	MaterialManager* materialManager = nullptr;
+	ShaderManager* shaderManager = nullptr;
+
+	// Entity to display
+	Entity expandedEntity = INT16_MAX;
+
 public:
 	PropertiesWindow() : Window("Properties", true, ImGuiWindowFlags_NoCollapse) { }
-	
-	bool BeginRender() override 
+	PropertiesWindow(
+		TransformManager* transformManager,
+		MeshManager* meshManager,
+		MaterialManager* materialManager,
+		ShaderManager* shaderManager)
+		:
+		Window("Properties", true, ImGuiWindowFlags_NoCollapse),
+		transformManager(transformManager),
+		meshManager(meshManager),
+		materialManager(materialManager),
+		shaderManager(shaderManager) { }
+
+
+	bool BeginRender() override
 	{
 		if (!window_open) return false;
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 		bool renderContent = (ImGui::Begin(title.c_str(), &window_open, window_flags));
-		ImGui::PopStyleVar(2);
-		if (renderContent)
+		
+		if (renderContent && transformManager && meshManager && materialManager && shaderManager)
 		{
 			// prepare default window
+			// Show transform values
+			TransformComponent* transformComp = transformManager->GetComponent(expandedEntity);
+			if (transformComp)
+			{
+				float position[4] = { transformComp->position.x, transformComp->position.y, transformComp->position.z, 1.0f };
+				float rotation[4] = { transformComp->rotation.x, transformComp->rotation.y, transformComp->rotation.z, 1.0f };
+				float scale[4] = { transformComp->scale.x, transformComp->scale.y, transformComp->scale.z, 1.0f };
+
+				std::string posLabel = "Position##ExpandedPropertiesWindow";
+				ImGui::DragFloat3(posLabel.c_str(), position, 0.5f);
+				transformComp->position = glm::vec3(position[0], position[1], position[2]);
+
+				std::string rotLabel = "Rotation##ExpandedPropertiesWindow";
+				ImGui::DragFloat3(rotLabel.c_str(), rotation, 0.5f);
+				transformComp->rotation = glm::vec3(rotation[0], rotation[1], rotation[2]);
+
+				std::string scaleLabel = "Scale##ExpandedPropertiesWindow";
+				ImGui::DragFloat3(scaleLabel.c_str(), scale, 0.5f);
+				transformComp->scale = glm::vec3(scale[0], scale[1], scale[2]);
+			}
+
+			// Show material and shader values
+			MaterialComponent* materialComp = materialManager->GetComponent(expandedEntity);
+			ShaderComponent* shaderComp = shaderManager->GetComponent(expandedEntity);
+			if (shaderComp)
+			{
+				std::string shaderName = shaderComp->shaderName;
+				std::vector<const char*> libShaders = ShaderLibrary::GetLibraryKeys();
+				auto shader_selected = std::find_if(libShaders.begin(), libShaders.end(), [&shaderName](const char* s)
+					{
+						return shaderName == s;
+					});
+				size_t shader_index = (shader_selected != libShaders.end()) ? std::distance(libShaders.begin(), shader_selected) : 0;
+				std::string shaderComboLabel = "Material##DropDownPropertiesWindow";
+
+				if (ImGui::BeginCombo(shaderComboLabel.c_str(), shaderName.c_str(), 0))
+				{
+					static ImGuiTextFilter filter;
+					if (ImGui::IsWindowAppearing())
+					{
+						ImGui::SetKeyboardFocusHere();
+						filter.Clear();
+					}
+					ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
+					std::string filterLabel = "##Filter" + std::to_string(expandedEntity);
+					filter.Draw(filterLabel.c_str(), -FLT_MIN);
+
+					for (int n = 0; n < libShaders.size(); n++)
+					{
+						const bool is_selected = (shader_index == n);
+						if (filter.PassFilter(libShaders[n]))
+						{
+							if (ImGui::Selectable(libShaders[n], is_selected))
+							{
+								if (shaderComp->shaderName != libShaders[n])
+								{
+									shader_index = n;
+									shaderComp->shaderName = libShaders[n];
+									shaderComp->shader = &ShaderLibrary::GetShader(shaderComp->shaderName);
+									materialComp->parameters = InitializeMaterialComponent(shaderComp->shader->ID);
+								}
+							}
+						}
+					}
+					ImGui::EndCombo();
+				}
+			}
+			if (materialComp)
+			{
+				for (auto& pair : materialComp->parameters)
+				{
+					std::string uniformName = pair.first;
+					UniformValue& uniformValue = pair.second;
+
+					std::string uniformLabel = uniformName + "##PropertiesWindow";
+					float uniformVec[4];
+
+					switch (uniformValue.type)
+					{
+					case UniformValue::Type::Bool:
+						uniformLabel += "bool";
+						ImGui::Checkbox(uniformLabel.c_str(), &uniformValue.boolValue);
+						break;
+					case UniformValue::Type::Int:
+						uniformLabel += "int";
+						ImGui::InputInt(uniformLabel.c_str(), &uniformValue.intValue);
+						break;
+					case UniformValue::Type::Float:
+						uniformLabel += "float";
+						ImGui::InputFloat(uniformLabel.c_str(), &uniformValue.floatValue);
+						break;
+					case UniformValue::Type::Vec2:
+						uniformLabel += "vec2";
+						uniformVec[0] = uniformValue.vec2Value.x;
+						uniformVec[1] = uniformValue.vec2Value.y;
+						uniformVec[2] = 0.0f;
+						uniformVec[3] = 0.0f;
+						ImGui::DragFloat2(uniformLabel.c_str(), uniformVec, 0.5f);
+						uniformValue.vec2Value = glm::vec2(uniformVec[0], uniformVec[1]);
+						break;
+					case UniformValue::Type::Vec3:
+						uniformLabel += "vec3";
+						uniformVec[0] = uniformValue.vec3Value.x;
+						uniformVec[1] = uniformValue.vec3Value.y;
+						uniformVec[2] = uniformValue.vec3Value.z;
+						uniformVec[3] = 0.0f;
+						ImGui::DragFloat3(uniformLabel.c_str(), uniformVec, 0.5f);
+						uniformValue.vec3Value = glm::vec3(uniformVec[0], uniformVec[1], uniformVec[2]);
+						break;
+					case UniformValue::Type::Vec4:
+						uniformLabel += "vec4";
+						uniformVec[0] = uniformValue.vec4Value.x;
+						uniformVec[1] = uniformValue.vec4Value.y;
+						uniformVec[2] = uniformValue.vec4Value.z;
+						uniformVec[3] = uniformValue.vec4Value.w;
+						ImGui::DragFloat4(uniformLabel.c_str(), uniformVec, 0.5f);
+						uniformValue.vec4Value = glm::vec4(uniformVec[0], uniformVec[1], uniformVec[2], uniformVec[3]);
+						break;
+					}
+				}
+			}
+
+			// Show mesh values
+			MeshComponent* meshComp = meshManager->GetComponent(expandedEntity);
+			if (meshComp)
+			{
+				std::string meshName = meshComp->meshName;
+				std::vector<const char*> libMeshes = MeshLibrary::GetLibraryKeys();
+				auto mesh_selected = std::find_if(libMeshes.begin(), libMeshes.end(), [&meshName](const char* s)
+					{
+						return meshName == s;
+					});
+				size_t mesh_index = (mesh_selected != libMeshes.end()) ? std::distance(libMeshes.begin(), mesh_selected) : 0;
+
+				std::string meshComboLabel = "Mesh##DropDownPropetiesWindow";
+				if (ImGui::BeginCombo(meshComboLabel.c_str(), meshName.c_str(), 0))
+				{
+					static ImGuiTextFilter filter;
+					if (ImGui::IsWindowAppearing())
+					{
+						ImGui::SetKeyboardFocusHere();
+						filter.Clear();
+					}
+					ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
+					std::string filterLabel = "##FilterPropertiesWindow";
+					filter.Draw(filterLabel.c_str(), -FLT_MIN);
+
+					for (int n = 0; n < libMeshes.size(); n++)
+					{
+						const bool is_selected = (mesh_index == n);
+						if (filter.PassFilter(libMeshes[n]))
+						{
+							if (ImGui::Selectable(libMeshes[n], is_selected))
+							{
+								if (meshComp->meshName != libMeshes[n])
+								{
+									mesh_index = n;
+									meshComp->meshName = libMeshes[n];
+									meshComp->mesh = &MeshLibrary::GetMesh(meshComp->meshName);
+								}
+							}
+						}
+					}
+					ImGui::EndCombo();
+				}
+			}
 		}
-		
+		ImGui::PopStyleVar(2);
 		return true;
 	}
 
-	void EndRender() override 
+	void EndRender() override
 	{
 		ImGui::End();
+	}
+
+	Entity GetExpandedEntity() const
+	{
+		return expandedEntity;
+	}
+
+	void SetExpandedEntity(Entity e)
+	{
+		expandedEntity = e;
 	}
 };
 
