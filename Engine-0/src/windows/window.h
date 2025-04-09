@@ -43,19 +43,7 @@ public:
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 
 		ImGui::Begin(title.c_str(), &window_open, window_flags);
-		ImGui::PopStyleVar(2);
-
-		ImGuiIO& io = ImGui::GetIO();
-		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-		{
-			ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
-			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-		}
-		else
-		{
-			std::cout << "Docking not enabled" << std::endl;
-		}
-
+		
 		if (ImGui::BeginMenuBar())
 		{
 			if (ImGui::BeginMenu("File"))
@@ -72,6 +60,30 @@ public:
 			ImGui::EndMenuBar();
 		}
 
+		// Toolbar buttons
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6, 6));
+
+		if (ImGui::Button("Save")) {  }  ImGui::SameLine();
+		if (ImGui::Button("Add Actor")) {  }  ImGui::SameLine();
+		if (ImGui::Button("Play")) {  }
+
+		ImGui::PopStyleVar(2);
+		ImGui::Separator();
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
+		ImGuiIO& io = ImGui::GetIO();
+		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+		{
+			ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
+			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+		}
+		else
+		{
+			std::cout << "Docking not enabled" << std::endl;
+		}
+
+		ImGui::PopStyleVar(3);
 		return true;
 	}
 
