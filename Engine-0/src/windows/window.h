@@ -1,5 +1,7 @@
 #pragma once
 #include "imgui.h"
+#include "../modules/component_manager.h"
+
 #include <iostream>
 #include <string>
 
@@ -79,17 +81,65 @@ public:
 
 class OutlinerWindow : public Window
 {
+private:
+	SceneEntityRegistry* sceneRegistry = nullptr;
+	IDManager* idManager = nullptr;
+	Entity selectedEntity = 9999999999;
 public:
 	OutlinerWindow() : Window("Outliner", true, ImGuiWindowFlags_NoCollapse) { }
+	OutlinerWindow(SceneEntityRegistry* sceneRegistry, IDManager* idManager) : 
+		Window("Outliner", true, ImGuiWindowFlags_NoCollapse), sceneRegistry(sceneRegistry), idManager(idManager) { }
 
+	bool BeginRender() override
+	{
+		if (!window_open) return false;
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		bool renderContent = (ImGui::Begin(title.c_str(), &window_open, window_flags));
+		
+		if (renderContent && sceneRegistry && idManager)
+		{
+			// prepare default window
+			ImVec2 region = ImGui::GetContentRegionAvail();
+			if (ImGui::BeginListBox("##Outliner", region))
+			{
+				for (Entity entity : sceneRegistry->GetAll())
+				{
+					bool isSelected = entity == selectedEntity;
 
+					std::string label = idManager->components[entity].ID + "##" + std::to_string(entity);
+					if (ImGui::Selectable(label.c_str(), isSelected)) selectedEntity = entity;
+					if (isSelected) ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndListBox();
+			}
+		}
+		ImGui::PopStyleVar(2);
+		return true;
+	}
+
+	void EndRender() override
+	{
+		ImGui::End();
+	}
+
+	Entity GetSelectedEntity() const
+	{
+		return selectedEntity;
+	}
+
+	// When other windows/elements can trigger the selected entity
+	void   SetSelectedEntity(Entity e)
+	{
+		selectedEntity = e;
+	}
 };
 
 class PropertiesWindow : public Window
 {
 public:
 	PropertiesWindow() : Window("Properties", true, ImGuiWindowFlags_NoCollapse) { }
-
+	
 	bool BeginRender() override 
 	{
 		if (!window_open) return false;

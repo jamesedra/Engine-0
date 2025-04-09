@@ -136,15 +136,17 @@ int main()
 	// Component Managers
 	EntityManager entityManager;
 	IDManager idManager;
-	SceneEntityRegistry sceneRegistry;
 	TransformManager transformManager;
 	MeshManager meshManager;
 	ShaderManager shaderManager;
 	MaterialManager materialManager;
 
+	// Registries
+	SceneEntityRegistry sceneRegistry;
+
 	// Contexts
 	WorldContext worldContext(&entityManager, &transformManager, &meshManager, &shaderManager, &materialManager);
-	OutlinerContext outlinerContext(&entityManager, &idManager);
+	OutlinerContext outlinerContext(&sceneRegistry, &idManager);
 
 	// Entity tests
 	Entity entityTest = WorldObjectFactory::CreateWorldMesh(worldContext, "Sphere");
@@ -180,10 +182,12 @@ int main()
 	MainDockWindow mainWindow;
 	PropertiesWindow propertiesWindow;
 	ViewportWindow viewportWindow;
+	OutlinerWindow outlinerWindow(&sceneRegistry, &idManager);
 
 	float my_color[4] = { 1.0, 1.0, 1.0, 1.0 };
 	static bool viewport_active;
 	static bool properties_active;
+	static bool outliner_active;
 	static ImVec4 color = ImVec4(114.0f / 255.0f, 144.0f / 255.0f, 154.0f / 255.0f, 200.0f / 255.0f);
 	static int tex_type = 0;
 	unsigned int tex_curr = 0;
@@ -266,6 +270,14 @@ int main()
 			);
 			
 			viewportWindow.EndRender();
+		}
+
+		outliner_active = outlinerWindow.BeginRender();
+		if (outliner_active)
+		{
+			// additional rendering
+
+			outlinerWindow.EndRender();
 		}
 
 		// GBuffer pass

@@ -1,7 +1,7 @@
 #pragma once
 #include "component_manager.h"
 
-// NOTE: Contexts are structs that holds references of component managers. Mainly uses this since passing multiple managers are kind of blowing out of proportion.
+// NOTE: Contexts are structs that holds references of component managers and registries. Mainly uses this since passing multiple parameters are kind of blowing out of proportion.
 
 // World context is used for rendering/viewports
 struct WorldContext
@@ -30,14 +30,14 @@ struct WorldContext
 // Outliner context is used for the outliner window
 struct OutlinerContext
 {
-	EntityManager* entityManager;
+	SceneEntityRegistry* sceneRegistry;
 	IDManager* idManager;
 
 	OutlinerContext(
-		EntityManager* entityManager,
+		SceneEntityRegistry* sceneRegistry,
 		IDManager* idManager
 	):
-		entityManager(entityManager),
+		sceneRegistry(sceneRegistry),
 		idManager(idManager)
 	{ }
 
