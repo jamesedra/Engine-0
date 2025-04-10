@@ -4,23 +4,22 @@
 
 #include "common.h"
 
-// #include "modules/model.h"
-#include "modules/utils.h"
-#include "modules/shader.h"
-#include "modules/camera.h"
-#include "modules/framebuffer.h"
-#include "modules/uniformbuffer.h"
-#include "modules/light_types.h"
-#include "modules/texture.h"
+#include "modules/public/utils.h"
+#include "modules/public/shader.h"
+#include "modules/public/camera.h"
+#include "modules/public/framebuffer.h"
+#include "modules/public/uniformbuffer.h"
+#include "modules/public/light_types.h"
+#include "modules/public/texture.h"
 
 #include "windows/deprecated-window.h"
 #include "windows/window.h"
 
-#include "modules/rendersystem.h"
-#include "modules/loaders.h"
-#include "modules/shader_uniform.h"
-#include "modules/factory.h"
-#include "modules/contexts.h"
+#include "modules/public/rendersystem.h"
+#include "modules/public/loaders.h"
+#include "modules/public/shader_uniform.h"
+#include "modules/public/factory.h"
+#include "modules/public/contexts.h"
 
 constexpr int W_WIDTH = 1600;
 constexpr int W_HEIGHT = 1200;

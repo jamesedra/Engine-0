@@ -1,4 +1,4 @@
-#include "Texture.h"
+#include "../public/texture.h"
 
 const std::unordered_map<GLenum, GLenum> Texture::unsizedFormatToType = {
     { GL_RED, GL_UNSIGNED_BYTE },

@@ -1,4 +1,4 @@
-#include "Camera.h"
+#include "../public/camera.h"
 
 // Constructor implementation
 Camera::Camera(const glm::vec3& cameraPos, const glm::vec3& cameraFront, const glm::vec3& cameraUp, const float& fov)

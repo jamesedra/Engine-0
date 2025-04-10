@@ -1,5 +1,5 @@
 #pragma once
-#include "../common.h"
+#include "../../common.h"
 
 struct UniformValue
 {
@@ -126,10 +126,14 @@ std::unordered_map<std::string, UniformValue> InitializeMaterialComponent(unsign
 		// Only handles names and types
 		data_name = std::string(nameData.data(), length);
 		
-		if ((includeTransformUniforms || !containsAnyForTransformUniforms(data_name)) && (includeTextureUniforms || !containsAnyForTextureUniforms(data_name)))
+		/*if ((includeTransformUniforms || !containsAnyForTransformUniforms(data_name)) && (includeTextureUniforms || !containsAnyForTextureUniforms(data_name)))
 		{
 			uniforms[data_name] = UniformTypeToValue(type);
-		}			
+		}*/			
+		if ((includeTransformUniforms || !containsAnyForTransformUniforms(data_name)))
+		{
+			uniforms[data_name] = UniformTypeToValue(type);
+		}
 	}
 
 	return uniforms;

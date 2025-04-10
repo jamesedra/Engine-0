@@ -1,4 +1,4 @@
-#include "mesh.h"
+#include "../public/mesh.h"
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<MeshTexture> textures)
 {

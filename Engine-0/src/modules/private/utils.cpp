@@ -5,8 +5,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "utils.h"
-#include "camera.h"
+#include "../public/utils.h"
+#include "../public/camera.h"
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;

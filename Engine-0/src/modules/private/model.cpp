@@ -1,4 +1,4 @@
-#include "model.h"
+#include "../public/model.h"
 
 void Model::Draw(Shader& shader)
 {

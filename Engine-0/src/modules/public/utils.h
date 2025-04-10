@@ -8,7 +8,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <stb/stb_image.h>
 
-#include "../modules/shader.h"
+#include "shader.h"
 #include "texture.h"
 
 enum class TextureColorSpace {

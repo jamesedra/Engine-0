@@ -1,5 +1,4 @@
 #pragma once
-#include "../common.h"
 #include "shader.h"
 #include <unordered_map>
 #include "mesh.h"

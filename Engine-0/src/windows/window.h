@@ -1,8 +1,8 @@
 #pragma once
 #include "imgui.h"
-#include "../modules/component_manager.h"
-#include "../modules/shader_library.h"
-#include "../modules/mesh_library.h"
+#include "../modules/public/component_manager.h"
+#include "../modules/public/shader_library.h"
+#include "../modules/public/mesh_library.h"
 
 #include <iostream>
 #include <string>
