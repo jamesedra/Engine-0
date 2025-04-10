@@ -32,7 +32,7 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow* window = glfwCreateWindow(W_WIDTH, W_HEIGHT, "PBR Engine", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(W_WIDTH, W_HEIGHT, "Engine 0", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
@@ -189,8 +189,8 @@ int main()
 	static bool properties_active;
 	static bool outliner_active;
 	static ImVec4 color = ImVec4(114.0f / 255.0f, 144.0f / 255.0f, 154.0f / 255.0f, 200.0f / 255.0f);
-	static int tex_type = 0;
-	unsigned int tex_curr = 0;
+	static int tex_type = 3;
+	unsigned int tex_curr;
 
 	static float lightPos[4] = { 2.5f, 5.0f, 2.5f, 0.0f };
 	glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);

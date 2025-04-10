@@ -3,7 +3,7 @@
 
 struct UniformValue
 {
-    enum class Type { Bool, Int, Float, Vec2, Vec3, Vec4, Mat4 } type;
+    enum class Type { Bool, Int, Float, Vec2, Vec3, Vec4, Mat4, Sampler2D, SamplerCube } type;
     union
     {
         bool boolValue;
@@ -15,8 +15,6 @@ struct UniformValue
         glm::mat4 mat4Value;
     };
 
-    UniformValue() : type(Type::Bool), boolValue(false) {}
-
     UniformValue(bool value) : type(Type::Bool), boolValue(value) {}
     UniformValue(int value) : type(Type::Int), intValue(value) {}
     UniformValue(float value) : type(Type::Float), floatValue(value) {}
@@ -24,6 +22,15 @@ struct UniformValue
     UniformValue(glm::vec3 value) : type(Type::Vec3), vec3Value(value) {}
     UniformValue(glm::vec4 value) : type(Type::Vec4), vec4Value(value) {}
     UniformValue(glm::mat4 value) : type(Type::Mat4), mat4Value(value) {}
+	UniformValue(Type t = Type::Bool) : type(t), intValue(0) {}
+	static UniformValue Sampler2D(int unit = 0)
+	{
+		UniformValue u(Type::Sampler2D);    u.intValue = unit; return u;
+	}
+	static UniformValue SamplerCube(int unit = 0)
+	{
+		UniformValue u(Type::SamplerCube);  u.intValue = unit; return u;
+	}
 };
 
 // Commenting out unused uniforms
@@ -71,9 +78,9 @@ UniformValue UniformTypeToValue(GLenum type)
 		//case GL_FLOAT_MAT2:        return "GL_FLOAT_MAT2";
 		//case GL_FLOAT_MAT3:        return "GL_FLOAT_MAT3";
 		case GL_FLOAT_MAT4:        return UniformValue(glm::mat4(1.0f));
-		case GL_SAMPLER_2D:        return UniformValue(0);
-		case GL_SAMPLER_CUBE:      return UniformValue(0);
-		default:                   return "UNKNOWN";
+		case GL_SAMPLER_2D:        return UniformValue::Sampler2D(0);
+		case GL_SAMPLER_CUBE:      return UniformValue::SamplerCube(0);
+		default:                   return UniformValue();
 	}
 }
 
