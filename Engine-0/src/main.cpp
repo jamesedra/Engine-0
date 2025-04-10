@@ -20,6 +20,7 @@
 #include "modules/loaders.h"
 #include "modules/shader_uniform.h"
 #include "modules/factory.h"
+#include "modules/contexts.h"
 
 constexpr int W_WIDTH = 1600;
 constexpr int W_HEIGHT = 1200;
@@ -117,31 +118,45 @@ int main()
 	glDrawBuffers(3, debugbuffer_attachments);
 	debugGBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
+	// Textures
 	unsigned int tex_diff = loadTexture("resources/textures/brickwall.jpg", true, TextureColorSpace::sRGB);
 	unsigned int tex_spec = createDefaultTexture();
 
+	// Object tests
 	unsigned int cubeVAO = createCubeVAO();
 	unsigned int frameVAO = createFrameVAO();
 
+	// Shaders
 	Shader outShader("shaders/default.vert", "shaders/default.frag");
 	Shader outputFrame("shaders/frame_out.vert", "shaders/frame_out.frag");
-	//Shader gBufferShader("shaders/gbuffer/gbuffer.vert", "shaders/gbuffer/gbuffer.frag");
 	Shader debugBufferShader("shaders/gbuffer/gbuffer_debug_out.vert", "shaders/gbuffer/gbuffer_debug_out.frag");
 	Shader litBufferShader("shaders/NPR/npr_def.vert", "shaders/NPR/blinn_shading.frag");
 
+	// -------------------
+	// Component Managers
 	EntityManager entityManager;
-	SceneEntityRegistry sceneRegistry;
+	IDManager idManager;
 	TransformManager transformManager;
 	MeshManager meshManager;
 	ShaderManager shaderManager;
 	MaterialManager materialManager;
 
-	Entity entityTest = WorldObjectFactory::CreateWorldMesh(entityManager, transformManager, meshManager, shaderManager, materialManager);
-	sceneRegistry.Register(entityTest);
+	// Registries
+	SceneEntityRegistry sceneRegistry;
 
-	Entity another = WorldObjectFactory::CreateWorldMesh(entityManager, transformManager, meshManager, shaderManager, materialManager);
+	// Contexts
+	WorldContext worldContext(&entityManager, &transformManager, &meshManager, &shaderManager, &materialManager);
+	OutlinerContext outlinerContext(&sceneRegistry, &idManager);
+
+	// Entity tests
+	Entity entityTest = WorldObjectFactory::CreateWorldMesh(worldContext, "Sphere");
+	idManager.components[entityTest].ID = "World Object";
+	sceneRegistry.Register(entityTest);
+	Entity another = WorldObjectFactory::CreateWorldMesh(worldContext, "Cone");
+	idManager.components[another].ID = "Another World Object";
 	transformManager.components[another].position = glm::vec3(1.5f, 0.0f, 0.0f);
 	sceneRegistry.Register(another);
+
 	RenderSystem renderSystem;
 
 	// Setup imgui context
@@ -165,12 +180,14 @@ int main()
 
 	// Windows
 	MainDockWindow mainWindow;
-	PropertiesWindow propertiesWindow;
 	ViewportWindow viewportWindow;
+	OutlinerWindow outlinerWindow(&sceneRegistry, &idManager);
+	PropertiesWindow nPropertiesWindow(&transformManager, &meshManager, &materialManager, &shaderManager);
 
 	float my_color[4] = { 1.0, 1.0, 1.0, 1.0 };
 	static bool viewport_active;
 	static bool properties_active;
+	static bool outliner_active;
 	static ImVec4 color = ImVec4(114.0f / 255.0f, 144.0f / 255.0f, 154.0f / 255.0f, 200.0f / 255.0f);
 	static int tex_type = 0;
 	unsigned int tex_curr = 0;
@@ -255,6 +272,29 @@ int main()
 			viewportWindow.EndRender();
 		}
 
+		outliner_active = outlinerWindow.BeginRender();
+		if (outliner_active)
+		{
+			// additional rendering
+			outlinerWindow.EndRender();
+		}
+
+		properties_active = nPropertiesWindow.BeginRender();
+		if (properties_active)
+		{
+			// additional rendering
+			nPropertiesWindow.SetExpandedEntity(outlinerWindow.GetSelectedEntity());
+
+			// tentative placement
+			ImGui::RadioButton("World Position", &tex_type, 0);
+			ImGui::RadioButton("World Normal", &tex_type, 1);
+			ImGui::RadioButton("Base Color", &tex_type, 2);
+			ImGui::RadioButton("Lit", &tex_type, 3);
+
+			ImGui::DragFloat3("Light Position", lightPos, 0.5f, -50.0f, 50.0f);
+			nPropertiesWindow.EndRender();
+		}
+
 		// GBuffer pass
 		gBuffer.bind();
 		glClearColor(0.0, 0.0, 0.0, 1.0);
@@ -310,192 +350,6 @@ int main()
 		}
 		glEnable(GL_DEPTH_TEST);
 		
-		// Property window
-		properties_active = propertiesWindow.BeginRender();
-		if (properties_active)
-		{
-			// additional rendering
-			for (Entity entity : sceneRegistry.GetAll())
-			{
-				auto meshIt = meshManager.components.find(entity);
-				if (meshIt == meshManager.components.end())
-					continue;
-
-				std::string propertyLabel = "World Object #" + std::to_string(entity);
-				if (ImGui::TreeNode(propertyLabel.c_str()))
-				{
-					// Transform Values
-					TransformComponent* transformComp = transformManager.GetComponent(entity);
-
-					float position[4] = { transformComp->position.x, transformComp->position.y, transformComp->position.z, 1.0f };
-					float rotation[4] = { transformComp->rotation.x, transformComp->rotation.y, transformComp->rotation.z, 1.0f };
-					float scale[4] = { transformComp->scale.x, transformComp->scale.y, transformComp->scale.z, 1.0f };
-
-					std::string posLabel = "Position##" + std::to_string(entity);
-					ImGui::DragFloat3(posLabel.c_str(), position, 0.5f);
-					transformComp->position = glm::vec3(position[0], position[1], position[2]);
-
-					std::string rotLabel = "Rotation##" + std::to_string(entity);
-					ImGui::DragFloat3(rotLabel.c_str(), rotation, 0.5f);
-					transformComp->rotation = glm::vec3(rotation[0], rotation[1], rotation[2]);
-
-					std::string scaleLabel = "Scale##" + std::to_string(entity);
-					ImGui::DragFloat3(scaleLabel.c_str(), scale, 0.5f);
-					transformComp->scale = glm::vec3(scale[0], scale[1], scale[2]);
-
-					// Material Values
-					MaterialComponent* materialComp = materialManager.GetComponent(entity);
-					ShaderComponent* shaderComp = shaderManager.GetComponent(entity);
-					std::string shaderName = shaderComp->shaderName;
-					std::vector<const char*> libShaders = ShaderLibrary::GetLibraryKeys();
-					auto shader_selected = std::find_if(libShaders.begin(), libShaders.end(), [&shaderName](const char* s)
-						{
-							return shaderName == s;
-						});
-					size_t shader_index = (shader_selected != libShaders.end()) ? std::distance(libShaders.begin(), shader_selected) : 0;
-					std::string shaderComboLabel = "Material##DropDown" + std::to_string(entity);
-
-					if (ImGui::BeginCombo(shaderComboLabel.c_str(), shaderName.c_str(), 0))
-					{
-						static ImGuiTextFilter filter;
-						if (ImGui::IsWindowAppearing())
-						{
-							ImGui::SetKeyboardFocusHere();
-							filter.Clear();
-						}
-						ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
-						std::string filterLabel = "##Filter" + std::to_string(entity);
-						filter.Draw(filterLabel.c_str(), -FLT_MIN);
-
-						for (int n = 0; n < libShaders.size(); n++)
-						{
-							const bool is_selected = (shader_index == n);
-							if (filter.PassFilter(libShaders[n]))
-							{
-								if (ImGui::Selectable(libShaders[n], is_selected))
-								{
-									if (shaderComp->shaderName != libShaders[n])
-									{
-										shader_index = n;
-										shaderComp->shaderName = libShaders[n];
-										shaderComp->shader = &ShaderLibrary::GetShader(shaderComp->shaderName);
-										materialComp->parameters = InitializeMaterialComponent(shaderComp->shader->ID);
-									}
-								}
-							}
-						}
-						ImGui::EndCombo();
-					}
-
-					if (materialComp)
-					{
-						for (auto& pair : materialComp->parameters)
-						{
-							std::string uniformName = pair.first;
-							UniformValue& uniformValue = pair.second;
-
-							std::string uniformLabel = uniformName + "##" + std::to_string(entity);
-							float uniformVec[4];
-
-							switch (uniformValue.type)
-							{
-								case UniformValue::Type::Bool:
-									uniformLabel += "bool";
-									ImGui::Checkbox(uniformLabel.c_str(), &uniformValue.boolValue);
-									break;
-								case UniformValue::Type::Int:
-									uniformLabel += "int";
-									ImGui::InputInt(uniformLabel.c_str(), &uniformValue.intValue);
-									break;
-								case UniformValue::Type::Float:
-									uniformLabel += "float";
-									ImGui::InputFloat(uniformLabel.c_str(), &uniformValue.floatValue);
-									break;
-								case UniformValue::Type::Vec2:
-									uniformLabel += "vec2";
-									uniformVec[0] = uniformValue.vec2Value.x;
-									uniformVec[1] = uniformValue.vec2Value.y;
-									uniformVec[2] = 0.0f;
-									uniformVec[3] = 0.0f;
-									ImGui::DragFloat2(uniformLabel.c_str(), uniformVec, 0.5f);
-									uniformValue.vec2Value = glm::vec2(uniformVec[0], uniformVec[1]);
-									break;
-								case UniformValue::Type::Vec3:
-									uniformLabel += "vec3";
-									uniformVec[0] = uniformValue.vec3Value.x;
-									uniformVec[1] = uniformValue.vec3Value.y;
-									uniformVec[2] = uniformValue.vec3Value.z;
-									uniformVec[3] = 0.0f;
-									ImGui::DragFloat3(uniformLabel.c_str(), uniformVec, 0.5f);
-									uniformValue.vec3Value = glm::vec3(uniformVec[0], uniformVec[1], uniformVec[2]);
-									break;
-								case UniformValue::Type::Vec4:
-									uniformLabel += "vec4";
-									uniformVec[0] = uniformValue.vec4Value.x;
-									uniformVec[1] = uniformValue.vec4Value.y;
-									uniformVec[2] = uniformValue.vec4Value.z;
-									uniformVec[3] = uniformValue.vec4Value.w;
-									ImGui::DragFloat4(uniformLabel.c_str(), uniformVec, 0.5f);
-									uniformValue.vec4Value = glm::vec4(uniformVec[0], uniformVec[1], uniformVec[2], uniformVec[3]);
-									break;
-							}
-						}
-					}
-
-					// Mesh Values
-					MeshComponent* meshComp = meshManager.GetComponent(entity);
-					std::string meshName = meshComp->meshName;
-					std::vector<const char*> libMeshes = MeshLibrary::GetLibraryKeys();
-					auto mesh_selected = std::find_if(libMeshes.begin(), libMeshes.end(), [&meshName](const char* s)
-						{
-							return meshName == s;
-						});
-					size_t mesh_index = (mesh_selected != libMeshes.end()) ? std::distance(libMeshes.begin(), mesh_selected) : 0;
-
-					std::string meshComboLabel = "Mesh##DropDown" + std::to_string(entity);
-					if (ImGui::BeginCombo(meshComboLabel.c_str(), meshName.c_str(), 0))
-					{
-						static ImGuiTextFilter filter;
-						if (ImGui::IsWindowAppearing())
-						{
-							ImGui::SetKeyboardFocusHere();
-							filter.Clear();
-						}
-						ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
-						std::string filterLabel = "##Filter" + std::to_string(entity);
-						filter.Draw(filterLabel.c_str(), -FLT_MIN);
-
-						for (int n = 0; n < libMeshes.size(); n++)
-						{
-							const bool is_selected = (mesh_index == n);
-							if (filter.PassFilter(libMeshes[n]))
-							{
-								if (ImGui::Selectable(libMeshes[n], is_selected))
-								{
-									if (meshComp->meshName != libMeshes[n])
-									{
-										mesh_index = n;
-										meshComp->meshName = libMeshes[n];
-										meshComp->mesh = &MeshLibrary::GetMesh(meshComp->meshName);
-									}
-								}
-							}
-						}
-						ImGui::EndCombo();
-					}
-					ImGui::TreePop();
-				}
-			}
-			//static ImGuiColorEditFlags base_flags = ImGuiColorEditFlags_None;
-			//ImGui::ColorPicker4("##picker", (float*)&color, base_flags | ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview);
-			ImGui::RadioButton("World Position", &tex_type, 0);
-			ImGui::RadioButton("World Normal", &tex_type, 1);
-			ImGui::RadioButton("Base Color", &tex_type, 2);
-			ImGui::RadioButton("Lit", &tex_type, 3);
-
-			ImGui::DragFloat3("Light Position", lightPos, 0.5f, -50.0f, 50.0f);
-			propertiesWindow.EndRender();
-		}
 		
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

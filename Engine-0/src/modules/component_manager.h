@@ -15,12 +15,11 @@ public:
 	}
 };
 
-// soon to be deprecated
-class TestMeshManager
+class IDManager
 {
 public:
-	std::unordered_map<Entity, TestMeshComponent> components;
-	TestMeshComponent* GetComponent(Entity entity)
+	std::unordered_map<Entity, IDComponent> components;
+	IDComponent* GetComponent(Entity entity)
 	{
 		auto it = components.find(entity);
 		return (it != components.end()) ? &it->second : nullptr;
@@ -54,6 +53,18 @@ class MaterialManager
 public:
 	std::unordered_map<Entity, MaterialComponent> components;
 	MaterialComponent* GetComponent(Entity entity)
+	{
+		auto it = components.find(entity);
+		return (it != components.end()) ? &it->second : nullptr;
+	}
+};
+
+// soon to be deprecated
+class TestMeshManager
+{
+public:
+	std::unordered_map<Entity, TestMeshComponent> components;
+	TestMeshComponent* GetComponent(Entity entity)
 	{
 		auto it = components.find(entity);
 		return (it != components.end()) ? &it->second : nullptr;
