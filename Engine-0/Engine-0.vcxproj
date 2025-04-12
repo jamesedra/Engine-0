@@ -172,6 +172,7 @@
     <ClInclude Include="src\modules\public\shader_library.h" />
     <ClInclude Include="src\modules\public\shader_uniform.h" />
     <ClInclude Include="src\modules\public\texture.h" />
+    <ClInclude Include="src\modules\public\texture_library.h" />
     <ClInclude Include="src\modules\public\uniformbuffer.h" />
     <ClInclude Include="src\modules\public\utils.h" />
     <ClInclude Include="src\modules\worldcomponent.h" />

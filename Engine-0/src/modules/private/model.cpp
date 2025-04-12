@@ -110,6 +110,7 @@ std::vector<MeshTexture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureT
 				break;
 			}
 		}
+		int width, height;
 		if (!skip) {
 			MeshTexture texture;
 
@@ -118,7 +119,7 @@ std::vector<MeshTexture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureT
 				colorSpace = TextureColorSpace::sRGB;
 			}
 
-			texture.id = TextureFromFile(str.C_Str(), directory, colorSpace);
+			texture.id = TextureFromFile(str.C_Str(), directory, width, height, colorSpace);
 			texture.type = typeName;
 			texture.path = str.C_Str();
 			textures.push_back(texture);
@@ -128,15 +129,63 @@ std::vector<MeshTexture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureT
 	return textures;
 }
 
+std::vector<TextureMetadata> Model::rloadMaterialTextures(aiMaterial* mat, aiTextureType type, const std::string& typeName)
+{
+	std::vector<TextureMetadata> textures;
 
-unsigned int Model::TextureFromFile(const char* path, const std::string& directory, TextureColorSpace space) {
+	for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
+	{
+		aiString str;
+		mat->GetTexture(type, i, &str);
+		std::string filename = str.C_Str();
+		std::string fullpath = directory + "/" + filename;
+
+		bool skip = false;
+		for (auto const& loaded : rtextures_loaded)
+			if (loaded == fullpath) skip = true; break;
+
+		unsigned int texID;
+		int width, height;
+		if (!skip) // save to texture library
+		{
+
+			TextureColorSpace colorSpace = TextureColorSpace::Linear;
+			if (type == aiTextureType_DIFFUSE || type == aiTextureType_AMBIENT)
+			{
+				colorSpace = TextureColorSpace::sRGB;
+			}
+
+			texID = TextureFromFile(fullpath.c_str(), directory, width, height, colorSpace);
+			rtextures_loaded.push_back(fullpath);
+			
+		}
+		else // fetch from texture library
+		{
+			auto const& tex = TextureLibrary::GetTexture(fullpath);
+			texID = tex.id;
+			width = tex.width;
+			height = tex.height;
+		}
+
+		TextureMetadata texture;
+		texture.path = fullpath;
+		texture.type = typeName;
+		texture.id = texID;
+		texture.width = width;
+		texture.height = height;
+		textures.push_back(texture);
+	}
+	return textures;
+}
+
+unsigned int Model::TextureFromFile(const char* path, const std::string& directory, int& width, int& height, TextureColorSpace space) {
 	std::string filename = std::string(path);
 	filename = directory + '/' + filename;
 
 	unsigned int textureID;
 	glGenTextures(1, &textureID);
 
-	int width, height, nrComponents;
+	int nrComponents;
 	unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
 	if (data)
 	{

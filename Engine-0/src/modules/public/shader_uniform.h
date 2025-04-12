@@ -15,6 +15,8 @@ struct UniformValue
         glm::mat4 mat4Value;
     };
 
+	std::string texturePath; // path of the texture. Used for Texture Libraries
+
     UniformValue(bool value) : type(Type::Bool), boolValue(value) {}
     UniformValue(int value) : type(Type::Int), intValue(value) {}
     UniformValue(float value) : type(Type::Float), floatValue(value) {}
@@ -25,11 +27,17 @@ struct UniformValue
 	UniformValue(Type t = Type::Bool) : type(t), intValue(0) {}
 	static UniformValue Sampler2D(int unit = 0)
 	{
-		UniformValue u(Type::Sampler2D);    u.intValue = unit; return u;
+		UniformValue u(Type::Sampler2D);   
+		u.intValue = unit; 
+		u.texturePath = "";
+		return u;
 	}
 	static UniformValue SamplerCube(int unit = 0)
 	{
-		UniformValue u(Type::SamplerCube);  u.intValue = unit; return u;
+		UniformValue u(Type::SamplerCube);  
+		u.intValue = unit; 
+		u.texturePath = "";
+		return u;
 	}
 };
 
@@ -78,8 +86,8 @@ UniformValue UniformTypeToValue(GLenum type)
 		//case GL_FLOAT_MAT2:        return "GL_FLOAT_MAT2";
 		//case GL_FLOAT_MAT3:        return "GL_FLOAT_MAT3";
 		case GL_FLOAT_MAT4:        return UniformValue(glm::mat4(1.0f));
-		case GL_SAMPLER_2D:        return UniformValue::Sampler2D(0);
-		case GL_SAMPLER_CUBE:      return UniformValue::SamplerCube(0);
+		case GL_SAMPLER_2D:        return UniformValue::Sampler2D();
+		case GL_SAMPLER_CUBE:      return UniformValue::SamplerCube();
 		default:                   return UniformValue();
 	}
 }
@@ -104,7 +112,7 @@ bool containsAnyForTextureUniforms(std::string data_name)
 		});
 }
 
-
+// reflects uniform names and value types from shader ID
 std::unordered_map<std::string, UniformValue> InitializeMaterialComponent(unsigned int shaderID, bool includeTransformUniforms = false, bool includeTextureUniforms = false)
 {
 	std::unordered_map<std::string, UniformValue> uniforms;
@@ -126,10 +134,6 @@ std::unordered_map<std::string, UniformValue> InitializeMaterialComponent(unsign
 		// Only handles names and types
 		data_name = std::string(nameData.data(), length);
 		
-		/*if ((includeTransformUniforms || !containsAnyForTransformUniforms(data_name)) && (includeTextureUniforms || !containsAnyForTextureUniforms(data_name)))
-		{
-			uniforms[data_name] = UniformTypeToValue(type);
-		}*/			
 		if ((includeTransformUniforms || !containsAnyForTransformUniforms(data_name)))
 		{
 			uniforms[data_name] = UniformTypeToValue(type);

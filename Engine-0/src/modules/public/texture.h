@@ -42,6 +42,12 @@ public:
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
+	// overloaded constructor for wrapping an existing GL texture ID (from Assimp loader)
+	Texture(unsigned int existingID, int width, int height)
+		: id(existingID), width(width), height(height) {}
+
+	Texture(){}
+
 	void setTexFilter(GLint filter) {
 		glBindTexture(GL_TEXTURE_2D, id);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
