@@ -25,17 +25,15 @@ struct UniformValue
     UniformValue(glm::vec4 value) : type(Type::Vec4), vec4Value(value) {}
     UniformValue(glm::mat4 value) : type(Type::Mat4), mat4Value(value) {}
 	UniformValue(Type t = Type::Bool) : type(t), intValue(0) {}
-	static UniformValue Sampler2D(const std::string&path, int unit = 0)
+	static UniformValue Sampler2D(const std::string&path)
 	{
 		UniformValue u(Type::Sampler2D);   
-		u.intValue = unit; 
 		u.texturePath = path;
 		return u;
 	}
-	static UniformValue SamplerCube(const std::string& path, int unit = 0)
+	static UniformValue SamplerCube(const std::string& path)
 	{
 		UniformValue u(Type::SamplerCube);  
-		u.intValue = unit; 
 		u.texturePath = path;
 		return u;
 	}

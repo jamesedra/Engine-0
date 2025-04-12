@@ -42,16 +42,15 @@ struct Material
             auto it = uniforms.find(uniformName);
             if (it != uniforms.end() && it->second.type == UniformValue::Type::Sampler2D)
             {
-                it->second = UniformValue::Sampler2D(mt.path, (int)i);
+                it->second = UniformValue::Sampler2D(mt.path);
             }
         }
-
     }
 	
 	void ApplyShaderUniforms(Shader& shader) const
 	{
         shader.use();
-
+        int textureUnit = 0;
         for (auto& pair : uniforms)
         {
             std::string name = pair.first;
@@ -82,20 +81,20 @@ struct Material
                     break;
                 case UniformValue::Type::Sampler2D:
                 {
-                    int unit = value.intValue;
-                    shader.setInt(name, unit);
-                    glActiveTexture(GL_TEXTURE0 + unit);
+                    shader.setInt(name, textureUnit);
+                    glActiveTexture(GL_TEXTURE0 + textureUnit);
                     auto& tex = TextureLibrary::GetTexture(value.texturePath);
                     glBindTexture(GL_TEXTURE_2D, tex.id);
+                    textureUnit++;
                     break;
                 }
                 case UniformValue::Type::SamplerCube:
                 {
-                    int unit = value.intValue;
-                    shader.setInt(name, unit);
-                    glActiveTexture(GL_TEXTURE0 + unit);
+                    shader.setInt(name, textureUnit);
+                    glActiveTexture(GL_TEXTURE0 + textureUnit);
                     auto& tex = TextureLibrary::GetTexture(value.texturePath);
                     glBindTexture(GL_TEXTURE_CUBE_MAP, tex.id);
+                    textureUnit++;
                     break;
                 }
             }
@@ -140,7 +139,7 @@ struct Material
             auto it = uniforms.find(uniformName);
             if (it != uniforms.end() && it->second.type == UniformValue::Type::Sampler2D)
             {
-                it->second = UniformValue::Sampler2D(mt.path, (int)i);
+                it->second = UniformValue::Sampler2D(mt.path);
             }
         }
     }

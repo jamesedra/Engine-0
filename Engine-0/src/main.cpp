@@ -182,7 +182,7 @@ int main()
 	MainDockWindow mainWindow;
 	ViewportWindow viewportWindow;
 	OutlinerWindow outlinerWindow(&sceneRegistry, &idManager);
-	PropertiesWindow nPropertiesWindow(&transformManager, &meshManager, &materialManager, &shaderManager);
+	PropertiesWindow nPropertiesWindow(&transformManager, &meshManager, &materialManager, &rmaterialManager, &shaderManager);
 
 	float my_color[4] = { 1.0, 1.0, 1.0, 1.0 };
 	static bool viewport_active;

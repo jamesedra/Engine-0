@@ -3,6 +3,7 @@
 #include "../modules/public/component_manager.h"
 #include "../modules/public/shader_library.h"
 #include "../modules/public/mesh_library.h"
+#include "../modules/public/texture_library.h"
 
 #include <iostream>
 #include <string>
@@ -155,6 +156,7 @@ private:
 	TransformManager* transformManager = nullptr;
 	MeshManager* meshManager = nullptr;
 	MaterialManager* materialManager = nullptr;
+	rMaterialManager* rmaterialManager = nullptr;
 	ShaderManager* shaderManager = nullptr;
 
 	// Entity to display
@@ -166,12 +168,14 @@ public:
 		TransformManager* transformManager,
 		MeshManager* meshManager,
 		MaterialManager* materialManager,
+		rMaterialManager* rmaterialManager,
 		ShaderManager* shaderManager)
 		:
 		Window("Properties", true, ImGuiWindowFlags_NoCollapse),
 		transformManager(transformManager),
 		meshManager(meshManager),
 		materialManager(materialManager),
+		rmaterialManager(rmaterialManager),
 		shaderManager(shaderManager) { }
 
 
@@ -207,6 +211,7 @@ public:
 			}
 
 			// Show material and shader values
+			rMaterialComponent* rmaterialComp = rmaterialManager->GetComponent(expandedEntity);
 			MaterialComponent* materialComp = materialManager->GetComponent(expandedEntity);
 			ShaderComponent* shaderComp = shaderManager->GetComponent(expandedEntity);
 			if (shaderComp)
@@ -252,14 +257,18 @@ public:
 					ImGui::EndCombo();
 				}
 			}
-			if (materialComp)
+
+			if (rmaterialComp)
 			{
-				for (auto& pair : materialComp->parameters)
+				auto& uniforms = rmaterialComp->material.uniforms;
+
+				for (auto& pair : uniforms)
 				{
 					std::string uniformName = pair.first;
 					UniformValue& uniformValue = pair.second;
 
 					std::string uniformLabel = uniformName + "##PropertiesWindow";
+
 					float uniformVec[4];
 
 					switch (uniformValue.type)
@@ -303,9 +312,107 @@ public:
 						ImGui::DragFloat4(uniformLabel.c_str(), uniformVec, 0.5f);
 						uniformValue.vec4Value = glm::vec4(uniformVec[0], uniformVec[1], uniformVec[2], uniformVec[3]);
 						break;
+					case UniformValue::Type::Sampler2D:
+						std::string path = uniformValue.texturePath;
+						std::vector<const char*> libTextures = TextureLibrary::GetLibraryKeys();
+						auto tex_selected = std::find_if(libTextures.begin(), libTextures.end(), [&path](const char* s)
+						{
+								return path == s;
+						});
+						size_t tex_index = (tex_selected != libTextures.end()) ? std::distance(libTextures.begin(), tex_selected) : 0;
+
+						std::string tex2DComboLabel = uniformName + "##Texture2DDropdownPropertiesWindow";
+						if (ImGui::BeginCombo(tex2DComboLabel.c_str(), path.c_str(), 0))
+						{
+							static ImGuiTextFilter filter;
+							if (ImGui::IsWindowAppearing())
+							{
+								ImGui::SetKeyboardFocusHere();
+								filter.Clear();
+							}
+							ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
+							std::string filterLabel = "##FilterPropertiesWindow:" + uniformName;
+							filter.Draw(filterLabel.c_str(), -FLT_MIN);
+
+							for (int n = 0; n < libTextures.size(); n++)
+							{
+								const bool is_selected = (tex_index == n);
+								if (filter.PassFilter(libTextures[n]))
+								{
+									if (ImGui::Selectable(libTextures[n], is_selected))
+									{
+										if (path != libTextures[n])
+										{
+											tex_index = n;
+											uniformValue.texturePath = libTextures[n];
+										}
+									}
+								}
+							}
+							ImGui::EndCombo();
+						}
+						break;
+
 					}
+
 				}
 			}
+
+			// soon to be deprecated
+			//if (materialComp)
+			//{
+			//	for (auto& pair : materialComp->parameters)
+			//	{
+			//		std::string uniformName = pair.first;
+			//		UniformValue& uniformValue = pair.second;
+
+			//		std::string uniformLabel = uniformName + "##PropertiesWindow";
+			//		float uniformVec[4];
+
+			//		switch (uniformValue.type)
+			//		{
+			//		case UniformValue::Type::Bool:
+			//			uniformLabel += "bool";
+			//			ImGui::Checkbox(uniformLabel.c_str(), &uniformValue.boolValue);
+			//			break;
+			//		case UniformValue::Type::Int:
+			//			uniformLabel += "int";
+			//			ImGui::InputInt(uniformLabel.c_str(), &uniformValue.intValue);
+			//			break;
+			//		case UniformValue::Type::Float:
+			//			uniformLabel += "float";
+			//			ImGui::InputFloat(uniformLabel.c_str(), &uniformValue.floatValue);
+			//			break;
+			//		case UniformValue::Type::Vec2:
+			//			uniformLabel += "vec2";
+			//			uniformVec[0] = uniformValue.vec2Value.x;
+			//			uniformVec[1] = uniformValue.vec2Value.y;
+			//			uniformVec[2] = 0.0f;
+			//			uniformVec[3] = 0.0f;
+			//			ImGui::DragFloat2(uniformLabel.c_str(), uniformVec, 0.5f);
+			//			uniformValue.vec2Value = glm::vec2(uniformVec[0], uniformVec[1]);
+			//			break;
+			//		case UniformValue::Type::Vec3:
+			//			uniformLabel += "vec3";
+			//			uniformVec[0] = uniformValue.vec3Value.x;
+			//			uniformVec[1] = uniformValue.vec3Value.y;
+			//			uniformVec[2] = uniformValue.vec3Value.z;
+			//			uniformVec[3] = 0.0f;
+			//			ImGui::DragFloat3(uniformLabel.c_str(), uniformVec, 0.5f);
+			//			uniformValue.vec3Value = glm::vec3(uniformVec[0], uniformVec[1], uniformVec[2]);
+			//			break;
+			//		case UniformValue::Type::Vec4:
+			//			uniformLabel += "vec4";
+			//			uniformVec[0] = uniformValue.vec4Value.x;
+			//			uniformVec[1] = uniformValue.vec4Value.y;
+			//			uniformVec[2] = uniformValue.vec4Value.z;
+			//			uniformVec[3] = uniformValue.vec4Value.w;
+			//			ImGui::DragFloat4(uniformLabel.c_str(), uniformVec, 0.5f);
+			//			uniformValue.vec4Value = glm::vec4(uniformVec[0], uniformVec[1], uniformVec[2], uniformVec[3]);
+			//			break;
+			//		}
+			//	}
+			//}
 
 			// Show mesh values
 			MeshComponent* meshComp = meshManager->GetComponent(expandedEntity);
