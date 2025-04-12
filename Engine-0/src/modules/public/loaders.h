@@ -12,8 +12,6 @@ public:
 	static Mesh CreateCube()
 	{
 		std::vector<Vertex> vertices;
-		std::vector<unsigned int> indices;
-		std::vector<MeshTexture> textures;
 
 		float baseVertexData[] = {
 			// back face (0,0,-1)
@@ -74,14 +72,13 @@ public:
 		size_t vertexArraySize = sizeof(baseVertexData) / (sizeof(float));
 
 		setMeshVertices(baseVertexData, vertexArraySize, vertices);
-		return Mesh(vertices, indices, textures);
+		return Mesh(vertices);
 	}
 
 	static Mesh CreateSphere(float radius, unsigned int sectorCount, unsigned int stackCount)
 	{
 		std::vector<Vertex> vertices;
 		std::vector<unsigned int> indices;
-		std::vector<MeshTexture> textures;
 
 		std::vector<float> baseVertData;
 
@@ -143,14 +140,13 @@ public:
 
 		setMeshVertices(baseVertData, vertices, indices);
 		
-		return Mesh(vertices, indices, textures);
+		return Mesh(vertices, indices);
 	}
 
 	static Mesh CreateCone(float radius, float height, unsigned int sectorCount, unsigned int stackCount)
 	{
 		std::vector<Vertex> vertices;
 		std::vector<unsigned int> indices;
-		std::vector<MeshTexture> textures;
 		std::vector<float> baseVertData;
 
 		// Lateral Surface
@@ -260,7 +256,7 @@ public:
 
 		setMeshVertices(baseVertData, vertices, indices);
 
-		return Mesh(vertices, indices, textures);
+		return Mesh(vertices, indices);
 	}
 
 private:
