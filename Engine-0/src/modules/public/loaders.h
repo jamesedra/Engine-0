@@ -1,5 +1,6 @@
 #pragma once
 #include "mesh.h"
+#include "texture.h"
 
 // NOTE: This is are functions for loaders or automated class creators. Mostly for default values and testing.
 
@@ -368,5 +369,25 @@ private:
 		tangentBitangent[1] = bitangent;
 
 		return tangentBitangent;
+	}
+};
+
+class TextureLoader
+{
+public:
+	static Texture CreateWhiteTexture()
+	{
+		unsigned char white[4] = { 255, 255, 255, 255 };
+		Texture whiteTex(1, 1, GL_RGBA, GL_RGBA, white);
+		whiteTex.setTexFilter(GL_NEAREST);
+		return whiteTex;
+	}
+
+	static Texture CreateNormalTexture()
+	{
+		unsigned char norm[3] = { 128, 128, 255 };
+		Texture normTex(1, 1, GL_RGB, GL_RGB, norm);
+		normTex.setTexFilter(GL_NEAREST);
+		return normTex;
 	}
 };

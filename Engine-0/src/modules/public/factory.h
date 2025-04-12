@@ -34,10 +34,16 @@ public:
         transformComp.scale = glm::vec3(1.0f);
         worldContext.transformManager->components[entity] = transformComp;
 
+        // to be deprecated
         MaterialComponent materialComp;
         materialComp.parameters = InitializeMaterialComponent(shaderComp.shader->ID);
 
         worldContext.materialManager->components[entity] = materialComp;
+        
+        rMaterialComponent rmaterialComp{
+            Material{*shaderComp.shader, {}}
+        };
+        worldContext.rmaterialManager->components.emplace(entity, std::move(rmaterialComp));
 
         return entity;
     }

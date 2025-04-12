@@ -25,18 +25,18 @@ struct UniformValue
     UniformValue(glm::vec4 value) : type(Type::Vec4), vec4Value(value) {}
     UniformValue(glm::mat4 value) : type(Type::Mat4), mat4Value(value) {}
 	UniformValue(Type t = Type::Bool) : type(t), intValue(0) {}
-	static UniformValue Sampler2D(int unit = 0)
+	static UniformValue Sampler2D(const std::string&path, int unit = 0)
 	{
 		UniformValue u(Type::Sampler2D);   
 		u.intValue = unit; 
-		u.texturePath = "";
+		u.texturePath = path;
 		return u;
 	}
-	static UniformValue SamplerCube(int unit = 0)
+	static UniformValue SamplerCube(const std::string& path, int unit = 0)
 	{
 		UniformValue u(Type::SamplerCube);  
 		u.intValue = unit; 
-		u.texturePath = "";
+		u.texturePath = path;
 		return u;
 	}
 };
@@ -86,8 +86,8 @@ UniformValue UniformTypeToValue(GLenum type)
 		//case GL_FLOAT_MAT2:        return "GL_FLOAT_MAT2";
 		//case GL_FLOAT_MAT3:        return "GL_FLOAT_MAT3";
 		case GL_FLOAT_MAT4:        return UniformValue(glm::mat4(1.0f));
-		case GL_SAMPLER_2D:        return UniformValue::Sampler2D();
-		case GL_SAMPLER_CUBE:      return UniformValue::SamplerCube();
+		case GL_SAMPLER_2D:        return UniformValue::Sampler2D("White Texture - Default");
+		case GL_SAMPLER_CUBE:      return UniformValue::SamplerCube("White Texture - Default");
 		default:                   return UniformValue();
 	}
 }

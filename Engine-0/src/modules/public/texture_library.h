@@ -1,5 +1,6 @@
 #pragma once
 #include "texture.h"
+#include "loaders.h"
 
 class TextureLibrary
 {
@@ -11,6 +12,8 @@ public:
 
 	static Texture& GetTexture(const std::string& key)
 	{
+		if (GetLibrary().empty())
+			InitializeLibrary();
 		auto it = GetLibrary().find(key);
 		if (it != GetLibrary().end())
 			return it->second;
@@ -35,5 +38,13 @@ private:
 	{
 		static std::unordered_map<std::string, Texture> library;
 		return library;
+	}
+
+	static void InitializeLibrary()
+	{
+		Texture whiteTexture = TextureLoader::CreateWhiteTexture();
+		Texture normalTexture = TextureLoader::CreateNormalTexture();
+		GetLibrary().emplace("White Texture - Default", std::move(whiteTexture));
+		GetLibrary().emplace("Normal Texture - Default", std::move(normalTexture));
 	}
 };

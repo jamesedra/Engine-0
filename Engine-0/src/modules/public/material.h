@@ -38,13 +38,14 @@ struct Material
             else if (mt.type == "texture_normal") number = std::to_string(normalNr);
             std::string uniformName = "material." + mt.type + number;
 
-            // override if uniform name already exists
+            // override if uniform name exists
             auto it = uniforms.find(uniformName);
             if (it != uniforms.end() && it->second.type == UniformValue::Type::Sampler2D)
             {
-                it->second = UniformValue::Sampler2D((int)i);
+                it->second = UniformValue::Sampler2D(mt.path, (int)i);
             }
         }
+
     }
 	
 	void ApplyShaderUniforms(Shader& shader) const
@@ -139,7 +140,7 @@ struct Material
             auto it = uniforms.find(uniformName);
             if (it != uniforms.end() && it->second.type == UniformValue::Type::Sampler2D)
             {
-                it->second = UniformValue::Sampler2D((int)i);
+                it->second = UniformValue::Sampler2D(mt.path, (int)i);
             }
         }
     }

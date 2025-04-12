@@ -48,6 +48,18 @@ public:
 	}
 };
 
+class rMaterialManager
+{
+public:
+	std::unordered_map<Entity, rMaterialComponent> components;
+	rMaterialComponent* GetComponent(Entity entity)
+	{
+		auto it = components.find(entity);
+		return (it != components.end()) ? &it->second : nullptr;
+	}
+};
+
+// soon to be deprecated
 class MaterialManager
 {
 public:

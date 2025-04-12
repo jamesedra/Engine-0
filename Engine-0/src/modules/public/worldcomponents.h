@@ -1,7 +1,9 @@
 #pragma once
-#include "shader.h"
+
 #include <unordered_map>
 #include "mesh.h"
+#include "material.h"
+#include "shader.h"
 #include "shader_uniform.h"
 
 // NOTE: This is a temporary header file used to store all needed components in one place first.
@@ -45,12 +47,18 @@ struct MeshComponent
     Mesh* mesh;
 };
 
-// Holds instances of the uniforms from the shader
+// Holds instances of the uniforms from the shader, to be deprecated
 struct MaterialComponent
 {
     std::unordered_map<std::string, UniformValue> parameters;
 };
 
+// the Component owns the material directly because in this implementation
+// an object has its own material.
+struct rMaterialComponent
+{
+    Material material; 
+};
 
 // soon to be deprecated
 
