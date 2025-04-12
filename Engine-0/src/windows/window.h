@@ -1,8 +1,9 @@
 #pragma once
 #include "imgui.h"
-#include "../modules/component_manager.h"
-#include "../modules/shader_library.h"
-#include "../modules/mesh_library.h"
+#include "../modules/public/component_manager.h"
+#include "../modules/public/shader_library.h"
+#include "../modules/public/mesh_library.h"
+#include "../modules/public/texture_library.h"
 
 #include <iostream>
 #include <string>
@@ -244,7 +245,7 @@ public:
 									shader_index = n;
 									shaderComp->shaderName = libShaders[n];
 									shaderComp->shader = &ShaderLibrary::GetShader(shaderComp->shaderName);
-									materialComp->parameters = InitializeMaterialComponent(shaderComp->shader->ID);
+									materialComp->material.SetShader(*shaderComp->shader);
 								}
 							}
 						}
@@ -252,14 +253,18 @@ public:
 					ImGui::EndCombo();
 				}
 			}
+
 			if (materialComp)
 			{
-				for (auto& pair : materialComp->parameters)
+				auto& uniforms = materialComp->material.uniforms;
+
+				for (auto& pair : uniforms)
 				{
 					std::string uniformName = pair.first;
 					UniformValue& uniformValue = pair.second;
 
 					std::string uniformLabel = uniformName + "##PropertiesWindow";
+
 					float uniformVec[4];
 
 					switch (uniformValue.type)
@@ -303,7 +308,49 @@ public:
 						ImGui::DragFloat4(uniformLabel.c_str(), uniformVec, 0.5f);
 						uniformValue.vec4Value = glm::vec4(uniformVec[0], uniformVec[1], uniformVec[2], uniformVec[3]);
 						break;
+					case UniformValue::Type::Sampler2D:
+						std::string path = uniformValue.texturePath;
+						std::vector<const char*> libTextures = TextureLibrary::GetLibraryKeys();
+						auto tex_selected = std::find_if(libTextures.begin(), libTextures.end(), [&path](const char* s)
+						{
+								return path == s;
+						});
+						size_t tex_index = (tex_selected != libTextures.end()) ? std::distance(libTextures.begin(), tex_selected) : 0;
+
+						std::string tex2DComboLabel = uniformName + "##Texture2DDropdownPropertiesWindow";
+						if (ImGui::BeginCombo(tex2DComboLabel.c_str(), path.c_str(), 0))
+						{
+							static ImGuiTextFilter filter;
+							if (ImGui::IsWindowAppearing())
+							{
+								ImGui::SetKeyboardFocusHere();
+								filter.Clear();
+							}
+							ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
+							std::string filterLabel = "##FilterPropertiesWindow:" + uniformName;
+							filter.Draw(filterLabel.c_str(), -FLT_MIN);
+
+							for (int n = 0; n < libTextures.size(); n++)
+							{
+								const bool is_selected = (tex_index == n);
+								if (filter.PassFilter(libTextures[n]))
+								{
+									if (ImGui::Selectable(libTextures[n], is_selected))
+									{
+										if (path != libTextures[n])
+										{
+											tex_index = n;
+											uniformValue.texturePath = libTextures[n];
+										}
+									}
+								}
+							}
+							ImGui::EndCombo();
+						}
+						break;
+
 					}
+
 				}
 			}
 
