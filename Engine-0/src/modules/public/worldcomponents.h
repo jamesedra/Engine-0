@@ -47,40 +47,8 @@ struct MeshComponent
     Mesh* mesh;
 };
 
-// Holds instances of the uniforms from the shader, to be deprecated
+// the Component owns the material directly because in this implementation an object has its own material.
 struct MaterialComponent
 {
-    std::unordered_map<std::string, UniformValue> parameters;
-};
-
-// the Component owns the material directly because in this implementation
-// an object has its own material.
-struct rMaterialComponent
-{
     Material material; 
-};
-
-// soon to be deprecated
-
-// Object Structs (Note that some components (such as ShaderComponent do not need one)
-// mesh struct (different from the model class we have. May be changed and only used for testing)
-struct TestMesh
-{
-    unsigned int VAO;
-    unsigned int indexCount = 0;
-    unsigned int vertexCount = 0;
-
-    void Draw() const
-    {
-        glBindVertexArray(VAO);
-        if (indexCount > 0)
-            glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
-        else
-            glDrawArrays(GL_TRIANGLES, 0, vertexCount);
-        glBindVertexArray(0);
-    }
-};
-struct TestMeshComponent
-{
-    TestMesh* mesh;
 };

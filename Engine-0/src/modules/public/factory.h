@@ -33,53 +33,11 @@ public:
         transformComp.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
         transformComp.scale = glm::vec3(1.0f);
         worldContext.transformManager->components[entity] = transformComp;
-
-        // to be deprecated
-        MaterialComponent materialComp;
-        materialComp.parameters = InitializeMaterialComponent(shaderComp.shader->ID);
-
-        worldContext.materialManager->components[entity] = materialComp;
-        
-        rMaterialComponent rmaterialComp{
+      
+        MaterialComponent materialComp{
             Material{*shaderComp.shader, {}}
         };
-        worldContext.rmaterialManager->components.emplace(entity, std::move(rmaterialComp));
-
-        return entity;
-    }
-
-    // will probably be less used, but just in case world context is not initialized
-    static Entity CreateWorldMesh(
-        EntityManager& entityManager,
-        TransformManager& transformManager,
-        MeshManager& meshManager,
-        ShaderManager& shaderManager,
-        MaterialManager& materialManager,
-        Mesh* mesh = nullptr,
-        Shader* shader = nullptr)
-    {
-        Entity entity = entityManager.CreateEntity();
-
-        MeshComponent meshComp;
-        meshComp.meshName = "Cube";
-        meshComp.mesh = mesh != nullptr ? mesh : &MeshLibrary::GetMesh("Cube");
-        meshManager.components[entity] = meshComp;
-
-        ShaderComponent shaderComp;
-        shaderComp.shaderName = "Lit with Color Tint";
-        shaderComp.shader = shader != nullptr ? shader : &ShaderLibrary::GetShader("Lit with Color Tint");
-        shaderManager.components[entity] = shaderComp;
-
-        TransformComponent transformComp;
-        transformComp.position = glm::vec3(0.0f, 0.0f, 0.0f);
-        transformComp.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-        transformComp.scale = glm::vec3(1.0f);
-        transformManager.components[entity] = transformComp;
-
-        MaterialComponent materialComp;
-        materialComp.parameters = InitializeMaterialComponent(shaderComp.shader->ID);
-
-        materialManager.components[entity] = materialComp;
+        worldContext.materialManager->components.emplace(entity, std::move(materialComp));
 
         return entity;
     }

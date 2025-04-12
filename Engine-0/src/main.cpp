@@ -139,13 +139,12 @@ int main()
 	MeshManager meshManager;
 	ShaderManager shaderManager;
 	MaterialManager materialManager;
-	rMaterialManager rmaterialManager;
 
 	// Registries
 	SceneEntityRegistry sceneRegistry;
 
 	// Contexts
-	WorldContext worldContext(&entityManager, &transformManager, &meshManager, &shaderManager, &materialManager, &rmaterialManager);
+	WorldContext worldContext(&entityManager, &transformManager, &meshManager, &shaderManager, &materialManager);
 	OutlinerContext outlinerContext(&sceneRegistry, &idManager);
 
 	// Entity tests
@@ -182,7 +181,7 @@ int main()
 	MainDockWindow mainWindow;
 	ViewportWindow viewportWindow;
 	OutlinerWindow outlinerWindow(&sceneRegistry, &idManager);
-	PropertiesWindow nPropertiesWindow(&transformManager, &meshManager, &materialManager, &rmaterialManager, &shaderManager);
+	PropertiesWindow nPropertiesWindow(&transformManager, &meshManager, &materialManager, &shaderManager);
 
 	float my_color[4] = { 1.0, 1.0, 1.0, 1.0 };
 	static bool viewport_active;
@@ -299,7 +298,7 @@ int main()
 		gBuffer.bind();
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		renderSystem.Render(sceneRegistry, transformManager, meshManager, shaderManager, materialManager, rmaterialManager, camera);
+		renderSystem.Render(sceneRegistry, transformManager, meshManager, shaderManager, materialManager, camera);
 		gBuffer.unbind();
 
 		// deferred shading stage
