@@ -164,6 +164,7 @@
     <ClInclude Include="src\modules\public\light_types.h" />
     <ClInclude Include="src\modules\public\material.h" />
     <ClInclude Include="src\modules\public\mesh.h" />
+    <ClInclude Include="src\modules\public\mesh_data.h" />
     <ClInclude Include="src\modules\public\mesh_library.h" />
     <ClInclude Include="src\modules\public\model.h" />
     <ClInclude Include="src\modules\public\loaders.h" />
@@ -173,6 +174,7 @@
     <ClInclude Include="src\modules\public\shader_uniform.h" />
     <ClInclude Include="src\modules\public\texture.h" />
     <ClInclude Include="src\modules\public\texture_library.h" />
+    <ClInclude Include="src\modules\public\texture_metadata.h" />
     <ClInclude Include="src\modules\public\uniformbuffer.h" />
     <ClInclude Include="src\modules\public\utils.h" />
     <ClInclude Include="src\modules\worldcomponent.h" />

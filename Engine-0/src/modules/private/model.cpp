@@ -31,7 +31,7 @@ void Model::processNode(aiNode* node, const aiScene* scene)
 	for (unsigned int i = 0; i < node->mNumMeshes; i++) {
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 		// add to mesh array
-		meshes.push_back(processMesh(mesh, scene));
+		meshDataList.push_back(processMesh(mesh, scene));
 	}
 
 	// recurse through its children
@@ -40,11 +40,11 @@ void Model::processNode(aiNode* node, const aiScene* scene)
 	}
 }
 
-Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
+MeshData Model::processMesh(aiMesh* mesh, const aiScene* scene)
 {
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
-	std::vector<MeshTexture> textures;
+	std::vector<TextureMetadata> textures;
 
 	// populate vertices vector
 	for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
@@ -83,50 +83,19 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 	if (mesh->mMaterialIndex >= 0) {
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
-		std::vector<MeshTexture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+		std::vector<TextureMetadata> diffuseMaps = rloadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
-		std::vector<MeshTexture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+		std::vector<TextureMetadata> specularMaps = rloadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
 		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
-		std::vector<MeshTexture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+		std::vector<TextureMetadata> normalMaps = rloadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
 		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
 	}
 
-	return Mesh(vertices, indices, textures);
-}
-
-std::vector<MeshTexture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName)
-{
-	std::vector<MeshTexture> textures;
-	for (unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
-		aiString str;
-		mat->GetTexture(type, i, &str);
-		bool skip = false;
-		for (unsigned int j = 0; j < textures_loaded.size(); j++) {
-			if (std::strcmp(textures_loaded[j].path.data(), str.C_Str()) == 0) {
-				textures.push_back(textures_loaded[j]);
-				skip = true;
-				break;
-			}
-		}
-		int width, height;
-		if (!skip) {
-			MeshTexture texture;
-
-			TextureColorSpace colorSpace = TextureColorSpace::Linear;
-			if (type == aiTextureType_DIFFUSE || type == aiTextureType_AMBIENT) {
-				colorSpace = TextureColorSpace::sRGB;
-			}
-
-			texture.id = TextureFromFile(str.C_Str(), directory, width, height, colorSpace);
-			texture.type = typeName;
-			texture.path = str.C_Str();
-			textures.push_back(texture);
-			textures_loaded.push_back(texture);
-		}
-	}
-	return textures;
+	return MeshData{
+		Mesh(std::move(vertices), std::move(indices)), std::move(textures)
+	};
 }
 
 std::vector<TextureMetadata> Model::rloadMaterialTextures(aiMaterial* mat, aiTextureType type, const std::string& typeName)

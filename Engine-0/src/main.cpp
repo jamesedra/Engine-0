@@ -125,16 +125,11 @@ int main()
 	unsigned int cubeVAO = createCubeVAO();
 	unsigned int frameVAO = createFrameVAO();
 
-	
-
 	// Shaders
 	Shader outShader("shaders/default.vert", "shaders/default.frag");
 	Shader outputFrame("shaders/frame_out.vert", "shaders/frame_out.frag");
 	Shader debugBufferShader("shaders/gbuffer/gbuffer_debug_out.vert", "shaders/gbuffer/gbuffer_debug_out.frag");
 	Shader litBufferShader("shaders/NPR/npr_def.vert", "shaders/NPR/blinn_shading.frag");
-
-	Shader defaultGShader("shaders/gbuffer/gbuffer.vert", "shaders/gbuffer/gbuffer.frag");
-	Model obj("resources/objects/backpack/backpack.obj");
 
 	// -------------------
 	// Component Managers
@@ -303,20 +298,7 @@ int main()
 		gBuffer.bind();
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		//renderSystem.Render(sceneRegistry, transformManager, meshManager, shaderManager, materialManager, camera);
-		
-
-		// for testing:
-		defaultGShader.use();
-		defaultGShader.setMat4("projection", camera.getProjectionMatrix(W_WIDTH, W_HEIGHT, 0.1f, 1000.0f));
-		defaultGShader.setMat4("view", camera.getViewMatrix());
-		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-		defaultGShader.setMat4("model", model);
-		defaultGShader.setBool("material.useDiffuseTexture", true);
-		obj.Draw(defaultGShader);
-
-
+		renderSystem.Render(sceneRegistry, transformManager, meshManager, shaderManager, materialManager, camera);
 		gBuffer.unbind();
 
 		// deferred shading stage
