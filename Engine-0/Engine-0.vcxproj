@@ -155,6 +155,7 @@
   <ItemGroup>
     <ClInclude Include="lib\stb\stb_image.h" />
     <ClInclude Include="src\common.h" />
+    <ClInclude Include="src\modules\public\asset_library.h" />
     <ClInclude Include="src\modules\public\camera.h" />
     <ClInclude Include="src\modules\public\component_manager.h" />
     <ClInclude Include="src\modules\public\contexts.h" />

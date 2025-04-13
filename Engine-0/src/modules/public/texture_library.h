@@ -7,6 +7,8 @@ class TextureLibrary
 public:
 	static void Register(const std::string& key, unsigned int glID, int w, int h)
 	{
+		if (GetLibrary().empty())
+			InitializeLibrary();
 		GetLibrary()[key] = Texture(glID, w, h);
 	}
 

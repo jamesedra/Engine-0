@@ -53,7 +53,7 @@ public:
 				materialComp->material.ApplyShaderUniforms(*shader);
 
 			if (meshComp.mesh)
-				meshComp.mesh->Draw(*shader, true);
+				meshComp.mesh->Draw(*shader);
 
 		}
 		

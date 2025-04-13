@@ -124,6 +124,7 @@ int main()
 	// Object tests
 	unsigned int cubeVAO = createCubeVAO();
 	unsigned int frameVAO = createFrameVAO();
+	Model obj("resources/objects/backpack/backpack.obj"); // test
 
 	// Shaders
 	Shader outShader("shaders/default.vert", "shaders/default.frag");

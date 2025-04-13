@@ -1,82 +1,21 @@
 #include "../public/mesh.h"
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<MeshTexture> textures)
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices)
 {
 	this->vertices = vertices;
 	this->indices = indices;
-	this->textures = textures;
 	
 	setupMesh();
 }
 
 void Mesh::Draw(Shader& shader)
 {
-	unsigned int diffuseNr = 1;
-	unsigned int specularNr = 1;
-	unsigned int normalNr = 1;
-	for (unsigned int i = 0; i < textures.size(); i++) {
-		glActiveTexture(GL_TEXTURE0 + i);
-		std::string number;
-		std::string name = textures[i].type;
-
-		if (name == "texture_diffuse") number = std::to_string(diffuseNr);
-		else if (name == "texture_specular") number = std::to_string(specularNr);
-		else if (name == "texture_normal") number = std::to_string(normalNr);
-
-		shader.setInt(("material." + name + number).c_str(), i);
-		glBindTexture(GL_TEXTURE_2D, textures[i].id);
-	}
-	glActiveTexture(GL_TEXTURE0);
-
-	// draw mesh
-	glBindVertexArray(VAO);
-	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-}
-
-// NOTE: this overloaded function is for testing as of now.
-// to not break anything just in case this new implementation
-// is not usable.
-void Mesh::Draw(Shader& shader, bool useUpdate)
-{
-	if (!useUpdate)
-	{
-		Draw(shader);
-		return;
-	}
-
 	// draw mesh
 	glBindVertexArray(VAO);
 	if (!indices.empty())
 		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 	else
 		glDrawArrays(GL_TRIANGLES, 0, vertices.size());
-	glBindVertexArray(0);
-}
-
-void Mesh::DrawInstanced(Shader& shader, unsigned int count)
-{
-	unsigned int diffuseNr = 1;
-	unsigned int specularNr = 1;
-	unsigned int normalNr = 1;
-	for (unsigned int i = 0; i < textures.size(); i++)
-	{
-		glActiveTexture(GL_TEXTURE0 + i);
-		std::string number;
-		std::string name = textures[i].type;
-
-		if (name == "texture_diffuse") number = std::to_string(diffuseNr);
-		else if (name == "texture_specular") number = std::to_string(specularNr);
-		else if (name == "texture_normal") number = std::to_string(normalNr);
-
-		shader.setFloat(("material." + name + number).c_str(), i);
-		glBindTexture(GL_TEXTURE_2D, textures[i].id);
-	}
-	glActiveTexture(GL_TEXTURE0);
-
-	// draw mesh
-	glBindVertexArray(VAO);
-	glDrawElementsInstanced(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0, count);
 	glBindVertexArray(0);
 }
 
@@ -118,5 +57,4 @@ void Mesh::setupMesh()
 	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
 
 	glBindVertexArray(0);
-
 }
