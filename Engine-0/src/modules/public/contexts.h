@@ -11,19 +11,25 @@ struct WorldContext
 	MeshManager* meshManager;
 	ShaderManager* shaderManager;
 	MaterialManager* materialManager;
+	AssetManager* assetManager;
+	MaterialsManager* materialsManager;
 
 	WorldContext(
 		EntityManager* entityManager, 
 		TransformManager* transformManager, 
 		MeshManager* meshManager, 
 		ShaderManager* shaderManager, 
-		MaterialManager* materialManager
+		MaterialManager* materialManager,
+		AssetManager* assetManager,
+		MaterialsManager* materialsManager
 	): 
 		entityManager(entityManager), 
 		transformManager(transformManager), 
 		meshManager(meshManager), 
 		shaderManager(shaderManager), 
-		materialManager(materialManager)
+		materialManager(materialManager),
+		assetManager(assetManager),
+		materialsManager(materialsManager)
 	{ }
 };
 

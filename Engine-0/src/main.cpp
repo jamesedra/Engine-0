@@ -26,6 +26,7 @@ constexpr int W_HEIGHT = 1200;
 
 int main()
 {
+	std::cout << "__cplusplus is " << __cplusplus << "\n";
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -124,6 +125,7 @@ int main()
 	// Object tests
 	unsigned int cubeVAO = createCubeVAO();
 	unsigned int frameVAO = createFrameVAO();
+
 	Model obj("resources/objects/backpack/backpack.obj"); // test
 
 	// Shaders
@@ -140,12 +142,15 @@ int main()
 	MeshManager meshManager;
 	ShaderManager shaderManager;
 	MaterialManager materialManager;
+	// temp
+	AssetManager assetManager;
+	MaterialsManager materialsManager;
 
 	// Registries
 	SceneEntityRegistry sceneRegistry;
 
 	// Contexts
-	WorldContext worldContext(&entityManager, &transformManager, &meshManager, &shaderManager, &materialManager);
+	WorldContext worldContext(&entityManager, &transformManager, &meshManager, &shaderManager, &materialManager, &assetManager, &materialsManager);
 	OutlinerContext outlinerContext(&sceneRegistry, &idManager);
 
 	// Entity tests

@@ -26,11 +26,22 @@ public:
 	}
 };
 
-class MeshManager
+class AssetManager
 {
 public:
-	std::unordered_map<Entity, MeshComponent> components;
-	MeshComponent* GetComponent(Entity entity)
+	std::unordered_map<Entity, AssetComponent> components;
+	AssetComponent* GetComponent(Entity entity)
+	{
+		auto it = components.find(entity);
+		return (it != components.end()) ? &it->second : nullptr;
+	}
+};
+
+class MaterialsManager
+{
+public:
+	std::unordered_map<Entity, MaterialsComponent> components;
+	MaterialsComponent* GetComponent(Entity entity)
 	{
 		auto it = components.find(entity);
 		return (it != components.end()) ? &it->second : nullptr;
@@ -42,6 +53,18 @@ class ShaderManager
 public:
 	std::unordered_map<Entity, ShaderComponent> components;
 	ShaderComponent* GetComponent(Entity entity)
+	{
+		auto it = components.find(entity);
+		return (it != components.end()) ? &it->second : nullptr;
+	}
+};
+
+// to be deprecated
+class MeshManager
+{
+public:
+	std::unordered_map<Entity, MeshComponent> components;
+	MeshComponent* GetComponent(Entity entity)
 	{
 		auto it = components.find(entity);
 		return (it != components.end()) ? &it->second : nullptr;

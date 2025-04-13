@@ -21,24 +21,11 @@ struct Asset
 class AssetLibrary
 {
 public:
-	static Asset& GetAsset(const std::string& name)
-	{
-		if (GetLibrary().empty())
-			InitializeLibrary();
-
-		auto it = GetLibrary().find(name);
-
-		if (it != GetLibrary().end())
-			return it->second;
-
-		else
-			throw std::runtime_error("Asset not found: " + name);
-	}
 
 	// this uses the model loader class
 	// when the asset cannot be found in the library, it loads and saves the model
 	// given that the path is valid.
-	static Asset& GetAssetModel(const std::string& name, const std::string& path = "")
+	static Asset& GetAsset(const std::string& name, const std::string& path = "")
 	{
 		if (GetLibrary().empty())
 			InitializeLibrary();
@@ -48,17 +35,18 @@ public:
 		if (it != GetLibrary().end())
 			return it->second;
 
-		if (path.empty()) throw std::runtime_error("Asset" + name + " is not found and path given is invalid : " + path);
+		if (path.empty()) 
+			throw std::runtime_error("Asset" + name + " is not found and path given is invalid : " + path);
 
 		Model model(path.c_str());
 		Asset asset;
+
 		for (auto& meshData : model.getMeshData())
 		{
 			asset.parts.push_back(meshData);
 		}
 
 		return GetLibrary().emplace(name, std::move(asset)).first->second;
-
 	}
 
 	static std::vector<const char*> GetLibraryKeys()
@@ -82,6 +70,13 @@ private:
 
 	static void InitializeLibrary()
 	{
+		Mesh cubeMesh = MeshLoader::CreateCube();
+		Mesh sphereMesh = MeshLoader::CreateSphere(1.0f, 36, 18);
+		Mesh coneMesh = MeshLoader::CreateCone(1.0f, 1.5f, 36, 18);
+
+		GetLibrary().emplace("Cube", Asset{ {MeshData{cubeMesh, {}}} }); // damn
+		GetLibrary().emplace("Sphere", Asset{ {MeshData{sphereMesh, {}}} });
+		GetLibrary().emplace("Cone", Asset{ {MeshData{coneMesh, {}}} });
 
 	}
 };

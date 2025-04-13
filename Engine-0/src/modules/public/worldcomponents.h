@@ -41,6 +41,19 @@ struct ShaderComponent
     Shader* shader;
 };
 
+struct AssetComponent
+{
+    std::string assetName; // refers to the asset library 
+};
+
+// since assets may contain multiple meshdata
+struct MaterialsComponent
+{
+    std::vector<Material> materials; 
+};
+
+
+// will probably be deprecated
 struct MeshComponent
 {
     std::string meshName;
@@ -50,5 +63,5 @@ struct MeshComponent
 // the Component owns the material directly because in this implementation an object has its own material.
 struct MaterialComponent
 {
-    Material material; 
+    Material material;
 };
