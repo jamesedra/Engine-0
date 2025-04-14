@@ -111,6 +111,8 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)\vendor\imgui\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -155,6 +157,7 @@
   <ItemGroup>
     <ClInclude Include="lib\stb\stb_image.h" />
     <ClInclude Include="src\common.h" />
+    <ClInclude Include="src\modules\public\asset_library.h" />
     <ClInclude Include="src\modules\public\camera.h" />
     <ClInclude Include="src\modules\public\component_manager.h" />
     <ClInclude Include="src\modules\public\contexts.h" />
@@ -165,7 +168,6 @@
     <ClInclude Include="src\modules\public\material.h" />
     <ClInclude Include="src\modules\public\mesh.h" />
     <ClInclude Include="src\modules\public\mesh_data.h" />
-    <ClInclude Include="src\modules\public\mesh_library.h" />
     <ClInclude Include="src\modules\public\model.h" />
     <ClInclude Include="src\modules\public\loaders.h" />
     <ClInclude Include="src\modules\public\rendersystem.h" />

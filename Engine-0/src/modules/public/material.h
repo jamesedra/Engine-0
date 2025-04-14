@@ -145,3 +145,11 @@ struct Material
     }
 
 };
+
+// helper struct
+struct MaterialsGroup
+{
+    Material material;
+    // store index of each MeshData that has the same texture metadata
+    std::vector<unsigned int> assetPartsIndices;
+};

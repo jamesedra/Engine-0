@@ -41,14 +41,13 @@ struct ShaderComponent
     Shader* shader;
 };
 
-struct MeshComponent
+struct AssetComponent
 {
-    std::string meshName;
-    Mesh* mesh;
+    std::string assetName; // refers to the asset library 
 };
 
-// the Component owns the material directly because in this implementation an object has its own material.
-struct MaterialComponent
+
+struct MaterialsGroupComponent
 {
-    Material material; 
+    std::vector<MaterialsGroup> materialsGroup;
 };

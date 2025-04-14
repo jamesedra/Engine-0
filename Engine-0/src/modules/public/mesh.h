@@ -17,26 +17,13 @@ struct Vertex {
 	glm::vec3 Bitangent;
 };
 
-struct MeshTexture {
-	unsigned int id;
-	std::string type;
-	std::string path;
-};
-
 class Mesh {
 public:
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
-	std::vector<MeshTexture> textures;
 
-	Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices = {}, std::vector<MeshTexture> textures = {});
+	Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices = {});
 	void Draw(Shader& shader);
-
-	// NOTE: this overloaded function is for testing as of now.
-	// to not break anything just in case this new implementation
-	// is not usable.
-	void Draw(Shader& shader, bool useUpdate);
-	void DrawInstanced(Shader& shader, unsigned int count);
 
 	const std::vector<unsigned int>& getIndices() const { return indices; }
 	unsigned int getVAO() const { return VAO; }

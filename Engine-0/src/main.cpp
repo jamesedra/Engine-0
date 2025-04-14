@@ -125,6 +125,8 @@ int main()
 	unsigned int cubeVAO = createCubeVAO();
 	unsigned int frameVAO = createFrameVAO();
 
+	// Model obj("resources/objects/backpack/backpack.obj"); // test
+
 	// Shaders
 	Shader outShader("shaders/default.vert", "shaders/default.frag");
 	Shader outputFrame("shaders/frame_out.vert", "shaders/frame_out.frag");
@@ -136,25 +138,24 @@ int main()
 	EntityManager entityManager;
 	IDManager idManager;
 	TransformManager transformManager;
-	MeshManager meshManager;
 	ShaderManager shaderManager;
-	MaterialManager materialManager;
+	AssetManager assetManager;
+	MaterialsGroupManager materialsGroupManager;
 
 	// Registries
 	SceneEntityRegistry sceneRegistry;
 
 	// Contexts
-	WorldContext worldContext(&entityManager, &transformManager, &meshManager, &shaderManager, &materialManager);
+	WorldContext worldContext(&entityManager, &transformManager, &shaderManager, &assetManager, &materialsGroupManager);
 	OutlinerContext outlinerContext(&sceneRegistry, &idManager);
+	
+	Entity worldObjectTest = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/backpack/backpack.obj");
+	idManager.components[worldObjectTest].ID = "bag";
+	sceneRegistry.Register(worldObjectTest);
 
-	// Entity tests
-	Entity entityTest = WorldObjectFactory::CreateWorldMesh(worldContext, "Sphere");
-	idManager.components[entityTest].ID = "World Object";
-	sceneRegistry.Register(entityTest);
-	Entity another = WorldObjectFactory::CreateWorldMesh(worldContext, "Cone");
-	idManager.components[another].ID = "Another World Object";
-	transformManager.components[another].position = glm::vec3(1.5f, 0.0f, 0.0f);
-	sceneRegistry.Register(another);
+	Entity worldObjectTest1 = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/nanosuit/nanosuit.obj");
+	idManager.components[worldObjectTest1].ID = "nanosuit";
+	sceneRegistry.Register(worldObjectTest1);
 
 	RenderSystem renderSystem;
 
@@ -181,7 +182,7 @@ int main()
 	MainDockWindow mainWindow;
 	ViewportWindow viewportWindow;
 	OutlinerWindow outlinerWindow(&sceneRegistry, &idManager);
-	PropertiesWindow nPropertiesWindow(&transformManager, &meshManager, &materialManager, &shaderManager);
+	PropertiesWindow propertiesWindow(&transformManager, &shaderManager, &assetManager, &materialsGroupManager);
 
 	float my_color[4] = { 1.0, 1.0, 1.0, 1.0 };
 	static bool viewport_active;
@@ -278,11 +279,11 @@ int main()
 			outlinerWindow.EndRender();
 		}
 
-		properties_active = nPropertiesWindow.BeginRender();
+		properties_active = propertiesWindow.BeginRender();
 		if (properties_active)
 		{
 			// additional rendering
-			nPropertiesWindow.SetExpandedEntity(outlinerWindow.GetSelectedEntity());
+			propertiesWindow.SetExpandedEntity(outlinerWindow.GetSelectedEntity());
 
 			// tentative placement
 			ImGui::RadioButton("World Position", &tex_type, 0);
@@ -291,14 +292,14 @@ int main()
 			ImGui::RadioButton("Lit", &tex_type, 3);
 
 			ImGui::DragFloat3("Light Position", lightPos, 0.5f, -50.0f, 50.0f);
-			nPropertiesWindow.EndRender();
+			propertiesWindow.EndRender();
 		}
 
 		// GBuffer pass
 		gBuffer.bind();
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		renderSystem.Render(sceneRegistry, transformManager, meshManager, shaderManager, materialManager, camera);
+		renderSystem.Render(sceneRegistry, transformManager, shaderManager, assetManager, materialsGroupManager, camera);
 		gBuffer.unbind();
 
 		// deferred shading stage

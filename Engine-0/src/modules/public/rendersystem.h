@@ -1,6 +1,7 @@
 #pragma once
 #include "component_manager.h"
 #include "camera.h"
+#include "asset_library.h"
 
 class RenderSystem
 {
@@ -8,24 +9,21 @@ public:
 	void Render(
 		SceneEntityRegistry& sceneRegistry,
 		TransformManager& transformManager,
-		MeshManager& meshManager,
 		ShaderManager& shaderManager,
-		MaterialManager& materialManager,
+		AssetManager& assetManager,
+		MaterialsGroupManager& materialsGroupManager,
 		Camera& camera
 	)
 	{
 		for (Entity entity : sceneRegistry.GetAll())
 		{
-			auto meshIt = meshManager.components.find(entity);
-			if (meshIt == meshManager.components.end())
-				continue;
-			const MeshComponent& meshComp = meshIt->second;
-
+			AssetComponent* assetComp = assetManager.GetComponent(entity);
 			ShaderComponent* shaderComp = shaderManager.GetComponent(entity);
 			TransformComponent* transformComp = transformManager.GetComponent(entity);
-			MaterialComponent* materialComp = materialManager.GetComponent(entity);
+			MaterialsGroupComponent* materialsGroupComp = materialsGroupManager.GetComponent(entity);
 
-			if (!shaderComp || !shaderComp->shader) continue;
+			if (!assetComp || !transformComp || !shaderComp || !materialsGroupComp)
+				continue;
 
 			Shader* shader = shaderComp->shader;
 			shader->use();
@@ -49,12 +47,17 @@ public:
 			shader->setMat4("view", view);
 			shader->setMat4("projection", glm::perspective(glm::radians(45.0f), (float)1600 / (float)1200, 0.1f, 10.0f));
 
-			if (materialComp)
-				materialComp->material.ApplyShaderUniforms(*shader);
+			Asset& asset = AssetLibrary::GetAsset(assetComp->assetName);
+			auto& parts = asset.parts;
 
-			if (meshComp.mesh)
-				meshComp.mesh->Draw(*shader, true);
-
+			for (auto& group : materialsGroupComp->materialsGroup)
+			{
+				group.material.ApplyShaderUniforms(*shader);
+				for (size_t index : group.assetPartsIndices)
+				{
+					parts[index].mesh.Draw(*shader);
+				}
+			}
 		}
 		
 	}
