@@ -77,8 +77,19 @@ MeshData Model::processMeshData(aiMesh* mesh, const aiScene* scene)
 		std::vector<TextureMetadata> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
 		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
-		std::vector<TextureMetadata> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+		std::vector<TextureMetadata> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
+		if (normalMaps.empty()) normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
 		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+
+		std::vector<TextureMetadata> metallicMaps = loadMaterialTextures(material, aiTextureType_METALNESS, "texture_metallic");
+		textures.insert(textures.end(), metallicMaps.begin(), metallicMaps.end());
+
+		std::vector<TextureMetadata> roughnessMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS, "texture_roughness");
+		if (roughnessMaps.empty()) roughnessMaps = loadMaterialTextures(material, aiTextureType_SHININESS, "texture_roughness");
+		textures.insert(textures.end(), roughnessMaps.begin(), roughnessMaps.end());
+
+		std::vector<TextureMetadata> aoMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_ao");
+		textures.insert(textures.end(), aoMaps.begin(), aoMaps.end());
 	}
 
 	return MeshData{
@@ -111,7 +122,7 @@ std::vector<TextureMetadata> Model::loadMaterialTextures(aiMaterial* mat, aiText
 		{
 			// texture wasn't in the library. Load and register it.
 			TextureColorSpace space =
-				(type == aiTextureType_DIFFUSE || type == aiTextureType_AMBIENT)
+				(type == aiTextureType_DIFFUSE)
 				? TextureColorSpace::sRGB
 				: TextureColorSpace::Linear;
 

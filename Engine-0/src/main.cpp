@@ -79,14 +79,18 @@ int main()
 	Texture gNormal(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA);
 	gNormal.setTexFilter(GL_NEAREST);
 	gBuffer.attachTexture2D(gNormal, GL_COLOR_ATTACHMENT1);
-	// specular color buffer
+	// albedo specular/roughness color buffer
 	Texture gAlbedoSpec(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
 	gAlbedoSpec.setTexFilter(GL_NEAREST);
 	gBuffer.attachTexture2D(gAlbedoSpec, GL_COLOR_ATTACHMENT2);
+	// metallic and ao buffer
+	Texture gMetallicAO(W_WIDTH, W_HEIGHT, GL_RG8, GL_RG);
+	gMetallicAO.setTexFilter(GL_NEAREST);
+	gBuffer.attachTexture2D(gMetallicAO, GL_COLOR_ATTACHMENT3);
 	// texture and renderbuffer attachments
 	gBuffer.bind();
-	unsigned int gbuffer_attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-	glDrawBuffers(3, gbuffer_attachments);
+	unsigned int gbuffer_attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+	glDrawBuffers(4, gbuffer_attachments);
 	gBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
 	// Lit Frame buffer
@@ -111,10 +115,23 @@ int main()
 	Texture debugAlbedo(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
 	debugAlbedo.setTexFilter(GL_NEAREST);
 	debugGBuffer.attachTexture2D(debugAlbedo, GL_COLOR_ATTACHMENT2);
+	// metallic
+	Texture debugMetallic(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
+	debugMetallic.setTexFilter(GL_NEAREST);
+	debugGBuffer.attachTexture2D(debugMetallic, GL_COLOR_ATTACHMENT3);
+	// roughnesss
+	Texture debugRoughness(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
+	debugRoughness.setTexFilter(GL_NEAREST);
+	debugGBuffer.attachTexture2D(debugRoughness, GL_COLOR_ATTACHMENT4);
+	// roughnesss
+	Texture debugAO(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
+	debugAO.setTexFilter(GL_NEAREST);
+	debugGBuffer.attachTexture2D(debugAO, GL_COLOR_ATTACHMENT5);
 	
 	debugGBuffer.bind();
-	unsigned int debugbuffer_attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-	glDrawBuffers(3, debugbuffer_attachments);
+	unsigned int debugbuffer_attachments[6] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 };
+
+	glDrawBuffers(6, debugbuffer_attachments);
 	debugGBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
 	// Textures
@@ -124,8 +141,6 @@ int main()
 	// Object tests
 	unsigned int cubeVAO = createCubeVAO();
 	unsigned int frameVAO = createFrameVAO();
-
-	// Model obj("resources/objects/backpack/backpack.obj"); // test
 
 	// Shaders
 	Shader outShader("shaders/default.vert", "shaders/default.frag");
@@ -189,7 +204,7 @@ int main()
 	static bool properties_active;
 	static bool outliner_active;
 	static ImVec4 color = ImVec4(114.0f / 255.0f, 144.0f / 255.0f, 154.0f / 255.0f, 200.0f / 255.0f);
-	static int tex_type = 3;
+	static int tex_type = 6;
 	unsigned int tex_curr;
 
 	static float lightPos[4] = { 2.5f, 5.0f, 2.5f, 0.0f };
@@ -213,6 +228,15 @@ int main()
 			break;
 		case 2:
 			tex_curr = debugAlbedo.id;
+			break;
+		case 3:
+			tex_curr = debugMetallic.id;
+			break;
+		case 4:
+			tex_curr = debugRoughness.id;
+			break;
+		case 5:
+			tex_curr = debugAO.id;
 			break;
 		default:
 			tex_curr = litBufferOut.id;
@@ -289,7 +313,10 @@ int main()
 			ImGui::RadioButton("World Position", &tex_type, 0);
 			ImGui::RadioButton("World Normal", &tex_type, 1);
 			ImGui::RadioButton("Base Color", &tex_type, 2);
-			ImGui::RadioButton("Lit", &tex_type, 3);
+			ImGui::RadioButton("Metallic", &tex_type, 3);
+			ImGui::RadioButton("Roughness", &tex_type, 4);
+			ImGui::RadioButton("Ambient Occlusion", &tex_type, 5);
+			ImGui::RadioButton("Lit", &tex_type, 6);
 
 			ImGui::DragFloat3("Light Position", lightPos, 0.5f, -50.0f, 50.0f);
 			propertiesWindow.EndRender();
@@ -297,7 +324,7 @@ int main()
 
 		// GBuffer pass
 		gBuffer.bind();
-		glClearColor(0.0, 0.0, 0.0, 1.0);
+		glClearColor(0.0, 0.0, 0.0, 0.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		renderSystem.Render(sceneRegistry, transformManager, shaderManager, assetManager, materialsGroupManager, camera);
 		gBuffer.unbind();
@@ -305,11 +332,11 @@ int main()
 		// deferred shading stage
 		glDisable(GL_DEPTH_TEST);
 
-		if (tex_type > 2)
+		if (tex_type > 5)
 		{
 			// Lit shading pass
 			litBuffer.bind();
-			glClearColor(0.0, 0.0, 0.0, 1.0);
+			glClearColor(0.0, 0.0, 0.0, 0.0);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			litBufferShader.use();
 			litBufferShader.setVec3("dirLight.Position", lightPos[0], lightPos[1], lightPos[2]);
@@ -327,22 +354,25 @@ int main()
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 			litBuffer.unbind();
 		}
-		else if (tex_type <= 2)
+		else if (tex_type <= 5)
 		{
 			// Debug GBuffer pass
 			debugGBuffer.bind();
-			glClearColor(0.0, 0.0, 0.0, 1.0);
+			glClearColor(0.0, 0.0, 0.0, 0.0);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			debugBufferShader.use();
 			debugBufferShader.setInt("gPosition", 0);
 			debugBufferShader.setInt("gNormal", 1);
 			debugBufferShader.setInt("gAlbedoSpec", 2);
+			debugBufferShader.setInt("gMetallicAO", 3);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, gPosition.id);
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, gNormal.id);
 			glActiveTexture(GL_TEXTURE2);
 			glBindTexture(GL_TEXTURE_2D, gAlbedoSpec.id);
+			glActiveTexture(GL_TEXTURE3);
+			glBindTexture(GL_TEXTURE_2D, gMetallicAO.id);
 			glBindVertexArray(frameVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 			debugGBuffer.unbind();

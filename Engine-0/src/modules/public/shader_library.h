@@ -37,9 +37,11 @@ private:
 
 	static void InitializeLibrary()
 	{
-		Shader defaultGShader = Shader("shaders/gbuffer/gbuffer.vert", "shaders/gbuffer/gbuffer.frag");
+		Shader defaultGShader = Shader("shaders/gbuffer/gbuffer_default.vert", "shaders/gbuffer/gbuffer_default.frag");
 		GetLibrary().emplace("Default Lit", std::move(defaultGShader));
-		Shader tintedGShader = Shader("shaders/gbuffer/gbuffer.vert", "shaders/gbuffer/gbuffer_tint.frag");
+		Shader PBRGShader = Shader("shaders/gbuffer/gbuffer_default.vert", "shaders/gbuffer/gbuffer_pbr.frag");
+		GetLibrary().emplace("PBR Test", std::move(PBRGShader));
+		Shader tintedGShader = Shader("shaders/gbuffer/gbuffer_default.vert", "shaders/gbuffer/gbuffer_tint.frag");
 		GetLibrary().emplace("Lit with Color Tint", std::move(tintedGShader));
 	}
 };

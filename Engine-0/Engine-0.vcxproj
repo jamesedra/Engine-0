@@ -198,10 +198,11 @@
     <None Include="shaders\default.vert" />
     <None Include="shaders\frame_out.frag" />
     <None Include="shaders\frame_out.vert" />
-    <None Include="shaders\gbuffer\gbuffer.frag" />
-    <None Include="shaders\gbuffer\gbuffer.vert" />
+    <None Include="shaders\gbuffer\gbuffer_default.frag" />
+    <None Include="shaders\gbuffer\gbuffer_default.vert" />
     <None Include="shaders\gbuffer\gbuffer_debug_out.frag" />
     <None Include="shaders\gbuffer\gbuffer_debug_out.vert" />
+    <None Include="shaders\gbuffer\gbuffer_pbr.frag" />
     <None Include="shaders\gbuffer\gbuffer_tint.frag" />
     <None Include="shaders\NPR\blinn_shading.frag" />
     <None Include="shaders\NPR\npr_def.vert" />

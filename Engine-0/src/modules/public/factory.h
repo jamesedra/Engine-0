@@ -22,7 +22,7 @@ public:
         Entity entity = worldContext.entityManager->CreateEntity();
 
         ShaderComponent shaderComp;
-        shaderComp.shaderName = !shaderLibName.empty() ? shaderLibName : "Default Lit";
+        shaderComp.shaderName = !shaderLibName.empty() ? shaderLibName : "PBR Test";
         shaderComp.shader = &ShaderLibrary::GetShader(shaderComp.shaderName);
         worldContext.shaderManager->components[entity] = shaderComp;
 
