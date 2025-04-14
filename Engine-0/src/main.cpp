@@ -138,21 +138,17 @@ int main()
 	EntityManager entityManager;
 	IDManager idManager;
 	TransformManager transformManager;
-	MeshManager meshManager;
 	ShaderManager shaderManager;
-	MaterialManager materialManager;
-	// temp
 	AssetManager assetManager;
-	MaterialsManager materialsManager;
 	MaterialsGroupManager materialsGroupManager;
 
 	// Registries
 	SceneEntityRegistry sceneRegistry;
 
 	// Contexts
-	WorldContext worldContext(&entityManager, &transformManager, &meshManager, &shaderManager, &materialManager, &assetManager, &materialsManager, &materialsGroupManager);
+	WorldContext worldContext(&entityManager, &transformManager, &shaderManager, &assetManager, &materialsGroupManager);
 	OutlinerContext outlinerContext(&sceneRegistry, &idManager);
-
+	
 	Entity worldObjectTest = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/backpack/backpack.obj");
 	idManager.components[worldObjectTest].ID = "bag";
 	sceneRegistry.Register(worldObjectTest);
@@ -186,7 +182,7 @@ int main()
 	MainDockWindow mainWindow;
 	ViewportWindow viewportWindow;
 	OutlinerWindow outlinerWindow(&sceneRegistry, &idManager);
-	PropertiesWindow propertiesWindow(&transformManager, &meshManager, &materialManager, &shaderManager, &materialsManager, &assetManager, &materialsGroupManager);
+	PropertiesWindow propertiesWindow(&transformManager, &shaderManager, &assetManager, &materialsGroupManager);
 
 	float my_color[4] = { 1.0, 1.0, 1.0, 1.0 };
 	static bool viewport_active;
@@ -303,7 +299,7 @@ int main()
 		gBuffer.bind();
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		renderSystem.Render(sceneRegistry, transformManager, shaderManager, assetManager, materialsManager, materialsGroupManager, camera);
+		renderSystem.Render(sceneRegistry, transformManager, shaderManager, assetManager, materialsGroupManager, camera);
 		gBuffer.unbind();
 
 		// deferred shading stage

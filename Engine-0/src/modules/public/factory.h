@@ -2,7 +2,6 @@
 #include <filesystem>
 #include "../../common.h"
 #include "contexts.h"
-#include "mesh_library.h"
 #include "shader_library.h"
 #include "asset_library.h"
 #include <map>
@@ -14,37 +13,6 @@
 class WorldObjectFactory
 {
 public:
-    static Entity CreateWorldMesh(
-        WorldContext& worldContext, 
-        const std::string meshLibName = "",
-        const std::string shaderLibName = "")
-    {
-        Entity entity = worldContext.entityManager->CreateEntity();
-
-        MeshComponent meshComp;
-        meshComp.meshName = !meshLibName.empty() ? meshLibName : "Cube";
-        meshComp.mesh = &MeshLibrary::GetMesh(meshComp.meshName);
-        worldContext.meshManager->components[entity] = meshComp;
-
-        ShaderComponent shaderComp;
-        shaderComp.shaderName = !shaderLibName.empty() ? shaderLibName : "Default Lit";
-        shaderComp.shader = &ShaderLibrary::GetShader(shaderComp.shaderName);
-        worldContext.shaderManager->components[entity] = shaderComp;
-
-        TransformComponent transformComp;
-        transformComp.position = glm::vec3(0.0f, 0.0f, 0.0f);
-        transformComp.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-        transformComp.scale = glm::vec3(1.0f);
-        worldContext.transformManager->components[entity] = transformComp;
-      
-        MaterialComponent materialComp{
-            Material{*shaderComp.shader, {}}
-        };
-        worldContext.materialManager->components.emplace(entity, std::move(materialComp));
-
-        return entity;
-    }
-
     static Entity CreateWorldObject(
         WorldContext& worldContext,
         const std::string shaderLibName = "",
@@ -80,18 +48,7 @@ public:
         AssetComponent assetComp{assetName};
         worldContext.assetManager->components[entity] = assetComp;
 
-        MaterialsComponent materialsComp;
-        materialsComp.materials.reserve(asset.parts.size());
-        for (auto& meshData : asset.parts)
-        {
-            materialsComp.materials.emplace_back(*shaderComp.shader, meshData.textures);
-        }
-        worldContext.materialsManager->components[entity] = std::move(materialsComp);
-
-
-        // tentative
         MaterialsGroupComponent materialsGroupComponent;
-
         using TexturePaths = std::vector<std::string>;
         std::map<TexturePaths, std::vector<unsigned int>> textureIndexMap;
         for (unsigned int i = 0; i < asset.parts.size(); i++)
@@ -114,7 +71,6 @@ public:
             };
             materialsGroupComponent.materialsGroup.push_back(materialsGroup);
         }
-
         worldContext.materialsGroupManager->components[entity] = std::move(materialsGroupComponent);
 
         return entity;

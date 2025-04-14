@@ -152,9 +152,6 @@
     <ClInclude Include="src\modules\public\loaders.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\public\mesh_library.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\modules\public\shader_library.h">
       <Filter>Header Files</Filter>
     </ClInclude>

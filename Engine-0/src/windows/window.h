@@ -2,7 +2,6 @@
 #include "imgui.h"
 #include "../modules/public/component_manager.h"
 #include "../modules/public/shader_library.h"
-#include "../modules/public/mesh_library.h"
 #include "../modules/public/texture_library.h"
 #include "../modules/public/asset_library.h"
 #include <iostream>
@@ -155,10 +154,7 @@ class PropertiesWindow : public Window
 {
 private:
 	TransformManager* transformManager = nullptr;
-	MeshManager* meshManager = nullptr;
-	MaterialManager* materialManager = nullptr;
 	ShaderManager* shaderManager = nullptr;
-	MaterialsManager* materialsManager = nullptr;
 	AssetManager* assetManager = nullptr;
 	MaterialsGroupManager* materialsGroupManager = nullptr;
 
@@ -169,19 +165,13 @@ public:
 	PropertiesWindow() : Window("Properties", true, ImGuiWindowFlags_NoCollapse) { }
 	PropertiesWindow(
 		TransformManager* transformManager,
-		MeshManager* meshManager,
-		MaterialManager* materialManager,
 		ShaderManager* shaderManager,
-		MaterialsManager* materialsManager,
 		AssetManager* assetManager,
 		MaterialsGroupManager* materialsGroupManager)
 		:
 		Window("Properties", true, ImGuiWindowFlags_NoCollapse),
 		transformManager(transformManager),
-		meshManager(meshManager),
-		materialManager(materialManager),
 		shaderManager(shaderManager),
-		materialsManager(materialsManager),
 		assetManager(assetManager),
 		materialsGroupManager(materialsGroupManager){ }
 
@@ -192,7 +182,7 @@ public:
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 		bool renderContent = (ImGui::Begin(title.c_str(), &window_open, window_flags));
 		
-		if (renderContent && transformManager && meshManager && materialManager && shaderManager && materialsManager && assetManager)
+		if (renderContent && transformManager && shaderManager && materialsGroupManager && assetManager)
 		{
 			// prepare default window
 			// Show transform values
@@ -216,8 +206,6 @@ public:
 				transformComp->scale = glm::vec3(scale[0], scale[1], scale[2]);
 			}
 
-			// Show material and shader values
-			MaterialComponent* materialComp = materialManager->GetComponent(expandedEntity);
 			ShaderComponent* shaderComp = shaderManager->GetComponent(expandedEntity);
 			if (shaderComp)
 			{
@@ -254,7 +242,6 @@ public:
 									shader_index = n;
 									shaderComp->shaderName = libShaders[n];
 									shaderComp->shader = &ShaderLibrary::GetShader(shaderComp->shaderName);
-									materialComp->material.SetShader(*shaderComp->shader);
 								}
 							}
 						}
@@ -262,218 +249,8 @@ public:
 					ImGui::EndCombo();
 				}
 			}
-			
-			if (materialComp)
-			{
-				auto& uniforms = materialComp->material.uniforms;
-
-				for (auto& pair : uniforms)
-				{
-					std::string uniformName = pair.first;
-					UniformValue& uniformValue = pair.second;
-
-					std::string uniformLabel = uniformName + "##PropertiesWindow";
-
-					float uniformVec[4];
-
-					switch (uniformValue.type)
-					{
-					case UniformValue::Type::Bool:
-						uniformLabel += "bool";
-						ImGui::Checkbox(uniformLabel.c_str(), &uniformValue.boolValue);
-						break;
-					case UniformValue::Type::Int:
-						uniformLabel += "int";
-						ImGui::InputInt(uniformLabel.c_str(), &uniformValue.intValue);
-						break;
-					case UniformValue::Type::Float:
-						uniformLabel += "float";
-						ImGui::InputFloat(uniformLabel.c_str(), &uniformValue.floatValue);
-						break;
-					case UniformValue::Type::Vec2:
-						uniformLabel += "vec2";
-						uniformVec[0] = uniformValue.vec2Value.x;
-						uniformVec[1] = uniformValue.vec2Value.y;
-						uniformVec[2] = 0.0f;
-						uniformVec[3] = 0.0f;
-						ImGui::DragFloat2(uniformLabel.c_str(), uniformVec, 0.5f);
-						uniformValue.vec2Value = glm::vec2(uniformVec[0], uniformVec[1]);
-						break;
-					case UniformValue::Type::Vec3:
-						uniformLabel += "vec3";
-						uniformVec[0] = uniformValue.vec3Value.x;
-						uniformVec[1] = uniformValue.vec3Value.y;
-						uniformVec[2] = uniformValue.vec3Value.z;
-						uniformVec[3] = 0.0f;
-						ImGui::DragFloat3(uniformLabel.c_str(), uniformVec, 0.5f);
-						uniformValue.vec3Value = glm::vec3(uniformVec[0], uniformVec[1], uniformVec[2]);
-						break;
-					case UniformValue::Type::Vec4:
-						uniformLabel += "vec4";
-						uniformVec[0] = uniformValue.vec4Value.x;
-						uniformVec[1] = uniformValue.vec4Value.y;
-						uniformVec[2] = uniformValue.vec4Value.z;
-						uniformVec[3] = uniformValue.vec4Value.w;
-						ImGui::DragFloat4(uniformLabel.c_str(), uniformVec, 0.5f);
-						uniformValue.vec4Value = glm::vec4(uniformVec[0], uniformVec[1], uniformVec[2], uniformVec[3]);
-						break;
-					case UniformValue::Type::Sampler2D:
-						std::string path = uniformValue.texturePath;
-						std::vector<const char*> libTextures = TextureLibrary::GetLibraryKeys();
-						auto tex_selected = std::find_if(libTextures.begin(), libTextures.end(), [&path](const char* s)
-						{
-								return path == s;
-						});
-						size_t tex_index = (tex_selected != libTextures.end()) ? std::distance(libTextures.begin(), tex_selected) : 0;
-
-						std::string tex2DComboLabel = uniformName + "##Texture2DDropdownPropertiesWindow";
-						if (ImGui::BeginCombo(tex2DComboLabel.c_str(), path.c_str(), 0))
-						{
-							static ImGuiTextFilter filter;
-							if (ImGui::IsWindowAppearing())
-							{
-								ImGui::SetKeyboardFocusHere();
-								filter.Clear();
-							}
-							ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
-							std::string filterLabel = "##FilterPropertiesWindow:" + uniformName;
-							filter.Draw(filterLabel.c_str(), -FLT_MIN);
-
-							for (int n = 0; n < libTextures.size(); n++)
-							{
-								const bool is_selected = (tex_index == n);
-								if (filter.PassFilter(libTextures[n]))
-								{
-									if (ImGui::Selectable(libTextures[n], is_selected))
-									{
-										if (path != libTextures[n])
-										{
-											tex_index = n;
-											uniformValue.texturePath = libTextures[n];
-										}
-									}
-								}
-							}
-							ImGui::EndCombo();
-						}
-						break;
-
-					}
-
-				}
-			}
 
 			AssetComponent* assetComp = assetManager->GetComponent(expandedEntity);
-			MaterialsComponent* materialsComp = materialsManager->GetComponent(expandedEntity);
-			//if (materialsComp)
-			//{
-			//	auto& materials = materialsComp->materials;
-			//	for (unsigned int i = 0; i < materials.size(); i++)
-			//	{
-			//		std::string header = assetComp->assetName + " submesh " + std::to_string(i);
-			//		if (ImGui::TreeNode(header.c_str()))
-			//		{
-			//			auto& uniforms = materials[i].uniforms;
-			//			for (auto& pair : uniforms)
-			//			{
-			//				std::string uniformName = pair.first;
-			//				UniformValue& uniformValue = pair.second;
-
-			//				std::string uniformLabel = uniformName + "##PropertiesWindow";
-
-			//				float uniformVec[4];
-
-			//				switch (uniformValue.type)
-			//				{
-			//					case UniformValue::Type::Bool:
-			//						uniformLabel += "bool";
-			//						ImGui::Checkbox(uniformLabel.c_str(), &uniformValue.boolValue);
-			//						break;
-			//					case UniformValue::Type::Int:
-			//						uniformLabel += "int";
-			//						ImGui::InputInt(uniformLabel.c_str(), &uniformValue.intValue);
-			//						break;
-			//					case UniformValue::Type::Float:
-			//						uniformLabel += "float";
-			//						ImGui::InputFloat(uniformLabel.c_str(), &uniformValue.floatValue);
-			//						break;
-			//					case UniformValue::Type::Vec2:
-			//						uniformLabel += "vec2";
-			//						uniformVec[0] = uniformValue.vec2Value.x;
-			//						uniformVec[1] = uniformValue.vec2Value.y;
-			//						uniformVec[2] = 0.0f;
-			//						uniformVec[3] = 0.0f;
-			//						ImGui::DragFloat2(uniformLabel.c_str(), uniformVec, 0.5f);
-			//						uniformValue.vec2Value = glm::vec2(uniformVec[0], uniformVec[1]);
-			//						break;
-			//					case UniformValue::Type::Vec3:
-			//						uniformLabel += "vec3";
-			//						uniformVec[0] = uniformValue.vec3Value.x;
-			//						uniformVec[1] = uniformValue.vec3Value.y;
-			//						uniformVec[2] = uniformValue.vec3Value.z;
-			//						uniformVec[3] = 0.0f;
-			//						ImGui::DragFloat3(uniformLabel.c_str(), uniformVec, 0.5f);
-			//						uniformValue.vec3Value = glm::vec3(uniformVec[0], uniformVec[1], uniformVec[2]);
-			//						break;
-			//					case UniformValue::Type::Vec4:
-			//						uniformLabel += "vec4";
-			//						uniformVec[0] = uniformValue.vec4Value.x;
-			//						uniformVec[1] = uniformValue.vec4Value.y;
-			//						uniformVec[2] = uniformValue.vec4Value.z;
-			//						uniformVec[3] = uniformValue.vec4Value.w;
-			//						ImGui::DragFloat4(uniformLabel.c_str(), uniformVec, 0.5f);
-			//						uniformValue.vec4Value = glm::vec4(uniformVec[0], uniformVec[1], uniformVec[2], uniformVec[3]);
-			//						break;
-			//					case UniformValue::Type::Sampler2D:
-			//						std::string path = uniformValue.texturePath;
-			//						std::vector<const char*> libTextures = TextureLibrary::GetLibraryKeys();
-			//						auto tex_selected = std::find_if(libTextures.begin(), libTextures.end(), [&path](const char* s)
-			//							{
-			//								return path == s;
-			//							});
-			//						size_t tex_index = (tex_selected != libTextures.end()) ? std::distance(libTextures.begin(), tex_selected) : 0;
-
-			//						std::string tex2DComboLabel = uniformName + "##Texture2DDropdownPropertiesWindow";
-			//						if (ImGui::BeginCombo(tex2DComboLabel.c_str(), path.c_str(), 0))
-			//						{
-			//							static ImGuiTextFilter filter;
-			//							if (ImGui::IsWindowAppearing())
-			//							{
-			//								ImGui::SetKeyboardFocusHere();
-			//								filter.Clear();
-			//							}
-			//							ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
-			//							std::string filterLabel = "##FilterPropertiesWindow:" + uniformName;
-			//							filter.Draw(filterLabel.c_str(), -FLT_MIN);
-
-			//							for (int n = 0; n < libTextures.size(); n++)
-			//							{
-			//								const bool is_selected = (tex_index == n);
-			//								if (filter.PassFilter(libTextures[n]))
-			//								{
-			//									if (ImGui::Selectable(libTextures[n], is_selected))
-			//									{
-			//										if (path != libTextures[n])
-			//										{
-			//											tex_index = n;
-			//											uniformValue.texturePath = libTextures[n];
-			//										}
-			//									}
-			//								}
-			//							}
-			//							ImGui::EndCombo();
-			//						}
-			//						break;
-
-			//				}
-
-			//			}
-
-
-			//			ImGui::TreePop();
-			//		}
-			//	}
-			//}
 
 			MaterialsGroupComponent* materialsGroupComp = materialsGroupManager->GetComponent(expandedEntity);
 			if (materialsGroupComp)
@@ -651,52 +428,6 @@ public:
 				}
 
 			}
-			
-
-			// Show mesh values
-			//MeshComponent* meshComp = meshManager->GetComponent(expandedEntity);
-			//if (meshComp)
-			//{
-			//	std::string meshName = meshComp->meshName;
-			//	std::vector<const char*> libMeshes = MeshLibrary::GetLibraryKeys();
-			//	auto mesh_selected = std::find_if(libMeshes.begin(), libMeshes.end(), [&meshName](const char* s)
-			//		{
-			//			return meshName == s;
-			//		});
-			//	size_t mesh_index = (mesh_selected != libMeshes.end()) ? std::distance(libMeshes.begin(), mesh_selected) : 0;
-
-			//	std::string meshComboLabel = "Mesh##DropDownPropetiesWindow";
-			//	if (ImGui::BeginCombo(meshComboLabel.c_str(), meshName.c_str(), 0))
-			//	{
-			//		static ImGuiTextFilter filter;
-			//		if (ImGui::IsWindowAppearing())
-			//		{
-			//			ImGui::SetKeyboardFocusHere();
-			//			filter.Clear();
-			//		}
-			//		ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
-			//		std::string filterLabel = "##FilterPropertiesWindow";
-			//		filter.Draw(filterLabel.c_str(), -FLT_MIN);
-
-			//		for (int n = 0; n < libMeshes.size(); n++)
-			//		{
-			//			const bool is_selected = (mesh_index == n);
-			//			if (filter.PassFilter(libMeshes[n]))
-			//			{
-			//				if (ImGui::Selectable(libMeshes[n], is_selected))
-			//				{
-			//					if (meshComp->meshName != libMeshes[n])
-			//					{
-			//						mesh_index = n;
-			//						meshComp->meshName = libMeshes[n];
-			//						meshComp->mesh = &MeshLibrary::GetMesh(meshComp->meshName);
-			//					}
-			//				}
-			//			}
-			//		}
-			//		ImGui::EndCombo();
-			//	}
-			//}
 		}
 		ImGui::PopStyleVar(2);
 		return true;

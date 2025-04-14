@@ -11,7 +11,6 @@ public:
 		TransformManager& transformManager,
 		ShaderManager& shaderManager,
 		AssetManager& assetManager,
-		MaterialsManager& materialsManager,
 		MaterialsGroupManager& materialsGroupManager,
 		Camera& camera
 	)
@@ -19,12 +18,11 @@ public:
 		for (Entity entity : sceneRegistry.GetAll())
 		{
 			AssetComponent* assetComp = assetManager.GetComponent(entity);
-			MaterialsComponent* materialsComp = materialsManager.GetComponent(entity);
 			ShaderComponent* shaderComp = shaderManager.GetComponent(entity);
 			TransformComponent* transformComp = transformManager.GetComponent(entity);
 			MaterialsGroupComponent* materialsGroupComp = materialsGroupManager.GetComponent(entity);
 
-			if (!assetComp || !materialsComp || !transformComp || !shaderComp || !materialsGroupComp)
+			if (!assetComp || !transformComp || !shaderComp || !materialsGroupComp)
 				continue;
 
 			Shader* shader = shaderComp->shader;
@@ -51,7 +49,7 @@ public:
 
 			Asset& asset = AssetLibrary::GetAsset(assetComp->assetName);
 			auto& parts = asset.parts;
-			// auto& mats = materialsComp->materials;
+
 			for (auto& group : materialsGroupComp->materialsGroup)
 			{
 				group.material.ApplyShaderUniforms(*shader);
@@ -60,15 +58,6 @@ public:
 					parts[index].mesh.Draw(*shader);
 				}
 			}
-
-			//// optional sanity check
-			//assert(parts.size() == mats.size());
-
-			//for (size_t i = 0; i < parts.size(); ++i)
-			//{
-			//	mats[i].ApplyShaderUniforms(*shader);
-			//	parts[i].mesh.Draw(*shader);
-			//}
 		}
 		
 	}

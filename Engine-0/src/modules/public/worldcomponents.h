@@ -46,27 +46,8 @@ struct AssetComponent
     std::string assetName; // refers to the asset library 
 };
 
-// since assets may contain multiple meshdata
-struct MaterialsComponent
-{
-    std::vector<Material> materials; 
-};
 
 struct MaterialsGroupComponent
 {
     std::vector<MaterialsGroup> materialsGroup;
-};
-
-
-// will probably be deprecated
-struct MeshComponent
-{
-    std::string meshName;
-    Mesh* mesh;
-};
-
-// the Component owns the material directly because in this implementation an object has its own material.
-struct MaterialComponent
-{
-    Material material;
 };

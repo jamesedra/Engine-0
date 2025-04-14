@@ -168,7 +168,6 @@
     <ClInclude Include="src\modules\public\material.h" />
     <ClInclude Include="src\modules\public\mesh.h" />
     <ClInclude Include="src\modules\public\mesh_data.h" />
-    <ClInclude Include="src\modules\public\mesh_library.h" />
     <ClInclude Include="src\modules\public\model.h" />
     <ClInclude Include="src\modules\public\loaders.h" />
     <ClInclude Include="src\modules\public\rendersystem.h" />

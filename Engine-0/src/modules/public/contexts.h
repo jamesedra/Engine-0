@@ -8,30 +8,21 @@ struct WorldContext
 {
 	EntityManager* entityManager;
 	TransformManager* transformManager;
-	MeshManager* meshManager;
 	ShaderManager* shaderManager;
-	MaterialManager* materialManager;
 	AssetManager* assetManager;
-	MaterialsManager* materialsManager;
 	MaterialsGroupManager* materialsGroupManager;
 
 	WorldContext(
 		EntityManager* entityManager, 
 		TransformManager* transformManager, 
-		MeshManager* meshManager, 
 		ShaderManager* shaderManager, 
-		MaterialManager* materialManager,
 		AssetManager* assetManager,
-		MaterialsManager* materialsManager,
 		MaterialsGroupManager* materialsGroupManager
 	): 
 		entityManager(entityManager), 
 		transformManager(transformManager), 
-		meshManager(meshManager), 
 		shaderManager(shaderManager), 
-		materialManager(materialManager),
 		assetManager(assetManager),
-		materialsManager(materialsManager),
 		materialsGroupManager(materialsGroupManager)
 	{ }
 };

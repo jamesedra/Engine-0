@@ -1,17 +1,5 @@
 #include "../public/model.h"
 
-//void Model::Draw(Shader& shader)
-//{
-//	for (unsigned int i = 0; i < meshes.size(); i++)
-//		meshes[i].Draw(shader);
-//}
-//
-//void Model::DrawInstanced(Shader& shader, unsigned int count)
-//{
-//	for (unsigned int i = 0; i < meshes.size(); i++)
-//		meshes[i].DrawInstanced(shader, count);
-//}
-
 void Model::loadModel(std::string path)
 {
 	Assimp::Importer import;
@@ -146,7 +134,7 @@ unsigned int Model::TextureFromFile(const char* path, const std::string& directo
 
 	unsigned int textureID;
 	glGenTextures(1, &textureID);
-
+	stbi_set_flip_vertically_on_load(true); // test
 	int nrComponents;
 	unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
 	if (data)
@@ -182,8 +170,3 @@ unsigned int Model::TextureFromFile(const char* path, const std::string& directo
 	stbi_image_free(data);
 	return textureID;
 }
-
-//const std::vector<Mesh>& Model::getMeshes() const
-//{
-//	return meshes;
-//}
