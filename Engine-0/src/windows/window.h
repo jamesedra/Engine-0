@@ -206,6 +206,8 @@ public:
 				transformComp->scale = glm::vec3(scale[0], scale[1], scale[2]);
 			}
 
+			AssetComponent* assetComp = assetManager->GetComponent(expandedEntity);
+			MaterialsGroupComponent* materialsGroupComp = materialsGroupManager->GetComponent(expandedEntity);
 			ShaderComponent* shaderComp = shaderManager->GetComponent(expandedEntity);
 			if (shaderComp)
 			{
@@ -242,6 +244,9 @@ public:
 									shader_index = n;
 									shaderComp->shaderName = libShaders[n];
 									shaderComp->shader = &ShaderLibrary::GetShader(shaderComp->shaderName);
+
+									for (auto& group : materialsGroupComp->materialsGroup)
+										group.material.SetShader(*shaderComp->shader);
 								}
 							}
 						}
@@ -249,10 +254,7 @@ public:
 					ImGui::EndCombo();
 				}
 			}
-
-			AssetComponent* assetComp = assetManager->GetComponent(expandedEntity);
-
-			MaterialsGroupComponent* materialsGroupComp = materialsGroupManager->GetComponent(expandedEntity);
+			
 			if (materialsGroupComp)
 			{
 				auto& materialsGroup = materialsGroupComp->materialsGroup;
