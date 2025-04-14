@@ -37,6 +37,17 @@ public:
 	}
 };
 
+class MaterialsGroupManager
+{
+public:
+	std::unordered_map<Entity, MaterialsGroupComponent> components;
+	MaterialsGroupComponent* GetComponent(Entity entity)
+	{
+		auto it = components.find(entity);
+		return (it != components.end()) ? &it->second : nullptr;
+	}
+};
+
 class MaterialsManager
 {
 public:

@@ -52,6 +52,11 @@ struct MaterialsComponent
     std::vector<Material> materials; 
 };
 
+struct MaterialsGroupComponent
+{
+    std::vector<MaterialsGroup> materialsGroup;
+};
+
 
 // will probably be deprecated
 struct MeshComponent

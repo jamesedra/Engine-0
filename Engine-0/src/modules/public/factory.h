@@ -5,6 +5,7 @@
 #include "mesh_library.h"
 #include "shader_library.h"
 #include "asset_library.h"
+#include <map>
 
 // NOTE: this is a tentative header for testing purposes.
 // A "Factory" is used to create a combination of components that will be tied from a certain entity. 
@@ -86,6 +87,35 @@ public:
             materialsComp.materials.emplace_back(*shaderComp.shader, meshData.textures);
         }
         worldContext.materialsManager->components[entity] = std::move(materialsComp);
+
+
+        // tentative
+        MaterialsGroupComponent materialsGroupComponent;
+
+        using TexturePaths = std::vector<std::string>;
+        std::map<TexturePaths, std::vector<unsigned int>> textureIndexMap;
+        for (unsigned int i = 0; i < asset.parts.size(); i++)
+        {
+            TexturePaths texturePaths;
+            for (auto& textureMetaData : asset.parts[i].textures)
+            {
+                texturePaths.push_back(textureMetaData.path);
+            }
+            textureIndexMap[texturePaths].push_back(i);
+        }
+
+        materialsGroupComponent.materialsGroup.reserve(textureIndexMap.size());
+        for (auto& [paths, indices] : textureIndexMap)
+        {
+            std::vector<TextureMetadata> textures = asset.parts[indices[0]].textures;
+            Material material(*shaderComp.shader, textures);
+            MaterialsGroup materialsGroup{
+                material, std::move(indices)
+            };
+            materialsGroupComponent.materialsGroup.push_back(materialsGroup);
+        }
+
+        worldContext.materialsGroupManager->components[entity] = std::move(materialsGroupComponent);
 
         return entity;
     }
