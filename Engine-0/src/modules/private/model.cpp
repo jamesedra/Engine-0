@@ -97,6 +97,7 @@ MeshData Model::processMeshData(aiMesh* mesh, const aiScene* scene)
 	};
 }
 
+
 std::vector<TextureMetadata> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type, const std::string& typeName)
 {
 	std::vector<TextureMetadata> textures;
@@ -107,6 +108,13 @@ std::vector<TextureMetadata> Model::loadMaterialTextures(aiMaterial* mat, aiText
 		mat->GetTexture(type, i, &str);
 		std::string filename = str.C_Str();
 		std::string fullpath = directory + "/" + filename;
+
+		auto it = texturesLoaded.find(fullpath);
+		if (it != texturesLoaded.end())
+		{
+			textures.push_back(it->second);
+			continue;
+		}
 
 		unsigned int texID;
 		int width, height;

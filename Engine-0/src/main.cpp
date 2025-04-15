@@ -21,6 +21,7 @@
 #include "modules/public/factory.h"
 #include "modules/public/contexts.h"
 
+
 constexpr int W_WIDTH = 1600;
 constexpr int W_HEIGHT = 1200;
 
@@ -171,6 +172,9 @@ int main()
 	//Entity worldObjectTest1 = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/nanosuit/nanosuit.obj");
 	//idManager.components[worldObjectTest1].ID = "nanosuit";
 	//sceneRegistry.Register(worldObjectTest1);
+	//Entity sponza = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/main1_sponza/NewSponza_Main_Yup_003.fbx");
+	//idManager.components[sponza].ID = "Sponza";
+	//sceneRegistry.Register(sponza);
 
 	RenderSystem renderSystem;
 
