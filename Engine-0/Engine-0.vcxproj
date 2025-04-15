@@ -206,6 +206,8 @@
     <None Include="shaders\gbuffer\gbuffer_tint.frag" />
     <None Include="shaders\NPR\blinn_shading.frag" />
     <None Include="shaders\NPR\npr_def.vert" />
+    <None Include="shaders\PBR\pbr_alpha.frag" />
+    <None Include="shaders\PBR\pbr_def.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

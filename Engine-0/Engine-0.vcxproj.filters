@@ -190,5 +190,7 @@
     <None Include="shaders\NPR\npr_def.vert" />
     <None Include="shaders\gbuffer\gbuffer_tint.frag" />
     <None Include="shaders\gbuffer\gbuffer_pbr.frag" />
+    <None Include="shaders\PBR\pbr_alpha.frag" />
+    <None Include="shaders\PBR\pbr_def.vert" />
   </ItemGroup>
 </Project>

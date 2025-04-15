@@ -127,10 +127,9 @@ int main()
 	Texture debugAO(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
 	debugAO.setTexFilter(GL_NEAREST);
 	debugGBuffer.attachTexture2D(debugAO, GL_COLOR_ATTACHMENT5);
-	
+	// texture and renderbuffer attachments
 	debugGBuffer.bind();
 	unsigned int debugbuffer_attachments[6] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 };
-
 	glDrawBuffers(6, debugbuffer_attachments);
 	debugGBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
@@ -147,6 +146,7 @@ int main()
 	Shader outputFrame("shaders/frame_out.vert", "shaders/frame_out.frag");
 	Shader debugBufferShader("shaders/gbuffer/gbuffer_debug_out.vert", "shaders/gbuffer/gbuffer_debug_out.frag");
 	Shader litBufferShader("shaders/NPR/npr_def.vert", "shaders/NPR/blinn_shading.frag");
+	Shader PBRBufferShader("shaders/PBR/pbr_def.vert", "shaders/PBR/pbr_alpha.frag");
 
 	// -------------------
 	// Component Managers
@@ -164,13 +164,13 @@ int main()
 	WorldContext worldContext(&entityManager, &transformManager, &shaderManager, &assetManager, &materialsGroupManager);
 	OutlinerContext outlinerContext(&sceneRegistry, &idManager);
 	
+	// World Objects
 	Entity worldObjectTest = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/backpack/backpack.obj");
 	idManager.components[worldObjectTest].ID = "bag";
 	sceneRegistry.Register(worldObjectTest);
-
-	Entity worldObjectTest1 = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/nanosuit/nanosuit.obj");
-	idManager.components[worldObjectTest1].ID = "nanosuit";
-	sceneRegistry.Register(worldObjectTest1);
+	//Entity worldObjectTest1 = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/nanosuit/nanosuit.obj");
+	//idManager.components[worldObjectTest1].ID = "nanosuit";
+	//sceneRegistry.Register(worldObjectTest1);
 
 	RenderSystem renderSystem;
 
@@ -335,23 +335,49 @@ int main()
 		if (tex_type > 5)
 		{
 			// Lit shading pass
+			//litBuffer.bind();
+			//glClearColor(0.0, 0.0, 0.0, 0.0);
+			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			//litBufferShader.use();
+			//litBufferShader.setVec3("dirLight.Position", lightPos[0], lightPos[1], lightPos[2]);
+			//litBufferShader.setVec3("dirLight.Color", lightColor);
+			//litBufferShader.setInt("gPosition", 0);
+			//litBufferShader.setInt("gNormal", 1);
+			//litBufferShader.setInt("gAlbedoSpec", 2);
+			//glActiveTexture(GL_TEXTURE0);
+			//glBindTexture(GL_TEXTURE_2D, gPosition.id);
+			//glActiveTexture(GL_TEXTURE1);
+			//glBindTexture(GL_TEXTURE_2D, gNormal.id);
+			//glActiveTexture(GL_TEXTURE2);
+			//glBindTexture(GL_TEXTURE_2D, gAlbedoSpec.id);
+			//glBindVertexArray(frameVAO);
+			//glDrawArrays(GL_TRIANGLES, 0, 6);
+			//litBuffer.unbind();
+
 			litBuffer.bind();
 			glClearColor(0.0, 0.0, 0.0, 0.0);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			litBufferShader.use();
-			litBufferShader.setVec3("dirLight.Position", lightPos[0], lightPos[1], lightPos[2]);
-			litBufferShader.setVec3("dirLight.Color", lightColor);
-			litBufferShader.setInt("gPosition", 0);
-			litBufferShader.setInt("gNormal", 1);
-			litBufferShader.setInt("gAlbedoSpec", 2);
+
+			// PBR shading
+			PBRBufferShader.use();
+			PBRBufferShader.setVec3("lightPos", lightPos[0], lightPos[1], lightPos[2]);
+			PBRBufferShader.setVec3("lightColor", lightColor);
+			PBRBufferShader.setVec3("viewPos", glm::vec3(5.0f, 2.5f, 5.0f)); // tentative
+			PBRBufferShader.setInt("gPosition", 0);
+			PBRBufferShader.setInt("gNormal", 1);
+			PBRBufferShader.setInt("gAlbedoRoughness", 2);
+			PBRBufferShader.setInt("gMetallicAO", 3);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, gPosition.id);
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, gNormal.id);
 			glActiveTexture(GL_TEXTURE2);
 			glBindTexture(GL_TEXTURE_2D, gAlbedoSpec.id);
+			glActiveTexture(GL_TEXTURE3);
+			glBindTexture(GL_TEXTURE_2D, gMetallicAO.id);
 			glBindVertexArray(frameVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
+
 			litBuffer.unbind();
 		}
 		else if (tex_type <= 5)
