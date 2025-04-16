@@ -148,6 +148,22 @@ int main()
 	Shader debugBufferShader("shaders/gbuffer/gbuffer_debug_out.vert", "shaders/gbuffer/gbuffer_debug_out.frag");
 	Shader litBufferShader("shaders/NPR/npr_def.vert", "shaders/NPR/blinn_shading.frag");
 	Shader PBRBufferShader("shaders/PBR/pbr_def.vert", "shaders/PBR/pbr_alpha.frag");
+	Shader Skybox("shaders/skybox/skybox_default.vert", "shaders/skybox/skybox_default.frag");
+
+	// Skybox testing
+	stbi_set_flip_vertically_on_load(false);
+
+	std::vector<std::string> faces = {
+		"resources/skybox/right.jpg",
+		"resources/skybox/left.jpg",
+		"resources/skybox/top.jpg",
+		"resources/skybox/bottom.jpg",
+		"resources/skybox/front.jpg",
+		"resources/skybox/back.jpg"
+	};
+
+	unsigned int skyboxTexture = loadCubemap(faces);
+	stbi_set_flip_vertically_on_load(true);
 
 	// -------------------
 	// Component Managers
@@ -172,6 +188,8 @@ int main()
 	//Entity worldObjectTest1 = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/nanosuit/nanosuit.obj");
 	//idManager.components[worldObjectTest1].ID = "nanosuit";
 	//sceneRegistry.Register(worldObjectTest1);
+	
+	// Sponza takes more than a minute to load directly. Need to do something about heavy model loading
 	//Entity sponza = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/main1_sponza/NewSponza_Main_Yup_003.fbx");
 	//idManager.components[sponza].ID = "Sponza";
 	//sceneRegistry.Register(sponza);
@@ -211,9 +229,8 @@ int main()
 	static int tex_type = 6;
 	unsigned int tex_curr;
 
-	static float lightPos[4] = { 2.5f, 5.0f, 2.5f, 0.0f };
+	static float lightPos[4] = { 0.0f, 0.0f, 0.5f, 0.0f };
 	glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-
 	while (!glfwWindowShouldClose(window))
 	{
 		if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0)
@@ -221,7 +238,6 @@ int main()
 			ImGui_ImplGlfw_Sleep(10);
 			continue;
 		}
-
 		switch (tex_type)
 		{
 		case 0:
@@ -247,15 +263,12 @@ int main()
 		}
 
 		processInput(window);
-		
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-
 		// Docking Main Window
 		mainWindow.BeginRender();
 		mainWindow.EndRender();
-
 		// Viewport window
 		viewport_active = viewportWindow.BeginRender();
 		if (viewport_active) 
@@ -299,14 +312,12 @@ int main()
 			
 			viewportWindow.EndRender();
 		}
-
 		outliner_active = outlinerWindow.BeginRender();
 		if (outliner_active)
 		{
 			// additional rendering
 			outlinerWindow.EndRender();
 		}
-
 		properties_active = propertiesWindow.BeginRender();
 		if (properties_active)
 		{
@@ -325,11 +336,30 @@ int main()
 			ImGui::DragFloat3("Light Position", lightPos, 0.5f, -50.0f, 50.0f);
 			propertiesWindow.EndRender();
 		}
-
 		// GBuffer pass
 		gBuffer.bind();
 		glClearColor(0.0, 0.0, 0.0, 0.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glFrontFace(GL_CW);
+		glDepthFunc(GL_LEQUAL);
+		glDepthMask(GL_FALSE);
+		Skybox.use();
+		glm::vec3 cameraPos(5.0f, 2.5f, 5.0f);
+		glm::vec3 target(0.0f, 0.0f, 0.0f);
+		glm::vec3 up(0.0f, 1.0f, 0.0f);
+		glm::mat4 view = glm::lookAt(cameraPos, target, up);
+		Skybox.setMat4("projection", glm::perspective(glm::radians(45.0f), (float)1600 / (float)1200, 0.1f, 10.0f));
+		Skybox.setMat4("view", glm::mat4(glm::mat3(view)));
+		Skybox.setInt("skybox", 0);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
+		glBindVertexArray(cubeVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glDepthFunc(GL_LESS);
+		glFrontFace(GL_CCW);
+		glDepthMask(GL_TRUE);
+
 		renderSystem.Render(sceneRegistry, transformManager, shaderManager, assetManager, materialsGroupManager, camera);
 		gBuffer.unbind();
 
@@ -381,7 +411,7 @@ int main()
 			glBindTexture(GL_TEXTURE_2D, gMetallicAO.id);
 			glBindVertexArray(frameVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
-
+			
 			litBuffer.unbind();
 		}
 		else if (tex_type <= 5)

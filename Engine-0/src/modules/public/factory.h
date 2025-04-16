@@ -72,7 +72,6 @@ public:
             materialsGroupComponent.materialsGroup.push_back(materialsGroup);
         }
         worldContext.materialsGroupManager->components[entity] = std::move(materialsGroupComponent);
-
         return entity;
     }
 };

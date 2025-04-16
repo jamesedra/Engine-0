@@ -115,7 +115,6 @@ std::vector<TextureMetadata> Model::loadMaterialTextures(aiMaterial* mat, aiText
 			textures.push_back(it->second);
 			continue;
 		}
-
 		unsigned int texID;
 		int width, height;
 
@@ -144,6 +143,8 @@ std::vector<TextureMetadata> Model::loadMaterialTextures(aiMaterial* mat, aiText
 		texture.width = width;
 		texture.height = height;
 		textures.push_back(texture);
+
+		texturesLoaded[fullpath] = texture;
 	}
 	return textures;
 }

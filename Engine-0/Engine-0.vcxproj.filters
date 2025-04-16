@@ -192,5 +192,7 @@
     <None Include="shaders\gbuffer\gbuffer_pbr.frag" />
     <None Include="shaders\PBR\pbr_alpha.frag" />
     <None Include="shaders\PBR\pbr_def.vert" />
+    <None Include="shaders\skybox\skybox_default.vert" />
+    <None Include="shaders\skybox\skybox_default.frag" />
   </ItemGroup>
 </Project>
