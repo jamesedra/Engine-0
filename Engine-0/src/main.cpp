@@ -183,7 +183,7 @@ int main()
 	
 	// World Objects
 	Entity worldObjectTest = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/backpack/backpack.obj");
-	idManager.components[worldObjectTest].ID = "bag";
+	idManager.components[worldObjectTest].ID = "backpack";
 	sceneRegistry.Register(worldObjectTest);
 	//Entity worldObjectTest1 = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/nanosuit/nanosuit.obj");
 	//idManager.components[worldObjectTest1].ID = "nanosuit";
@@ -340,27 +340,7 @@ int main()
 		gBuffer.bind();
 		glClearColor(0.0, 0.0, 0.0, 0.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		glFrontFace(GL_CW);
-		glDepthFunc(GL_LEQUAL);
-		glDepthMask(GL_FALSE);
-		Skybox.use();
-		glm::vec3 cameraPos(5.0f, 2.5f, 5.0f);
-		glm::vec3 target(0.0f, 0.0f, 0.0f);
-		glm::vec3 up(0.0f, 1.0f, 0.0f);
-		glm::mat4 view = glm::lookAt(cameraPos, target, up);
-		Skybox.setMat4("projection", glm::perspective(glm::radians(45.0f), (float)1600 / (float)1200, 0.1f, 10.0f));
-		Skybox.setMat4("view", glm::mat4(glm::mat3(view)));
-		Skybox.setInt("skybox", 0);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
-		glBindVertexArray(cubeVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-		glDepthFunc(GL_LESS);
-		glFrontFace(GL_CCW);
-		glDepthMask(GL_TRUE);
-
-		renderSystem.Render(sceneRegistry, transformManager, shaderManager, assetManager, materialsGroupManager, camera);
+		renderSystem.RenderGeometry(sceneRegistry, transformManager, shaderManager, assetManager, materialsGroupManager, camera);
 		gBuffer.unbind();
 
 		// deferred shading stage
@@ -388,9 +368,20 @@ int main()
 			//glDrawArrays(GL_TRIANGLES, 0, 6);
 			//litBuffer.unbind();
 
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer.FBO);
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, litBuffer.FBO);
+			glBlitFramebuffer(
+				0, 0, W_WIDTH, W_HEIGHT,
+				0, 0, W_WIDTH, W_HEIGHT,
+				GL_DEPTH_BUFFER_BIT,
+				GL_NEAREST
+			);
+
 			litBuffer.bind();
 			glClearColor(0.0, 0.0, 0.0, 0.0);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glClear(GL_COLOR_BUFFER_BIT);
+
+			glDisable(GL_DEPTH_TEST);
 
 			// PBR shading
 			PBRBufferShader.use();
@@ -411,7 +402,26 @@ int main()
 			glBindTexture(GL_TEXTURE_2D, gMetallicAO.id);
 			glBindVertexArray(frameVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
-			
+
+			glEnable(GL_DEPTH_TEST);
+			glFrontFace(GL_CW);
+			glDepthFunc(GL_LEQUAL);
+			glDepthMask(GL_FALSE);
+			Skybox.use();
+			glm::vec3 cameraPos(5.0f, 2.5f, 5.0f);
+			glm::vec3 target(0.0f, 0.0f, 0.0f);
+			glm::vec3 up(0.0f, 1.0f, 0.0f);
+			glm::mat4 view = glm::lookAt(cameraPos, target, up);
+			Skybox.setMat4("projection", glm::perspective(glm::radians(45.0f), (float)1600 / (float)1200, 0.1f, 10.0f));
+			Skybox.setMat4("view", glm::mat4(glm::mat3(view)));
+			Skybox.setInt("skybox", 0);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
+			glBindVertexArray(cubeVAO);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+			glDepthFunc(GL_LESS);
+			glFrontFace(GL_CCW);
+			glDepthMask(GL_TRUE);
 			litBuffer.unbind();
 		}
 		else if (tex_type <= 5)
