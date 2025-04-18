@@ -94,6 +94,14 @@ int main()
 	glDrawBuffers(4, gbuffer_attachments);
 	gBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
+	// Lit Frame buffer
+	Framebuffer litBuffer(W_WIDTH, W_HEIGHT);
+	// lit output
+	Texture litBufferOut(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA);
+	litBufferOut.setTexFilter(GL_NEAREST);
+	litBuffer.attachTexture2D(litBufferOut, GL_COLOR_ATTACHMENT0);
+	litBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+
 	// Bloom buffers
 	Framebuffer bloomPing(W_WIDTH, W_HEIGHT);
 	Texture blurHorizontal(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
@@ -102,13 +110,17 @@ int main()
 	Texture blurFinal(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
 	bloomPong.attachTexture2D(blurFinal, GL_COLOR_ATTACHMENT0);
 
-	// Lit Frame buffer
-	Framebuffer litBuffer(W_WIDTH, W_HEIGHT);
-	// lit output
-	Texture litBufferOut(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
-	litBufferOut.setTexFilter(GL_NEAREST);
-	litBuffer.attachTexture2D(litBufferOut, GL_COLOR_ATTACHMENT0);
-	litBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+	// Tonemapper buffer
+	Framebuffer tonemapper(W_WIDTH, W_HEIGHT);
+	Texture colorBuffer(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
+	Texture brightBuffer(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
+	tonemapper.attachTexture2D(colorBuffer, GL_COLOR_ATTACHMENT0);
+	tonemapper.attachTexture2D(brightBuffer, GL_COLOR_ATTACHMENT1);
+	tonemapper.bind();
+	unsigned int tonemap_attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+	glDrawBuffers(2, tonemap_attachments);
+	tonemapper.unbind();
+	tonemapper.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
 	// Debug G-Buffer (for display)
 	Framebuffer debugGBuffer(W_WIDTH, W_HEIGHT);
