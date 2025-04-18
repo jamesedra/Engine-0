@@ -197,5 +197,7 @@
     <None Include="shaders\bloom\bloom.frag" />
     <None Include="shaders\blur\gaussian.frag" />
     <None Include="shaders\tonemapping\rh_tonemapping.frag" />
+    <None Include="shaders\PBR\bright_pass.frag" />
+    <None Include="shaders\postprocess\pp_base.frag" />
   </ItemGroup>
 </Project>

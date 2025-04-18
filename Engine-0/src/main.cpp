@@ -70,58 +70,6 @@ int main()
 	viewportFrame.attachTexture2D(viewportOutTexture, GL_COLOR_ATTACHMENT0);
 	viewportFrame.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
-	// G-Buffer
-	Framebuffer gBuffer(W_WIDTH, W_HEIGHT);
-	// position color buffer
-	Texture gPosition(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA);
-	gPosition.setTexFilter(GL_NEAREST);
-	gBuffer.attachTexture2D(gPosition, GL_COLOR_ATTACHMENT0);
-	// normal color buffer
-	Texture gNormal(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA);
-	gNormal.setTexFilter(GL_NEAREST);
-	gBuffer.attachTexture2D(gNormal, GL_COLOR_ATTACHMENT1);
-	// albedo specular/roughness color buffer
-	Texture gAlbedoSpec(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
-	gAlbedoSpec.setTexFilter(GL_NEAREST);
-	gBuffer.attachTexture2D(gAlbedoSpec, GL_COLOR_ATTACHMENT2);
-	// metallic and ao buffer
-	Texture gMetallicAO(W_WIDTH, W_HEIGHT, GL_RG8, GL_RG);
-	gMetallicAO.setTexFilter(GL_NEAREST);
-	gBuffer.attachTexture2D(gMetallicAO, GL_COLOR_ATTACHMENT3);
-	// texture and renderbuffer attachments
-	gBuffer.bind();
-	unsigned int gbuffer_attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
-	glDrawBuffers(4, gbuffer_attachments);
-	gBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
-
-	// Lit Frame buffer
-	Framebuffer litBuffer(W_WIDTH, W_HEIGHT);
-	// lit output
-	Texture litBufferOut(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA);
-	litBufferOut.setTexFilter(GL_NEAREST);
-	litBuffer.attachTexture2D(litBufferOut, GL_COLOR_ATTACHMENT0);
-	litBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
-
-	// Bloom buffers
-	Framebuffer bloomPing(W_WIDTH, W_HEIGHT);
-	Texture blurHorizontal(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
-	bloomPing.attachTexture2D(blurHorizontal, GL_COLOR_ATTACHMENT0);
-	Framebuffer bloomPong(W_WIDTH, W_HEIGHT);
-	Texture blurFinal(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
-	bloomPong.attachTexture2D(blurFinal, GL_COLOR_ATTACHMENT0);
-
-	// Tonemapper buffer
-	Framebuffer tonemapper(W_WIDTH, W_HEIGHT);
-	Texture colorBuffer(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
-	Texture brightBuffer(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
-	tonemapper.attachTexture2D(colorBuffer, GL_COLOR_ATTACHMENT0);
-	tonemapper.attachTexture2D(brightBuffer, GL_COLOR_ATTACHMENT1);
-	tonemapper.bind();
-	unsigned int tonemap_attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-	glDrawBuffers(2, tonemap_attachments);
-	tonemapper.unbind();
-	tonemapper.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
-
 	// Debug G-Buffer (for display)
 	Framebuffer debugGBuffer(W_WIDTH, W_HEIGHT);
 	// position
@@ -154,6 +102,58 @@ int main()
 	glDrawBuffers(6, debugbuffer_attachments);
 	debugGBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
+	// G-Buffer
+	Framebuffer gBuffer(W_WIDTH, W_HEIGHT);
+	// position color buffer
+	Texture gPosition(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA);
+	gPosition.setTexFilter(GL_NEAREST);
+	gBuffer.attachTexture2D(gPosition, GL_COLOR_ATTACHMENT0);
+	// normal color buffer
+	Texture gNormal(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA);
+	gNormal.setTexFilter(GL_NEAREST);
+	gBuffer.attachTexture2D(gNormal, GL_COLOR_ATTACHMENT1);
+	// albedo specular/roughness color buffer
+	Texture gAlbedoSpec(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
+	gAlbedoSpec.setTexFilter(GL_NEAREST);
+	gBuffer.attachTexture2D(gAlbedoSpec, GL_COLOR_ATTACHMENT2);
+	// metallic and ao buffer
+	Texture gMetallicAO(W_WIDTH, W_HEIGHT, GL_RG8, GL_RG);
+	gMetallicAO.setTexFilter(GL_NEAREST);
+	gBuffer.attachTexture2D(gMetallicAO, GL_COLOR_ATTACHMENT3);
+	// texture and renderbuffer attachments
+	gBuffer.bind();
+	unsigned int gbuffer_attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+	glDrawBuffers(4, gbuffer_attachments);
+	gBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+
+	// HDR Frame buffer
+	Framebuffer hdrBuffer(W_WIDTH, W_HEIGHT);
+	// hdr output
+	Texture hdrScene(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA);
+	hdrScene.setTexFilter(GL_NEAREST);
+	hdrBuffer.attachTexture2D(hdrScene, GL_COLOR_ATTACHMENT0);
+	hdrBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+
+	// Bloom buffers
+	Framebuffer bloomPingBuffer(W_WIDTH, W_HEIGHT);
+	Framebuffer bloomPongBuffer(W_WIDTH, W_HEIGHT);
+	Texture blurHorizontal(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
+	Texture blurVertical(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
+	bloomPingBuffer.attachTexture2D(blurHorizontal, GL_COLOR_ATTACHMENT0);
+	bloomPongBuffer.attachTexture2D(blurVertical, GL_COLOR_ATTACHMENT0);
+
+	// Tonemapper buffer
+	Framebuffer tonemapperBuffer(W_WIDTH, W_HEIGHT);
+	Texture tonemappedScene(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
+	tonemapperBuffer.attachTexture2D(tonemappedScene, GL_COLOR_ATTACHMENT0);
+	tonemapperBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+
+	// Post process buffer
+	Framebuffer postprocessBuffer(W_WIDTH, W_HEIGHT);
+	Texture ppScene(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
+	postprocessBuffer.attachTexture2D(ppScene, GL_COLOR_ATTACHMENT0);
+	postprocessBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+	
 	// Textures
 	unsigned int tex_diff = loadTexture("resources/textures/brickwall.jpg", true, TextureColorSpace::sRGB);
 	unsigned int tex_spec = createDefaultTexture();
@@ -166,11 +166,12 @@ int main()
 	Shader outShader("shaders/default.vert", "shaders/default.frag");
 	Shader outputFrame("shaders/frame_out.vert", "shaders/frame_out.frag");
 	Shader debugBufferShader("shaders/gbuffer/gbuffer_debug_out.vert", "shaders/gbuffer/gbuffer_debug_out.frag");
-	Shader litBufferShader("shaders/NPR/npr_def.vert", "shaders/NPR/blinn_shading.frag");
 	Shader pbrBufferShader("shaders/PBR/pbr_def.vert", "shaders/PBR/pbr_alpha.frag");
-	Shader hdrShader("shaders/frame_out.vert", "shaders/tonemapping/rh_tonemapping.frag");
+	Shader brightPassShader("shaders/frame_out.vert", "shaders/PBR/bright_pass.frag");
 	Shader blurShader("shaders/frame_out.vert", "shaders/blur/gaussian.frag");
 	Shader bloomShader("shaders/frame_out.vert", "shaders/bloom/bloom.frag");
+	Shader tonemapShader("shaders/frame_out.vert", "shaders/tonemapping/rh_tonemapping.frag");
+	Shader ppShader("shaders/frame_out.vert", "shaders/postprocess/pp_base.frag");
 
 	Shader skyboxShader("shaders/skybox/skybox_default.vert", "shaders/skybox/skybox_default.frag");
 
@@ -283,7 +284,7 @@ int main()
 			tex_curr = debugAO.id;
 			break;
 		default:
-			tex_curr = litBufferOut.id;
+			tex_curr = ppScene.id;
 		}
 
 		processInput(window);
@@ -373,7 +374,7 @@ int main()
 		if (tex_type > 5)
 		{
 			glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer.FBO);
-			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, litBuffer.FBO);
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, hdrBuffer.FBO);
 			glBlitFramebuffer(
 				0, 0, W_WIDTH, W_HEIGHT,
 				0, 0, W_WIDTH, W_HEIGHT,
@@ -381,7 +382,7 @@ int main()
 				GL_NEAREST
 			);
 
-			litBuffer.bind();
+			hdrBuffer.bind();
 			glClearColor(0.0, 0.0, 0.0, 0.0);
 			glClear(GL_COLOR_BUFFER_BIT);
 
@@ -406,27 +407,92 @@ int main()
 			glBindTexture(GL_TEXTURE_2D, gMetallicAO.id);
 			glBindVertexArray(frameVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
+			hdrBuffer.unbind();
+
+			// Blur shading for bright pass
+			glDisable(GL_DEPTH_TEST);
+			bloomPingBuffer.bind();
+			brightPassShader.use();
+			brightPassShader.setInt("hdrScene", 0);
+			brightPassShader.setFloat("threshold", 0.5f);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, hdrScene.id);
+			glBindVertexArray(frameVAO);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+			bloomPingBuffer.unbind();
+
+			bool horizontal = true;
+			const int blurAmount = 10;
+			blurShader.use();
+			for (size_t i = 0; i < blurAmount; i++)
+			{
+				(horizontal ? bloomPongBuffer : bloomPingBuffer).bind();
+				blurShader.setInt("image", 0);
+				blurShader.setBool("horizontal", horizontal);
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, horizontal ? blurHorizontal.id : blurVertical.id);
+				glBindVertexArray(frameVAO);
+				glDrawArrays(GL_TRIANGLES, 0, 6);
+				(horizontal ? bloomPongBuffer : bloomPingBuffer).unbind();
+				horizontal = !horizontal;
+			}
+
+			// Bloom shading
+			hdrBuffer.bind();
+			bloomShader.use();
+			bloomShader.setInt("hdrScene", 0);
+			bloomShader.setInt("blurBuffer", 1);
+			bloomShader.setFloat("exposure", 0.8f);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, hdrScene.id);
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, blurHorizontal.id);
+			glBindVertexArray(frameVAO);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+			hdrBuffer.unbind();
+
+			// Tone mapping
+			tonemapperBuffer.bind();
+			tonemapShader.use();
+			tonemapShader.setInt("hdrScene", 0);
+			tonemapShader.setFloat("exposure", 0.8f);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, hdrScene.id);
+			glBindVertexArray(frameVAO);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+			tonemapperBuffer.unbind();
+
+			// Post processing
+			postprocessBuffer.bind();
+			ppShader.use();
+			ppShader.setInt("scene", 0);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, tonemappedScene.id);
+			glBindVertexArray(frameVAO);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+			postprocessBuffer.unbind();
 
 			glEnable(GL_DEPTH_TEST);
-			glFrontFace(GL_CW);
-			glDepthFunc(GL_LEQUAL);
-			glDepthMask(GL_FALSE);
-			skyboxShader.use();
-			glm::vec3 cameraPos(5.0f, 2.5f, 5.0f);
-			glm::vec3 target(0.0f, 0.0f, 0.0f);
-			glm::vec3 up(0.0f, 1.0f, 0.0f);
-			glm::mat4 view = glm::lookAt(cameraPos, target, up);
-			skyboxShader.setMat4("projection", glm::perspective(glm::radians(45.0f), (float)1600 / (float)1200, 0.1f, 10.0f));
-			skyboxShader.setMat4("view", glm::mat4(glm::mat3(view)));
-			skyboxShader.setInt("skybox", 0);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
-			glBindVertexArray(cubeVAO);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-			glDepthFunc(GL_LESS);
-			glFrontFace(GL_CCW);
-			glDepthMask(GL_TRUE);
-			litBuffer.unbind();
+
+			// skybox
+			//glFrontFace(GL_CW);
+			//glDepthFunc(GL_LEQUAL);
+			//glDepthMask(GL_FALSE);
+			//skyboxShader.use();
+			//glm::vec3 cameraPos(5.0f, 2.5f, 5.0f);
+			//glm::vec3 target(0.0f, 0.0f, 0.0f);
+			//glm::vec3 up(0.0f, 1.0f, 0.0f);
+			//glm::mat4 view = glm::lookAt(cameraPos, target, up);
+			//skyboxShader.setMat4("projection", glm::perspective(glm::radians(45.0f), (float)1600 / (float)1200, 0.1f, 10.0f));
+			//skyboxShader.setMat4("view", glm::mat4(glm::mat3(view)));
+			//skyboxShader.setInt("skybox", 0);
+			//glActiveTexture(GL_TEXTURE0);
+			//glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
+			//glBindVertexArray(cubeVAO);
+			//glDrawArrays(GL_TRIANGLES, 0, 36);
+			//glDepthFunc(GL_LESS);
+			//glFrontFace(GL_CCW);
+			//glDepthMask(GL_TRUE);
 		}
 		else if (tex_type <= 5)
 		{

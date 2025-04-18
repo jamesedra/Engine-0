@@ -208,8 +208,10 @@
     <None Include="shaders\gbuffer\gbuffer_tint.frag" />
     <None Include="shaders\NPR\blinn_shading.frag" />
     <None Include="shaders\NPR\npr_def.vert" />
+    <None Include="shaders\PBR\bright_pass.frag" />
     <None Include="shaders\PBR\pbr_alpha.frag" />
     <None Include="shaders\PBR\pbr_def.vert" />
+    <None Include="shaders\postprocess\pp_base.frag" />
     <None Include="shaders\skybox\skybox_default.frag" />
     <None Include="shaders\skybox\skybox_default.vert" />
     <None Include="shaders\tonemapping\rh_tonemapping.frag" />
