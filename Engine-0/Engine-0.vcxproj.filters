@@ -194,5 +194,8 @@
     <None Include="shaders\PBR\pbr_def.vert" />
     <None Include="shaders\skybox\skybox_default.vert" />
     <None Include="shaders\skybox\skybox_default.frag" />
+    <None Include="shaders\bloom\bloom.frag" />
+    <None Include="shaders\blur\gaussian.frag" />
+    <None Include="shaders\tonemapping\rh_tonemapping.frag" />
   </ItemGroup>
 </Project>

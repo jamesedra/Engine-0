@@ -94,6 +94,14 @@ int main()
 	glDrawBuffers(4, gbuffer_attachments);
 	gBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
+	// Bloom buffers
+	Framebuffer bloomPing(W_WIDTH, W_HEIGHT);
+	Texture blurHorizontal(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
+	bloomPing.attachTexture2D(blurHorizontal, GL_COLOR_ATTACHMENT0);
+	Framebuffer bloomPong(W_WIDTH, W_HEIGHT);
+	Texture blurFinal(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
+	bloomPong.attachTexture2D(blurFinal, GL_COLOR_ATTACHMENT0);
+
 	// Lit Frame buffer
 	Framebuffer litBuffer(W_WIDTH, W_HEIGHT);
 	// lit output
@@ -147,8 +155,12 @@ int main()
 	Shader outputFrame("shaders/frame_out.vert", "shaders/frame_out.frag");
 	Shader debugBufferShader("shaders/gbuffer/gbuffer_debug_out.vert", "shaders/gbuffer/gbuffer_debug_out.frag");
 	Shader litBufferShader("shaders/NPR/npr_def.vert", "shaders/NPR/blinn_shading.frag");
-	Shader PBRBufferShader("shaders/PBR/pbr_def.vert", "shaders/PBR/pbr_alpha.frag");
-	Shader Skybox("shaders/skybox/skybox_default.vert", "shaders/skybox/skybox_default.frag");
+	Shader pbrBufferShader("shaders/PBR/pbr_def.vert", "shaders/PBR/pbr_alpha.frag");
+	Shader hdrShader("shaders/frame_out.vert", "shaders/tonemapping/rh_tonemapping.frag");
+	Shader blurShader("shaders/frame_out.vert", "shaders/blur/gaussian.frag");
+	Shader bloomShader("shaders/frame_out.vert", "shaders/bloom/bloom.frag");
+
+	Shader skyboxShader("shaders/skybox/skybox_default.vert", "shaders/skybox/skybox_default.frag");
 
 	// Skybox testing
 	stbi_set_flip_vertically_on_load(false);
@@ -348,26 +360,6 @@ int main()
 
 		if (tex_type > 5)
 		{
-			// Lit shading pass
-			//litBuffer.bind();
-			//glClearColor(0.0, 0.0, 0.0, 0.0);
-			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			//litBufferShader.use();
-			//litBufferShader.setVec3("dirLight.Position", lightPos[0], lightPos[1], lightPos[2]);
-			//litBufferShader.setVec3("dirLight.Color", lightColor);
-			//litBufferShader.setInt("gPosition", 0);
-			//litBufferShader.setInt("gNormal", 1);
-			//litBufferShader.setInt("gAlbedoSpec", 2);
-			//glActiveTexture(GL_TEXTURE0);
-			//glBindTexture(GL_TEXTURE_2D, gPosition.id);
-			//glActiveTexture(GL_TEXTURE1);
-			//glBindTexture(GL_TEXTURE_2D, gNormal.id);
-			//glActiveTexture(GL_TEXTURE2);
-			//glBindTexture(GL_TEXTURE_2D, gAlbedoSpec.id);
-			//glBindVertexArray(frameVAO);
-			//glDrawArrays(GL_TRIANGLES, 0, 6);
-			//litBuffer.unbind();
-
 			glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer.FBO);
 			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, litBuffer.FBO);
 			glBlitFramebuffer(
@@ -384,14 +376,14 @@ int main()
 			glDisable(GL_DEPTH_TEST);
 
 			// PBR shading
-			PBRBufferShader.use();
-			PBRBufferShader.setVec3("lightPos", lightPos[0], lightPos[1], lightPos[2]);
-			PBRBufferShader.setVec3("lightColor", lightColor);
-			PBRBufferShader.setVec3("viewPos", glm::vec3(5.0f, 2.5f, 5.0f)); // tentative
-			PBRBufferShader.setInt("gPosition", 0);
-			PBRBufferShader.setInt("gNormal", 1);
-			PBRBufferShader.setInt("gAlbedoRoughness", 2);
-			PBRBufferShader.setInt("gMetallicAO", 3);
+			pbrBufferShader.use();
+			pbrBufferShader.setVec3("lightPos", lightPos[0], lightPos[1], lightPos[2]);
+			pbrBufferShader.setVec3("lightColor", lightColor);
+			pbrBufferShader.setVec3("viewPos", glm::vec3(5.0f, 2.5f, 5.0f)); // tentative
+			pbrBufferShader.setInt("gPosition", 0);
+			pbrBufferShader.setInt("gNormal", 1);
+			pbrBufferShader.setInt("gAlbedoRoughness", 2);
+			pbrBufferShader.setInt("gMetallicAO", 3);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, gPosition.id);
 			glActiveTexture(GL_TEXTURE1);
@@ -407,14 +399,14 @@ int main()
 			glFrontFace(GL_CW);
 			glDepthFunc(GL_LEQUAL);
 			glDepthMask(GL_FALSE);
-			Skybox.use();
+			skyboxShader.use();
 			glm::vec3 cameraPos(5.0f, 2.5f, 5.0f);
 			glm::vec3 target(0.0f, 0.0f, 0.0f);
 			glm::vec3 up(0.0f, 1.0f, 0.0f);
 			glm::mat4 view = glm::lookAt(cameraPos, target, up);
-			Skybox.setMat4("projection", glm::perspective(glm::radians(45.0f), (float)1600 / (float)1200, 0.1f, 10.0f));
-			Skybox.setMat4("view", glm::mat4(glm::mat3(view)));
-			Skybox.setInt("skybox", 0);
+			skyboxShader.setMat4("projection", glm::perspective(glm::radians(45.0f), (float)1600 / (float)1200, 0.1f, 10.0f));
+			skyboxShader.setMat4("view", glm::mat4(glm::mat3(view)));
+			skyboxShader.setInt("skybox", 0);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
 			glBindVertexArray(cubeVAO);

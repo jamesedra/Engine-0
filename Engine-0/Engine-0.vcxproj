@@ -194,6 +194,8 @@
     <ClInclude Include="vendor\imgui\imstb_truetype.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders\bloom\bloom.frag" />
+    <None Include="shaders\blur\gaussian.frag" />
     <None Include="shaders\default.frag" />
     <None Include="shaders\default.vert" />
     <None Include="shaders\frame_out.frag" />
@@ -210,6 +212,7 @@
     <None Include="shaders\PBR\pbr_def.vert" />
     <None Include="shaders\skybox\skybox_default.frag" />
     <None Include="shaders\skybox\skybox_default.vert" />
+    <None Include="shaders\tonemapping\rh_tonemapping.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

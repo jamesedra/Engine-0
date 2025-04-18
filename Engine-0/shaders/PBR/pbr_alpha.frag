@@ -33,7 +33,7 @@ void main() {
 	float metallic = ma.r;
 	float ao = ma.g;
 
-	albedo = pow(albedo, vec3(2.2));	// linearize albedo
+	// albedo = pow(albedo, vec3(2.2));	// linearize albedo
 	roughness = max(roughness, 0.0001);
 
 	vec3 F0 = mix(vec3(0.04), albedo, metallic);
@@ -77,12 +77,12 @@ void main() {
 	//vec3 kS = FresnelRoughness(max(dot(n, v), 0.0), F0, roughness);
 	//vec3 kD = 1.0 - kS;
 	//vec3 ambient = kD * texture(irradianceMap, n).rgb * albedo * ao;
-	vec3 ambient = vec3(0.03) * albedo * ao; // base ambient value
+	vec3 ambient = vec3(0.3) * albedo * ao; // base ambient value
 	vec3 color = ambient + Lo;
 
 	// HDR and gamma corrections
-	color = color / (color + vec3(1.0));
-	color = pow(color, vec3(1.0/2.2));
+	// color = color / (color + vec3(1.0));
+	// color = pow(color, vec3(1.0/2.2));
 
 	FragColor = vec4(color, 1.0);
 }
