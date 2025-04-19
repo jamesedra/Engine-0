@@ -3,24 +3,14 @@
 #include "imgui_impl_opengl3.h"
 
 #include "common.h"
-
 #include "modules/public/utils.h"
-#include "modules/public/shader.h"
 #include "modules/public/camera.h"
 #include "modules/public/framebuffer.h"
-#include "modules/public/uniformbuffer.h"
-#include "modules/public/light_types.h"
 #include "modules/public/texture.h"
-
-#include "windows/deprecated-window.h"
 #include "windows/window.h"
-
 #include "modules/public/rendersystem.h"
-#include "modules/public/loaders.h"
-#include "modules/public/shader_uniform.h"
 #include "modules/public/factory.h"
 #include "modules/public/contexts.h"
-
 
 constexpr int W_WIDTH = 1600;
 constexpr int W_HEIGHT = 1200;
@@ -28,8 +18,8 @@ constexpr int W_HEIGHT = 1200;
 int main()
 {
 	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	GLFWwindow* window = glfwCreateWindow(W_WIDTH, W_HEIGHT, "Engine 0", NULL, NULL);
@@ -54,6 +44,15 @@ int main()
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 	glfwSwapInterval(1); // Enable vsync
+
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+		throw std::runtime_error("GLAD init failed");
+
+	int maj, min;
+	glGetIntegerv(GL_MAJOR_VERSION, &maj);
+	glGetIntegerv(GL_MINOR_VERSION, &min);
+	std::cout << "OpenGL " << maj << "." << min << " context\n";
+	bool HasCompute = maj > 4 || (maj == 4 && min >= 3);
 
 	// Camera settings
 	Camera camera(
