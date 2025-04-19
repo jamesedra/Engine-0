@@ -164,7 +164,6 @@
     <ClInclude Include="src\modules\public\entity_manager.h" />
     <ClInclude Include="src\modules\public\factory.h" />
     <ClInclude Include="src\modules\public\framebuffer.h" />
-    <ClInclude Include="src\modules\public\light_types.h" />
     <ClInclude Include="src\modules\public\material.h" />
     <ClInclude Include="src\modules\public\mesh.h" />
     <ClInclude Include="src\modules\public\mesh_data.h" />

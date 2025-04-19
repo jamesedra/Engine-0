@@ -98,9 +98,6 @@
     <ClInclude Include="src\modules\public\framebuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\public\light_types.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\modules\public\mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
