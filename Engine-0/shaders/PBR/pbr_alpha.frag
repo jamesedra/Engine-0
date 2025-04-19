@@ -33,7 +33,7 @@ void main() {
 	float metallic = ma.r;
 	float ao = ma.g;
 
-	albedo = pow(albedo, vec3(2.2));	// linearize albedo
+	// albedo = pow(albedo, vec3(2.2));	// linearize albedo
 	roughness = max(roughness, 0.0001);
 
 	vec3 F0 = mix(vec3(0.04), albedo, metallic);
@@ -43,10 +43,14 @@ void main() {
 	vec3 l = normalize(lightPos - fragPos);
 	vec3 h = normalize(v + l);
 
-	// Non-PBR, but lighting helper
+	// Non-PBR, but lighting helper // tentative for brightness check
+	float intensity = 10.0;
+	float radius = 2.5;
+	float radius2 = radius * radius;
 	float distance = length(lightPos - fragPos);
-	float attenuation = 1.0 / (distance * distance);
-	vec3 radiance = lightColor * attenuation;
+	float dist2   = dot(lightPos - fragPos, lightPos - fragPos);
+	float attenuation = dist2 < radius2 ? 1.0 : clamp(radius2 / dist2, 0.0, 1.0);
+	vec3 radiance = lightColor * attenuation * intensity;
 
 	// Dot product setup
 	float nDotL = max(dot(n, l), 0.0);
@@ -81,8 +85,8 @@ void main() {
 	vec3 color = ambient + Lo;
 
 	// HDR and gamma corrections
-	color = color / (color + vec3(1.0));
-	color = pow(color, vec3(1.0/2.2));
+	// color = color / (color + vec3(1.0));
+	// color = pow(color, vec3(1.0/2.2));
 
 	FragColor = vec4(color, 1.0);
 }

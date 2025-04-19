@@ -2,7 +2,7 @@
 
 layout (location = 0) out vec3 gPosition;
 layout (location = 1) out vec3 gNormal;
-layout (location = 2) out vec4 gAlbedoSpec; // spec will hold roughness for now
+layout (location = 2) out vec4 gAlbedoRoughness;
 layout (location = 3) out vec2 gMetallicAO;
 
 in vec2 TexCoords;
@@ -39,6 +39,6 @@ void main() {
 	float metallic = material.useMetallicTexture ? texture(material.texture_metallic1, TexCoords).r : material.metallic;
 	float ao = material.useAmbientOcclusionTexture ? texture(material.texture_ao1, TexCoords).r : 0.0;
 
-	gAlbedoSpec = vec4(diffuse, roughness);
+	gAlbedoRoughness = vec4(diffuse, roughness);
 	gMetallicAO = vec2(metallic, ao);
 }

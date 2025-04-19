@@ -6,7 +6,7 @@
 class RenderSystem
 {
 public:
-	void Render(
+	void RenderGeometry(
 		SceneEntityRegistry& sceneRegistry,
 		TransformManager& transformManager,
 		ShaderManager& shaderManager,
