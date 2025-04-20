@@ -26,6 +26,9 @@ struct Material
         unsigned int diffuseNr = 1;
         unsigned int specularNr = 1;
         unsigned int normalNr = 1;
+        unsigned int metallicNr = 1;
+        unsigned int roughnessNr = 1;
+        unsigned int aoNr = 1;
 
         for (size_t i = 0; i < modelTextures.size(); i++)
         {
@@ -36,6 +39,9 @@ struct Material
             if (mt.type == "texture_diffuse") number = std::to_string(diffuseNr);
             else if (mt.type == "texture_specular") number = std::to_string(specularNr);
             else if (mt.type == "texture_normal") number = std::to_string(normalNr);
+            else if (mt.type == "texture_roughness") number = std::to_string(roughnessNr);
+            else if (mt.type == "texture_metallic") number = std::to_string(metallicNr);
+            else if (mt.type == "texture_ao") number = std::to_string(aoNr);
             std::string uniformName = "material." + mt.type + number;
 
             // override if uniform name exists
@@ -123,6 +129,9 @@ struct Material
         unsigned int diffuseNr = 1;
         unsigned int specularNr = 1;
         unsigned int normalNr = 1;
+        unsigned int metallicNr = 1;
+        unsigned int roughnessNr = 1;
+        unsigned int aoNr = 1;
 
         for (size_t i = 0; i < modelTextures.size(); i++)
         {
@@ -133,6 +142,9 @@ struct Material
             if (mt.type == "texture_diffuse") number = std::to_string(diffuseNr);
             else if (mt.type == "texture_specular") number = std::to_string(specularNr);
             else if (mt.type == "texture_normal") number = std::to_string(normalNr);
+            else if (mt.type == "texture_roughness") number = std::to_string(roughnessNr);
+            else if (mt.type == "texture_metallic") number = std::to_string(metallicNr);
+            else if (mt.type == "texture_ao") number = std::to_string(aoNr);
             std::string uniformName = "material." + mt.type + number;
 
             // override if uniform name already exists
@@ -143,5 +155,12 @@ struct Material
             }
         }
     }
+};
 
+// helper struct
+struct MaterialsGroup
+{
+    Material material;
+    // store index of each MeshData that has the same texture metadata
+    std::vector<unsigned int> assetPartsIndices;
 };

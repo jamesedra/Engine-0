@@ -1,5 +1,5 @@
 #pragma once
-// #include "../common.h"
+
 #include <vector>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -17,25 +17,19 @@ public:
 	Model(const char* path) {
 		loadModel(path);
 	}
-	void Draw(Shader& shader);
-	void DrawInstanced(Shader& shader, unsigned int count);
 
-	const std::vector<Mesh>& getMeshes() const; // may be temporary for getting mesh array
 	const std::vector<MeshData>& getMeshData() const
 	{
 		return meshDataList;
 	}
 private:
-	std::vector<Mesh> meshes;
-	std::vector<MeshTexture> textures_loaded; // to be deprecated
-	std::vector<std::string> rtextures_loaded;
 	std::vector<MeshData> meshDataList;
+	std::unordered_map<std::string, TextureMetadata> texturesLoaded;
 	std::string directory;
 
 	void loadModel(std::string path);
 	void processNode(aiNode* node, const aiScene* scene);
-	MeshData processMesh(aiMesh* mesh, const aiScene* scene);
+	MeshData processMeshData(aiMesh* mesh, const aiScene* scene);
 	unsigned int TextureFromFile(const char* path, const std::string& directory, int& width, int& height, TextureColorSpace space = TextureColorSpace::Linear);
-	std::vector<TextureMetadata> rloadMaterialTextures(aiMaterial* mat, aiTextureType type, const std::string& typeName);
-
+	std::vector<TextureMetadata> loadMaterialTextures(aiMaterial* mat, aiTextureType type, const std::string& typeName);
 };

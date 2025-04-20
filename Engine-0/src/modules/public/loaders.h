@@ -386,4 +386,46 @@ public:
 		normTex.setTexFilter(GL_NEAREST);
 		return normTex;
 	}
+
+	static Texture CreateTextureFromImport(
+		const char* path, 
+		bool flipVertically = false, 
+		TextureColorSpace space = TextureColorSpace::Linear)
+	{
+		stbi_set_flip_vertically_on_load(flipVertically);
+
+		int width, height, nrChannels;
+		unsigned char* data = stbi_load(path, &width, &height, &nrChannels, 0);
+		if (!data)
+		{
+			std::cerr << "Failed to load texture" << std::endl;
+			stbi_image_free(data);
+			return CreateWhiteTexture();
+		}
+
+		GLenum baseFormat = GL_RGB;
+		if (nrChannels == 1)
+			baseFormat = GL_RED;
+		else if (nrChannels == 3)
+			baseFormat = GL_RGB;
+		else if (nrChannels == 4)
+			baseFormat = GL_RGBA;
+
+		GLenum internalFormat = baseFormat;
+
+		if (space == TextureColorSpace::sRGB)
+		{
+			if (baseFormat == GL_RGB)
+				internalFormat = GL_SRGB;
+			else if (baseFormat == GL_RGBA)
+				internalFormat = GL_SRGB_ALPHA;
+		}
+
+		Texture tex(width, height, internalFormat, baseFormat, GL_LINEAR, GL_REPEAT, data);
+		tex.genMipMap();
+
+		stbi_image_free(data);
+
+		return tex;
+	}
 };

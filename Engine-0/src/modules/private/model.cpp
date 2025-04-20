@@ -1,17 +1,5 @@
 #include "../public/model.h"
 
-void Model::Draw(Shader& shader)
-{
-	for (unsigned int i = 0; i < meshes.size(); i++)
-		meshes[i].Draw(shader);
-}
-
-void Model::DrawInstanced(Shader& shader, unsigned int count)
-{
-	for (unsigned int i = 0; i < meshes.size(); i++)
-		meshes[i].DrawInstanced(shader, count);
-}
-
 void Model::loadModel(std::string path)
 {
 	Assimp::Importer import;
@@ -30,8 +18,8 @@ void Model::processNode(aiNode* node, const aiScene* scene)
 {
 	for (unsigned int i = 0; i < node->mNumMeshes; i++) {
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-		// add to mesh array
-		meshDataList.push_back(processMesh(mesh, scene));
+		// add to mesh data array
+		meshDataList.push_back(processMeshData(mesh, scene));
 	}
 
 	// recurse through its children
@@ -40,7 +28,7 @@ void Model::processNode(aiNode* node, const aiScene* scene)
 	}
 }
 
-MeshData Model::processMesh(aiMesh* mesh, const aiScene* scene)
+MeshData Model::processMeshData(aiMesh* mesh, const aiScene* scene)
 {
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
@@ -83,14 +71,25 @@ MeshData Model::processMesh(aiMesh* mesh, const aiScene* scene)
 	if (mesh->mMaterialIndex >= 0) {
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
-		std::vector<TextureMetadata> diffuseMaps = rloadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+		std::vector<TextureMetadata> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
-		std::vector<TextureMetadata> specularMaps = rloadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+		std::vector<TextureMetadata> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
 		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
-		std::vector<TextureMetadata> normalMaps = rloadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+		std::vector<TextureMetadata> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
+		if (normalMaps.empty()) normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
 		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+
+		std::vector<TextureMetadata> metallicMaps = loadMaterialTextures(material, aiTextureType_METALNESS, "texture_metallic");
+		textures.insert(textures.end(), metallicMaps.begin(), metallicMaps.end());
+
+		std::vector<TextureMetadata> roughnessMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS, "texture_roughness");
+		if (roughnessMaps.empty()) roughnessMaps = loadMaterialTextures(material, aiTextureType_SHININESS, "texture_roughness");
+		textures.insert(textures.end(), roughnessMaps.begin(), roughnessMaps.end());
+
+		std::vector<TextureMetadata> aoMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_ao");
+		textures.insert(textures.end(), aoMaps.begin(), aoMaps.end());
 	}
 
 	return MeshData{
@@ -98,7 +97,8 @@ MeshData Model::processMesh(aiMesh* mesh, const aiScene* scene)
 	};
 }
 
-std::vector<TextureMetadata> Model::rloadMaterialTextures(aiMaterial* mat, aiTextureType type, const std::string& typeName)
+
+std::vector<TextureMetadata> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type, const std::string& typeName)
 {
 	std::vector<TextureMetadata> textures;
 
@@ -109,33 +109,33 @@ std::vector<TextureMetadata> Model::rloadMaterialTextures(aiMaterial* mat, aiTex
 		std::string filename = str.C_Str();
 		std::string fullpath = directory + "/" + filename;
 
-		bool skip = false;
-		for (auto const& loaded : rtextures_loaded)
-			if (loaded == fullpath) skip = true; break;
-
+		auto it = texturesLoaded.find(fullpath);
+		if (it != texturesLoaded.end())
+		{
+			textures.push_back(it->second);
+			continue;
+		}
 		unsigned int texID;
 		int width, height;
-		if (!skip) // save to texture library
+
+		try
 		{
-
-			TextureColorSpace colorSpace = TextureColorSpace::Linear;
-			if (type == aiTextureType_DIFFUSE || type == aiTextureType_AMBIENT)
-			{
-				colorSpace = TextureColorSpace::sRGB;
-			}
-
-			texID = TextureFromFile(fullpath.c_str(), directory, width, height, colorSpace);
-			rtextures_loaded.push_back(fullpath);
-			
+			Texture& cached = TextureLibrary::GetTexture(fullpath);
+			texID = cached.id;
+			width = cached.width;
+			height = cached.height;
 		}
-		else // fetch from texture library
+		catch (const std::runtime_error&)
 		{
-			auto const& tex = TextureLibrary::GetTexture(fullpath);
-			texID = tex.id;
-			width = tex.width;
-			height = tex.height;
-		}
+			// texture wasn't in the library. Load and register it.
+			TextureColorSpace space =
+				(type == aiTextureType_DIFFUSE)
+				? TextureColorSpace::sRGB
+				: TextureColorSpace::Linear;
 
+			texID = TextureFromFile(fullpath.c_str(), directory, width, height, space);
+			TextureLibrary::Register(fullpath, texID, width, height);
+		}
 		TextureMetadata texture;
 		texture.path = fullpath;
 		texture.type = typeName;
@@ -143,17 +143,18 @@ std::vector<TextureMetadata> Model::rloadMaterialTextures(aiMaterial* mat, aiTex
 		texture.width = width;
 		texture.height = height;
 		textures.push_back(texture);
+
+		texturesLoaded[fullpath] = texture;
 	}
 	return textures;
 }
 
 unsigned int Model::TextureFromFile(const char* path, const std::string& directory, int& width, int& height, TextureColorSpace space) {
 	std::string filename = std::string(path);
-	filename = directory + '/' + filename;
 
 	unsigned int textureID;
 	glGenTextures(1, &textureID);
-
+	stbi_set_flip_vertically_on_load(true); // test
 	int nrComponents;
 	unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
 	if (data)
@@ -188,9 +189,4 @@ unsigned int Model::TextureFromFile(const char* path, const std::string& directo
 	}
 	stbi_image_free(data);
 	return textureID;
-}
-
-const std::vector<Mesh>& Model::getMeshes() const
-{
-	return meshes;
 }

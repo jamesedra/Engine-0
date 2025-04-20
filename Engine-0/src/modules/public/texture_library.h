@@ -7,6 +7,8 @@ class TextureLibrary
 public:
 	static void Register(const std::string& key, unsigned int glID, int w, int h)
 	{
+		if (GetLibrary().empty())
+			InitializeLibrary();
 		GetLibrary()[key] = Texture(glID, w, h);
 	}
 
@@ -44,7 +46,9 @@ private:
 	{
 		Texture whiteTexture = TextureLoader::CreateWhiteTexture();
 		Texture normalTexture = TextureLoader::CreateNormalTexture();
+		Texture importedTexture = TextureLoader::CreateTextureFromImport("resources/textures/brickwall.jpg");
 		GetLibrary().emplace("White Texture - Default", std::move(whiteTexture));
 		GetLibrary().emplace("Normal Texture - Default", std::move(normalTexture));
+		GetLibrary().emplace("Imported Texture - Sample", std::move(importedTexture));
 	}
 };

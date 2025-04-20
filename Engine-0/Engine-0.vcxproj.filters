@@ -98,9 +98,6 @@
     <ClInclude Include="src\modules\public\framebuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\public\light_types.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\modules\public\mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -152,9 +149,6 @@
     <ClInclude Include="src\modules\public\loaders.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\public\mesh_library.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\modules\public\shader_library.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -176,18 +170,32 @@
     <ClInclude Include="src\modules\public\texture_metadata.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\modules\public\asset_library.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\default.vert" />
     <None Include="shaders\default.frag" />
     <None Include="shaders\frame_out.vert" />
     <None Include="shaders\frame_out.frag" />
-    <None Include="shaders\gbuffer\gbuffer.vert" />
-    <None Include="shaders\gbuffer\gbuffer.frag" />
+    <None Include="shaders\gbuffer\gbuffer_default.vert" />
+    <None Include="shaders\gbuffer\gbuffer_default.frag" />
     <None Include="shaders\gbuffer\gbuffer_debug_out.frag" />
     <None Include="shaders\gbuffer\gbuffer_debug_out.vert" />
     <None Include="shaders\NPR\blinn_shading.frag" />
     <None Include="shaders\NPR\npr_def.vert" />
     <None Include="shaders\gbuffer\gbuffer_tint.frag" />
+    <None Include="shaders\gbuffer\gbuffer_pbr.frag" />
+    <None Include="shaders\PBR\pbr_alpha.frag" />
+    <None Include="shaders\PBR\pbr_def.vert" />
+    <None Include="shaders\skybox\skybox_default.vert" />
+    <None Include="shaders\skybox\skybox_default.frag" />
+    <None Include="shaders\bloom\bloom.frag" />
+    <None Include="shaders\blur\gaussian.frag" />
+    <None Include="shaders\tonemapping\rh_tonemapping.frag" />
+    <None Include="shaders\PBR\bright_pass.frag" />
+    <None Include="shaders\postprocess\pp_base.frag" />
+    <None Include="shaders\postprocess\pp_celshading.frag" />
   </ItemGroup>
 </Project>
