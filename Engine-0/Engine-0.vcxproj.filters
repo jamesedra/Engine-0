@@ -39,25 +39,25 @@
     <ClCompile Include="vendor\imgui\imgui_widgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\modules\camera.cpp">
+    <ClCompile Include="src\modules\private\camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\modules\glad.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\modules\mesh.cpp">
+    <ClCompile Include="src\modules\private\mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\modules\model.cpp">
+    <ClCompile Include="src\modules\private\model.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\modules\shader.cpp">
+    <ClCompile Include="src\modules\private\shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\modules\texture.cpp">
+    <ClCompile Include="src\modules\private\texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\modules\utils.cpp">
+    <ClCompile Include="src\modules\private\utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="lib\stb\stb_image.cpp">
@@ -92,31 +92,28 @@
     <ClInclude Include="vendor\imgui\imstb_truetype.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\camera.h">
+    <ClInclude Include="src\modules\public\camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\framebuffer.h">
+    <ClInclude Include="src\modules\public\framebuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\light_types.h">
+    <ClInclude Include="src\modules\public\mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\mesh.h">
+    <ClInclude Include="src\modules\public\model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\model.h">
+    <ClInclude Include="src\modules\public\shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\shader.h">
+    <ClInclude Include="src\modules\public\texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\texture.h">
+    <ClInclude Include="src\modules\public\uniformbuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\uniformbuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\modules\utils.h">
+    <ClInclude Include="src\modules\public\utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\common.h">
@@ -134,34 +131,46 @@
     <ClInclude Include="src\modules\worldcomponent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\rendersystem.h">
+    <ClInclude Include="src\modules\public\rendersystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\worldcomponents.h">
+    <ClInclude Include="src\modules\public\worldcomponents.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\component_manager.h">
+    <ClInclude Include="src\modules\public\component_manager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\factory.h">
+    <ClInclude Include="src\modules\public\factory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\entity_manager.h">
+    <ClInclude Include="src\modules\public\entity_manager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\loaders.h">
+    <ClInclude Include="src\modules\public\loaders.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\mesh_library.h">
+    <ClInclude Include="src\modules\public\shader_library.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\shader_library.h">
+    <ClInclude Include="src\modules\public\shader_uniform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\shader_uniform.h">
+    <ClInclude Include="src\modules\public\contexts.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\contexts.h">
+    <ClInclude Include="src\modules\public\material.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\public\texture_library.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\public\mesh_data.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\public\texture_metadata.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\public\asset_library.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -170,12 +179,23 @@
     <None Include="shaders\default.frag" />
     <None Include="shaders\frame_out.vert" />
     <None Include="shaders\frame_out.frag" />
-    <None Include="shaders\gbuffer\gbuffer.vert" />
-    <None Include="shaders\gbuffer\gbuffer.frag" />
+    <None Include="shaders\gbuffer\gbuffer_default.vert" />
+    <None Include="shaders\gbuffer\gbuffer_default.frag" />
     <None Include="shaders\gbuffer\gbuffer_debug_out.frag" />
     <None Include="shaders\gbuffer\gbuffer_debug_out.vert" />
     <None Include="shaders\NPR\blinn_shading.frag" />
     <None Include="shaders\NPR\npr_def.vert" />
     <None Include="shaders\gbuffer\gbuffer_tint.frag" />
+    <None Include="shaders\gbuffer\gbuffer_pbr.frag" />
+    <None Include="shaders\PBR\pbr_alpha.frag" />
+    <None Include="shaders\PBR\pbr_def.vert" />
+    <None Include="shaders\skybox\skybox_default.vert" />
+    <None Include="shaders\skybox\skybox_default.frag" />
+    <None Include="shaders\bloom\bloom.frag" />
+    <None Include="shaders\blur\gaussian.frag" />
+    <None Include="shaders\tonemapping\rh_tonemapping.frag" />
+    <None Include="shaders\PBR\bright_pass.frag" />
+    <None Include="shaders\postprocess\pp_base.frag" />
+    <None Include="shaders\postprocess\pp_celshading.frag" />
   </ItemGroup>
 </Project>

@@ -14,3 +14,7 @@ map_Kd diffuse.jpg
 map_Bump normal.png
 map_Ks specular.jpg
 
+# added. Remove if not used
+map_Pr roughness.jpg
+map_Ka ao.jpg
+# map_Pm metallic.jpg # if there is a metallic map

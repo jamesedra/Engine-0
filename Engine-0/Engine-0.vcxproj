@@ -111,6 +111,8 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)\vendor\imgui\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -137,13 +139,13 @@
   <ItemGroup>
     <ClCompile Include="lib\stb\stb_image.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\modules\camera.cpp" />
+    <ClCompile Include="src\modules\private\camera.cpp" />
     <ClCompile Include="src\modules\glad.c" />
-    <ClCompile Include="src\modules\mesh.cpp" />
-    <ClCompile Include="src\modules\model.cpp" />
-    <ClCompile Include="src\modules\shader.cpp" />
-    <ClCompile Include="src\modules\texture.cpp" />
-    <ClCompile Include="src\modules\utils.cpp" />
+    <ClCompile Include="src\modules\private\mesh.cpp" />
+    <ClCompile Include="src\modules\private\model.cpp" />
+    <ClCompile Include="src\modules\private\shader.cpp" />
+    <ClCompile Include="src\modules\private\texture.cpp" />
+    <ClCompile Include="src\modules\private\utils.cpp" />
     <ClCompile Include="vendor\imgui\imgui.cpp" />
     <ClCompile Include="vendor\imgui\imgui_demo.cpp" />
     <ClCompile Include="vendor\imgui\imgui_draw.cpp" />
@@ -155,26 +157,29 @@
   <ItemGroup>
     <ClInclude Include="lib\stb\stb_image.h" />
     <ClInclude Include="src\common.h" />
-    <ClInclude Include="src\modules\camera.h" />
-    <ClInclude Include="src\modules\component_manager.h" />
-    <ClInclude Include="src\modules\contexts.h" />
-    <ClInclude Include="src\modules\entity_manager.h" />
-    <ClInclude Include="src\modules\factory.h" />
-    <ClInclude Include="src\modules\framebuffer.h" />
-    <ClInclude Include="src\modules\light_types.h" />
-    <ClInclude Include="src\modules\mesh.h" />
-    <ClInclude Include="src\modules\mesh_library.h" />
-    <ClInclude Include="src\modules\model.h" />
-    <ClInclude Include="src\modules\loaders.h" />
-    <ClInclude Include="src\modules\rendersystem.h" />
-    <ClInclude Include="src\modules\shader.h" />
-    <ClInclude Include="src\modules\shader_library.h" />
-    <ClInclude Include="src\modules\shader_uniform.h" />
-    <ClInclude Include="src\modules\texture.h" />
-    <ClInclude Include="src\modules\uniformbuffer.h" />
-    <ClInclude Include="src\modules\utils.h" />
+    <ClInclude Include="src\modules\public\asset_library.h" />
+    <ClInclude Include="src\modules\public\camera.h" />
+    <ClInclude Include="src\modules\public\component_manager.h" />
+    <ClInclude Include="src\modules\public\contexts.h" />
+    <ClInclude Include="src\modules\public\entity_manager.h" />
+    <ClInclude Include="src\modules\public\factory.h" />
+    <ClInclude Include="src\modules\public\framebuffer.h" />
+    <ClInclude Include="src\modules\public\material.h" />
+    <ClInclude Include="src\modules\public\mesh.h" />
+    <ClInclude Include="src\modules\public\mesh_data.h" />
+    <ClInclude Include="src\modules\public\model.h" />
+    <ClInclude Include="src\modules\public\loaders.h" />
+    <ClInclude Include="src\modules\public\rendersystem.h" />
+    <ClInclude Include="src\modules\public\shader.h" />
+    <ClInclude Include="src\modules\public\shader_library.h" />
+    <ClInclude Include="src\modules\public\shader_uniform.h" />
+    <ClInclude Include="src\modules\public\texture.h" />
+    <ClInclude Include="src\modules\public\texture_library.h" />
+    <ClInclude Include="src\modules\public\texture_metadata.h" />
+    <ClInclude Include="src\modules\public\uniformbuffer.h" />
+    <ClInclude Include="src\modules\public\utils.h" />
     <ClInclude Include="src\modules\worldcomponent.h" />
-    <ClInclude Include="src\modules\worldcomponents.h" />
+    <ClInclude Include="src\modules\public\worldcomponents.h" />
     <ClInclude Include="src\windows\deprecated-window.h" />
     <ClInclude Include="src\windows\window.h" />
     <ClInclude Include="vendor\imgui\imconfig.h" />
@@ -188,17 +193,28 @@
     <ClInclude Include="vendor\imgui\imstb_truetype.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders\bloom\bloom.frag" />
+    <None Include="shaders\blur\gaussian.frag" />
     <None Include="shaders\default.frag" />
     <None Include="shaders\default.vert" />
     <None Include="shaders\frame_out.frag" />
     <None Include="shaders\frame_out.vert" />
-    <None Include="shaders\gbuffer\gbuffer.frag" />
-    <None Include="shaders\gbuffer\gbuffer.vert" />
+    <None Include="shaders\gbuffer\gbuffer_default.frag" />
+    <None Include="shaders\gbuffer\gbuffer_default.vert" />
     <None Include="shaders\gbuffer\gbuffer_debug_out.frag" />
     <None Include="shaders\gbuffer\gbuffer_debug_out.vert" />
+    <None Include="shaders\gbuffer\gbuffer_pbr.frag" />
     <None Include="shaders\gbuffer\gbuffer_tint.frag" />
     <None Include="shaders\NPR\blinn_shading.frag" />
     <None Include="shaders\NPR\npr_def.vert" />
+    <None Include="shaders\PBR\bright_pass.frag" />
+    <None Include="shaders\PBR\pbr_alpha.frag" />
+    <None Include="shaders\PBR\pbr_def.vert" />
+    <None Include="shaders\postprocess\pp_base.frag" />
+    <None Include="shaders\postprocess\pp_celshading.frag" />
+    <None Include="shaders\skybox\skybox_default.frag" />
+    <None Include="shaders\skybox\skybox_default.vert" />
+    <None Include="shaders\tonemapping\rh_tonemapping.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
