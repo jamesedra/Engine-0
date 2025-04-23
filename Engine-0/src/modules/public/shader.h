@@ -10,10 +10,13 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <unordered_map>
 
 
 class Shader
 {
+private:
+	mutable std::unordered_map <std::string, GLint> uniformLocationCache;
 public:
 	// program ID
 	unsigned int ID;
@@ -36,4 +39,5 @@ public:
 	void setVec3(const std::string& name, const glm::vec3& vec) const;
 	void setVec4(const std::string& name, const glm::vec4& vec) const;
 	void setMat4(const std::string& name, const glm::mat4& mat) const;
+	GLint getUniformLocation(const std::string& name) const;
 };

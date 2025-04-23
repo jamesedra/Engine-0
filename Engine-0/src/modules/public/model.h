@@ -24,6 +24,7 @@ public:
 	}
 private:
 	std::vector<MeshData> meshDataList;
+	std::unordered_map<std::string, TextureMetadata> texturesLoaded;
 	std::string directory;
 
 	void loadModel(std::string path);
