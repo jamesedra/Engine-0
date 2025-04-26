@@ -5,6 +5,7 @@
 #include "material.h"
 #include "shader.h"
 #include "shader_uniform.h"
+#include "ibl_generator.h"
 
 // NOTE: This is a temporary header file used to store all needed components in one place first.
 // As of the moment, this will mostly prioritize components that will be used for the render system I am building. Which is basically what OpenGL will render in the viewport window.
@@ -50,4 +51,14 @@ struct AssetComponent
 struct MaterialsGroupComponent
 {
     std::vector<MaterialsGroup> materialsGroup;
+};
+
+struct EnvironmentProbeComponent
+{
+    std::string eqrMapPath; // path to *.hdr
+    bool buildMap = true;   // for rebuilding
+    IBLMaps maps{};         // four IBL texture cubemaps
+
+    glm::vec3 position;
+    float radius = std::numeric_limits<float>::infinity();
 };

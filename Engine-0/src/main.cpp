@@ -8,9 +8,10 @@
 #include "modules/public/framebuffer.h"
 #include "modules/public/texture.h"
 #include "windows/window.h"
-#include "modules/public/rendersystem.h"
+#include "modules/public/render_system.h"
 #include "modules/public/factory.h"
 #include "modules/public/contexts.h"
+#include "modules/public/ibl_generator.h"
 
 constexpr int W_WIDTH = 1600;
 constexpr int W_HEIGHT = 1200;
@@ -172,17 +173,22 @@ int main()
 	unsigned int frameVAO = createFrameVAO();
 
 	// Shaders
+	// Deferred Shading
 	Shader outShader("shaders/default.vert", "shaders/default.frag");
 	Shader outputFrame("shaders/frame_out.vert", "shaders/frame_out.frag");
 	Shader debugBufferShader("shaders/gbuffer/gbuffer_debug_out.vert", "shaders/gbuffer/gbuffer_debug_out.frag");
-	Shader pbrBufferShader("shaders/PBR/pbr_def.vert", "shaders/PBR/pbr_alpha.frag");
+	Shader pbrBufferShader("shaders/PBR/pbr_def.vert", "shaders/PBR/pbr_ibl.frag");
 	Shader brightPassShader("shaders/frame_out.vert", "shaders/PBR/bright_pass.frag");
 	Shader blurShader("shaders/frame_out.vert", "shaders/blur/gaussian.frag");
 	Shader bloomShader("shaders/frame_out.vert", "shaders/bloom/bloom.frag");
 	Shader tonemapShader("shaders/frame_out.vert", "shaders/tonemapping/rh_tonemapping.frag");
 	Shader ppShader("shaders/frame_out.vert", "shaders/postprocess/pp_celshading.frag");
-
+	// Skybox and IBL Shading
 	Shader skyboxShader("shaders/skybox/skybox_default.vert", "shaders/skybox/skybox_default.frag");
+	Shader EQRToCubemap("shaders/IBL/cubemap.vert", "shaders/IBL/eqr_to_cubemap.frag");
+	Shader IrradianceShader("shaders/IBL/cubemap.vert", "shaders/IBL/irradiance_convolution.frag");
+	Shader PrefilterShader("shaders/IBL/cubemap.vert", "shaders/IBL/prefilter_cubemap.frag");
+	Shader IntegratedBRDF("shaders/IBL/brdf.vert", "shaders/IBL/brdf.frag");
 
 	// Skybox testing
 	stbi_set_flip_vertically_on_load(false);
@@ -219,15 +225,20 @@ int main()
 	Entity worldObjectTest = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/backpack/backpack.obj");
 	idManager.components[worldObjectTest].ID = "backpack";
 	sceneRegistry.Register(worldObjectTest);
-	//Entity worldObjectTest1 = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/nanosuit/nanosuit.obj");
-	//idManager.components[worldObjectTest1].ID = "nanosuit";
-	//sceneRegistry.Register(worldObjectTest1);
-	
-	// Sponza takes more than a minute to load directly. Need to do something about heavy model loading
-	//Entity sponza = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/main1_sponza/NewSponza_Main_Yup_003.fbx");
-	//idManager.components[sponza].ID = "Sponza";
-	//sceneRegistry.Register(sponza);
 
+	// IBL testing
+	IBLSettings IBLsettings{};
+	IBLsettings.eqrMapPath = "resources/textures/eqr_maps/newport_loft.hdr";
+	IBLMaps IBLmap = IBLGenerator::Build(
+		IBLsettings, 
+		EQRToCubemap, 
+		IrradianceShader, 
+		PrefilterShader, 
+		IntegratedBRDF, 
+		cubeVAO, 
+		frameVAO);
+
+	// Systems
 	RenderSystem renderSystem;
 
 	// Setup imgui context
@@ -247,7 +258,7 @@ int main()
 
 	// Setup Platform/Renderer backends
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
-	ImGui_ImplOpenGL3_Init("#version 330");
+	ImGui_ImplOpenGL3_Init("#version 460");
 
 	// Windows
 	MainDockWindow mainWindow;
@@ -412,6 +423,9 @@ int main()
 			pbrBufferShader.setInt("gNormal", 1);
 			pbrBufferShader.setInt("gAlbedoRoughness", 2);
 			pbrBufferShader.setInt("gMetallicAO", 3);
+			pbrBufferShader.setInt("irradianceMap", 4);
+			pbrBufferShader.setInt("prefilterMap", 5);
+			pbrBufferShader.setInt("brdfLUT", 6);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, gPosition.id);
 			glActiveTexture(GL_TEXTURE1);
@@ -420,6 +434,12 @@ int main()
 			glBindTexture(GL_TEXTURE_2D, gAlbedoRoughness.id);
 			glActiveTexture(GL_TEXTURE3);
 			glBindTexture(GL_TEXTURE_2D, gMetallicAO.id);
+			glActiveTexture(GL_TEXTURE4);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, IBLmap.irradianceMap);
+			glActiveTexture(GL_TEXTURE5);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, IBLmap.prefilterMap);
+			glActiveTexture(GL_TEXTURE6);
+			glBindTexture(GL_TEXTURE_2D, IBLmap.brdfLUT);
 			glBindVertexArray(frameVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 			hdrBuffer.unbind();
