@@ -3,7 +3,16 @@
 void Model::loadModel(std::string path)
 {
 	Assimp::Importer import;
-	const aiScene* scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+
+	unsigned int flags =
+		aiProcess_Triangulate
+		| aiProcess_FlipUVs
+		| aiProcess_CalcTangentSpace
+		| aiProcess_JoinIdenticalVertices    // merge duplicate verts
+		| aiProcess_OptimizeMeshes           // combine small meshes
+		| aiProcess_OptimizeGraph;           // prune empty nodes
+
+	const aiScene* scene = import.ReadFile(path, flags);
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
 		std::cout << "ERROR::ASSIMP::" << import.GetErrorString() << std::endl;

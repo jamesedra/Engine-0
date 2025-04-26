@@ -59,3 +59,14 @@ public:
 	}
 };
 
+class EnvironmentProbeManager
+{
+public:
+	std::unordered_map<Entity, EnvironmentProbeComponent> components;
+	EnvironmentProbeComponent* GetComponent(Entity entity)
+	{
+		auto it = components.find(entity);
+		return (it != components.end()) ? &it->second : nullptr;
+	}
+};
+

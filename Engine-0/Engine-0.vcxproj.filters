@@ -131,7 +131,7 @@
     <ClInclude Include="src\modules\worldcomponent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\modules\public\rendersystem.h">
+    <ClInclude Include="src\modules\public\render_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\modules\public\worldcomponents.h">
@@ -173,6 +173,12 @@
     <ClInclude Include="src\modules\public\asset_library.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\modules\public\ibl_generator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\public\probe_system.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\default.vert" />
@@ -197,5 +203,12 @@
     <None Include="shaders\PBR\bright_pass.frag" />
     <None Include="shaders\postprocess\pp_base.frag" />
     <None Include="shaders\postprocess\pp_celshading.frag" />
+    <None Include="shaders\IBL\cubemap.vert" />
+    <None Include="shaders\IBL\eqr_to_cubemap.frag" />
+    <None Include="shaders\IBL\irradiance_convolution.frag" />
+    <None Include="shaders\IBL\prefilter_cubemap.frag" />
+    <None Include="shaders\IBL\brdf.vert" />
+    <None Include="shaders\IBL\brdf.frag" />
+    <None Include="shaders\PBR\pbr_ibl.frag" />
   </ItemGroup>
 </Project>
