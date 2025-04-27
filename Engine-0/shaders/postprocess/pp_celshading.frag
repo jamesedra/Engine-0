@@ -7,10 +7,11 @@ uniform sampler2D gNormal;
 uniform sampler2D gAlbedoRoughness;
 uniform sampler2D gMetallicAO;
 uniform sampler2D sceneDepth;
-uniform sampler2D sceneHDR;		// pure non-linearized PBR pass
-uniform sampler2D sceneColor;	// tonemapped, LDR
+uniform sampler2D sceneHDR;		    // pure non-linearized PBR pass
+uniform sampler2D sceneColor;	    // tonemapped, LDR
 uniform sampler2D brightPass;
-uniform sampler2D bloomPass;	// blurred brightPass
+uniform sampler2D bloomPass;	    // blurred brightPass
+uniform sampler2D compositePass;    // final output
 
 vec3 RGBtoHSV(vec3 c);
 vec3 HSVtoRGB(vec3 c);
@@ -30,7 +31,10 @@ void main() {
     // gamma correction and hdr
     vec3 mapped = celColor / (celColor + vec3(1.0));
     mapped = pow(mapped, vec3(1.0 / gamma));
-    FragColor = vec4(mapped, 1.0);
+
+    float d = texture(sceneDepth, TexCoords).r;
+    if (d > 0.999) FragColor = texture(compositePass, TexCoords);
+    else FragColor = vec4(mapped, 1.0);
 }
 
 vec3 desaturation(vec3 color, float saturation) {
