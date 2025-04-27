@@ -239,7 +239,8 @@ int main()
 
 	// IBL testing
 	IBLSettings IBLsettings{};
-	IBLsettings.eqrMapPath = "resources/textures/eqr_maps/newport_loft.hdr";
+	IBLsettings.eqrMapPath = "resources/textures/eqr_maps/test.hdr";
+	//IBLsettings.eqrMapPath = "resources/textures/eqr_maps/newport_loft.hdr";
 	IBLMaps IBLmap = IBLGenerator::Build(
 		IBLsettings, 
 		EQRToCubemap, 

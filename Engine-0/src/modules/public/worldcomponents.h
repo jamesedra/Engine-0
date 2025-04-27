@@ -55,10 +55,9 @@ struct MaterialsGroupComponent
 
 struct EnvironmentProbeComponent
 {
-    std::string eqrMapPath; // path to *.hdr
-    bool buildMap = true;   // for rebuilding
+    IBLSettings settings;   // holds the resolution and eqr path
     IBLMaps maps{};         // four IBL texture cubemaps
-
+    bool buildMap = true;   // for rebuilding
     glm::vec3 position;
     float radius = std::numeric_limits<float>::infinity();
 };
