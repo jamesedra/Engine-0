@@ -228,9 +228,14 @@ int main()
 	OutlinerContext outlinerContext(&sceneRegistry, &idManager);
 	
 	// World Objects
-	Entity worldObjectTest = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/backpack/backpack.obj");
-	idManager.components[worldObjectTest].ID = "backpack";
-	sceneRegistry.Register(worldObjectTest);
+	Entity backpackEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/backpack/backpack.obj");
+	idManager.components[backpackEntity].ID = "backpack";
+	sceneRegistry.Register(backpackEntity);
+	Entity floorEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "");
+	idManager.components[floorEntity].ID = "floor";
+	transformManager.components[floorEntity].position = glm::vec3(0.0f, -2.0f, 0.0f);
+	transformManager.components[floorEntity].scale = glm::vec3(5.0f, 0.5f, 5.0f);
+	sceneRegistry.Register(floorEntity);
 
 	// IBL testing
 	IBLSettings IBLsettings{};
@@ -545,6 +550,7 @@ int main()
 			ppShader.setInt("sceneColor", 6);
 			ppShader.setInt("brightPass", 7);
 			ppShader.setInt("bloomPass", 8);
+			ppShader.setInt("compositePass", 9);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, gPosition.id);
 			glActiveTexture(GL_TEXTURE1);
@@ -563,6 +569,8 @@ int main()
 			glBindTexture(GL_TEXTURE_2D, brightnessPass.id);
 			glActiveTexture(GL_TEXTURE8);
 			glBindTexture(GL_TEXTURE_2D, blurHorizontal.id);
+			glActiveTexture(GL_TEXTURE9);
+			glBindTexture(GL_TEXTURE_2D, compositeScene.id);
 			glBindVertexArray(frameVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 			postprocessBuffer.unbind();
