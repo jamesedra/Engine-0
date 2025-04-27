@@ -197,6 +197,7 @@
   <ItemGroup>
     <None Include="shaders\bloom\bloom.frag" />
     <None Include="shaders\blur\gaussian.frag" />
+    <None Include="shaders\composite\composite.frag" />
     <None Include="shaders\default.frag" />
     <None Include="shaders\default.vert" />
     <None Include="shaders\frame_out.frag" />
