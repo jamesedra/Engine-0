@@ -210,5 +210,6 @@
     <None Include="shaders\IBL\brdf.vert" />
     <None Include="shaders\IBL\brdf.frag" />
     <None Include="shaders\PBR\pbr_ibl.frag" />
+    <None Include="shaders\composite\composite.frag" />
   </ItemGroup>
 </Project>

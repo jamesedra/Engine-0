@@ -158,6 +158,11 @@ int main()
 	tonemapperBuffer.attachTexture2D(tonemappedScene, GL_COLOR_ATTACHMENT0);
 	tonemapperBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
+	// Base Composite buffer
+	Framebuffer compositeBuffer(W_WIDTH, W_HEIGHT);
+	Texture compositeScene(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
+	compositeBuffer.attachTexture2D(compositeScene, GL_COLOR_ATTACHMENT0);
+
 	// Post process buffer
 	Framebuffer postprocessBuffer(W_WIDTH, W_HEIGHT);
 	Texture ppScene(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
@@ -174,7 +179,7 @@ int main()
 
 	// Shaders
 	// Deferred Shading
-	Shader outShader("shaders/default.vert", "shaders/default.frag");
+	Shader outShader("shaders/frame_out.vert", "shaders/frame_out.frag");
 	Shader outputFrame("shaders/frame_out.vert", "shaders/frame_out.frag");
 	Shader debugBufferShader("shaders/gbuffer/gbuffer_debug_out.vert", "shaders/gbuffer/gbuffer_debug_out.frag");
 	Shader pbrBufferShader("shaders/PBR/pbr_def.vert", "shaders/PBR/pbr_ibl.frag");
@@ -182,6 +187,7 @@ int main()
 	Shader blurShader("shaders/frame_out.vert", "shaders/blur/gaussian.frag");
 	Shader bloomShader("shaders/frame_out.vert", "shaders/bloom/bloom.frag");
 	Shader tonemapShader("shaders/frame_out.vert", "shaders/tonemapping/rh_tonemapping.frag");
+	Shader compositeShader("shaders/frame_out.vert", "shaders/composite/composite.frag");
 	Shader ppShader("shaders/frame_out.vert", "shaders/postprocess/pp_celshading.frag");
 	// Skybox and IBL Shading
 	Shader skyboxShader("shaders/skybox/skybox_default.vert", "shaders/skybox/skybox_default.frag");
@@ -222,9 +228,14 @@ int main()
 	OutlinerContext outlinerContext(&sceneRegistry, &idManager);
 	
 	// World Objects
-	Entity worldObjectTest = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/backpack/backpack.obj");
-	idManager.components[worldObjectTest].ID = "backpack";
-	sceneRegistry.Register(worldObjectTest);
+	Entity backpackEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/backpack/backpack.obj");
+	idManager.components[backpackEntity].ID = "backpack";
+	sceneRegistry.Register(backpackEntity);
+	Entity floorEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "");
+	idManager.components[floorEntity].ID = "floor";
+	transformManager.components[floorEntity].position = glm::vec3(0.0f, -2.0f, 0.0f);
+	transformManager.components[floorEntity].scale = glm::vec3(5.0f, 0.5f, 5.0f);
+	sceneRegistry.Register(floorEntity);
 
 	// IBL testing
 	IBLSettings IBLsettings{};
@@ -304,7 +315,7 @@ int main()
 			tex_curr = debugAO.id;
 			break;
 		case 6:
-			tex_curr = tonemappedScene.id;
+			tex_curr = compositeScene.id;
 			break;
 		default:
 			tex_curr = ppScene.id;
@@ -498,8 +509,37 @@ int main()
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 			tonemapperBuffer.unbind();
 
+			// Composite output
+			compositeBuffer.bind();
+			compositeShader.use();
+			glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)1600 / (float)1200, 0.1f, 10.0f);
+			glm::vec3 cameraPos(5.0f, 2.5f, 5.0f);
+			glm::vec3 target(0.0f, 0.0f, 0.0f);
+			glm::vec3 up(0.0f, 1.0f, 0.0f);
+			glm::mat4 view = glm::lookAt(cameraPos, target, up);
+			glm::mat4 viewNoTrans = glm::mat4(glm::mat3(view));
+			glm::mat4 invProjection = glm::inverse(projection);
+			glm::mat4 invView = glm::inverse(viewNoTrans);
+
+			compositeShader.setInt("tonemappedScene", 0);
+			compositeShader.setInt("sceneDepth", 1);
+			compositeShader.setInt("skybox", 2);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, tonemappedScene.id);
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, gDepth.id);
+			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, IBLmap.envMap);
+			compositeShader.setMat4("invProjection", invProjection);
+			compositeShader.setMat4("invView", invView);
+			glBindVertexArray(frameVAO);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+			compositeBuffer.unbind();
+
 			// Post processing
 			postprocessBuffer.bind();
+			glClearColor(0.0, 0.0, 0.0, 0.0);
+			glClear(GL_COLOR_BUFFER_BIT);
 			ppShader.use();
 			ppShader.setInt("gPosition", 0);
 			ppShader.setInt("gNormal", 1);
@@ -510,6 +550,7 @@ int main()
 			ppShader.setInt("sceneColor", 6);
 			ppShader.setInt("brightPass", 7);
 			ppShader.setInt("bloomPass", 8);
+			ppShader.setInt("compositePass", 9);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, gPosition.id);
 			glActiveTexture(GL_TEXTURE1);
@@ -528,31 +569,11 @@ int main()
 			glBindTexture(GL_TEXTURE_2D, brightnessPass.id);
 			glActiveTexture(GL_TEXTURE8);
 			glBindTexture(GL_TEXTURE_2D, blurHorizontal.id);
+			glActiveTexture(GL_TEXTURE9);
+			glBindTexture(GL_TEXTURE_2D, compositeScene.id);
 			glBindVertexArray(frameVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 			postprocessBuffer.unbind();
-
-			glEnable(GL_DEPTH_TEST);
-
-			// skybox
-			//glFrontFace(GL_CW);
-			//glDepthFunc(GL_LEQUAL);
-			//glDepthMask(GL_FALSE);
-			//skyboxShader.use();
-			//glm::vec3 cameraPos(5.0f, 2.5f, 5.0f);
-			//glm::vec3 target(0.0f, 0.0f, 0.0f);
-			//glm::vec3 up(0.0f, 1.0f, 0.0f);
-			//glm::mat4 view = glm::lookAt(cameraPos, target, up);
-			//skyboxShader.setMat4("projection", glm::perspective(glm::radians(45.0f), (float)1600 / (float)1200, 0.1f, 10.0f));
-			//skyboxShader.setMat4("view", glm::mat4(glm::mat3(view)));
-			//skyboxShader.setInt("skybox", 0);
-			//glActiveTexture(GL_TEXTURE0);
-			//glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
-			//glBindVertexArray(cubeVAO);
-			//glDrawArrays(GL_TRIANGLES, 0, 36);
-			//glDepthFunc(GL_LESS);
-			//glFrontFace(GL_CCW);
-			//glDepthMask(GL_TRUE);
 		}
 		else if (tex_type <= 5)
 		{
