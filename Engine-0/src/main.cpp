@@ -15,6 +15,25 @@
 
 constexpr int W_WIDTH = 1600;
 constexpr int W_HEIGHT = 1200;
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+
+// mouse stuff
+bool firstMouse = false;
+float lastX = 400;
+float lastY = 300;
+float pitch = 0.0f;
+float yaw = -90.0f;
+float zoom = 45.0f;
+
+// adjusts the viewport when user resizes it
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+// process input in the renderer
+void processInput(GLFWwindow* window);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+
+static bool gViewportCaptured = false;
 
 int main()
 {
@@ -322,8 +341,8 @@ int main()
 			tex_curr = ppScene.id;
 			break;
 		}
-
 		processInput(window);
+		
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
@@ -363,14 +382,21 @@ int main()
 			float offset_x = (window_width - display_width) * 0.5f;
 			float offset_y = (window_height - display_height) * 0.5f;
 
-			ImGui::GetWindowDrawList()->AddImage(
-				tex_curr,           
-				ImVec2(pos.x + offset_x, pos.y + offset_y),
-				ImVec2(pos.x + offset_x + display_width, pos.y + offset_y + display_height),
-				ImVec2(0, 1),
-				ImVec2(1, 0)
-			);
-			
+			ImGui::SetCursorScreenPos({ pos.x + offset_x, pos.y + offset_y });
+
+			ImGui::Image(tex_curr, { display_width, display_height }, { 0,1 }, { 1,0 }, ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
+
+			bool imageHovered = ImGui::IsItemHovered();
+			if (imageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+			{
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+				gViewportCaptured = true;
+			}
+			if (!imageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+			{
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+				gViewportCaptured = false;
+			}
 			viewportWindow.EndRender();
 		}
 		outliner_active = outlinerWindow.BeginRender();
@@ -430,7 +456,7 @@ int main()
 			pbrBufferShader.use();
 			pbrBufferShader.setVec3("lightPos", lightPos[0], lightPos[1], lightPos[2]);
 			pbrBufferShader.setVec3("lightColor", lightColor);
-			pbrBufferShader.setVec3("viewPos", glm::vec3(5.0f, 2.5f, 5.0f)); // tentative
+			pbrBufferShader.setVec3("viewPos", camera.getCameraPos()); // tentative
 			pbrBufferShader.setInt("gPosition", 0);
 			pbrBufferShader.setInt("gNormal", 1);
 			pbrBufferShader.setInt("gAlbedoRoughness", 2);
@@ -513,11 +539,8 @@ int main()
 			// Composite output
 			compositeBuffer.bind();
 			compositeShader.use();
-			glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)1600 / (float)1200, 0.1f, 10.0f);
-			glm::vec3 cameraPos(5.0f, 2.5f, 5.0f);
-			glm::vec3 target(0.0f, 0.0f, 0.0f);
-			glm::vec3 up(0.0f, 1.0f, 0.0f);
-			glm::mat4 view = glm::lookAt(cameraPos, target, up);
+			glm::mat4 projection = camera.getProjectionMatrix(W_WIDTH, W_HEIGHT, 0.1f, 1000.0f);
+			glm::mat4 view = camera.getViewMatrix();
 			glm::mat4 viewNoTrans = glm::mat4(glm::mat3(view));
 			glm::mat4 invProjection = glm::inverse(projection);
 			glm::mat4 invView = glm::inverse(viewNoTrans);
@@ -625,4 +648,108 @@ int main()
 	glfwTerminate();
 
 	return 0;
+}
+
+void processInput(GLFWwindow* window)
+{
+	bool escPressed = glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS;
+	static bool escPressedLastFrame = false;
+
+	if (escPressed && !escPressedLastFrame)
+	{
+		if (gViewportCaptured)
+		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			gViewportCaptured = false;
+		}
+		else glfwSetWindowShouldClose(window, true);
+	}
+	escPressedLastFrame = escPressed;
+
+	Camera* camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
+	if (!camera) return;
+
+	float currentFrame = glfwGetTime();
+	deltaTime = currentFrame - lastFrame;
+	lastFrame = currentFrame;
+
+	const float cameraSpeed = 12.5f * deltaTime; // Adjust as needed.
+
+	// Update camera position based on key input:
+	if (gViewportCaptured)
+	{
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		{
+			camera->setCameraPos(camera->getCameraPos() + cameraSpeed * camera->getCameraFront());
+		}
+		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		{
+			camera->setCameraPos(camera->getCameraPos() - cameraSpeed * camera->getCameraFront());
+		}
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		{
+			// Calculate the right vector: normalized cross product of front and up.
+			glm::vec3 right = glm::normalize(glm::cross(camera->getCameraFront(), camera->getCameraUp()));
+			camera->setCameraPos(camera->getCameraPos() - right * cameraSpeed);
+		}
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		{
+			glm::vec3 right = glm::normalize(glm::cross(camera->getCameraFront(), camera->getCameraUp()));
+			camera->setCameraPos(camera->getCameraPos() + right * cameraSpeed);
+		}
+	}
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+	if (!gViewportCaptured) return;
+
+	Camera* camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
+	if (!camera) return;
+
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos;
+	lastX = xpos;
+	lastY = ypos;
+
+	const float sensitivity = 0.1f;
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
+
+	yaw += xoffset;
+	pitch += yoffset;
+
+	if (pitch > 89.0f) pitch = 89.0f;
+	if (pitch < -89.0f) pitch = -89.0f;
+
+	glm::vec3 direction;
+	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	direction.y = sin(glm::radians(pitch));
+	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+
+	camera->setCameraFront(glm::normalize(direction));
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	Camera* camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
+	if (!camera) return;
+
+	zoom -= (float)yoffset;
+	if (zoom < 1.0f) zoom = 1.0f;
+	if (zoom > 45.0f) zoom = 45.0f;
+
+	camera->setFOV(zoom);
+}
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+	glViewport(0, 0, width, height);
 }

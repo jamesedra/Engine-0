@@ -40,12 +40,10 @@ public:
 			}
 
 			shader->setMat4("model", model);
-			glm::vec3 cameraPos(5.0f, 2.5f, 5.0f);
-			glm::vec3 target(0.0f, 0.0f, 0.0f);
-			glm::vec3 up(0.0f, 1.0f, 0.0f);
-			glm::mat4 view = glm::lookAt(cameraPos, target, up);
-			shader->setMat4("view", view);
-			shader->setMat4("projection", glm::perspective(glm::radians(45.0f), (float)1600 / (float)1200, 0.1f, 10.0f));
+			shader->setMat4("view", camera.getViewMatrix());
+			int WIDTH = 1600;
+			int HEIGHT = 1200;
+			shader->setMat4("projection", camera.getProjectionMatrix(WIDTH, HEIGHT, 0.1f, 1000.0f));
 
 			Asset& asset = AssetLibrary::GetAsset(assetComp->assetName);
 			auto& parts = asset.parts;
