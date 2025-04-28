@@ -47,6 +47,7 @@ public:
 	std::vector<Entity> GetActiveProbes(
 		SceneEntityRegistry& sceneRegistry,
 		EnvironmentProbeManager& probeManager,
+		Entity skyboxEntity, // a bit dirty
 		Camera& camera)
 	{
 		struct ProbeDist
@@ -66,7 +67,8 @@ public:
 
 			float dist2 = glm::length(camera.getCameraPos() - pos);
 			dist2 *= dist2;
-			if (dist2 <= probeComp->radius * probeComp->radius) 
+			if (dist2 <= probeComp->radius * probeComp->radius 
+				&& probeComp->radius < std::numeric_limits<float>::infinity()) // avoid skybox probe
 				probes.push_back({ entity, dist2 });
 		}
 
@@ -76,8 +78,9 @@ public:
 			});
 
 		std::vector<Entity> activeProbes;
-		for (int i = 0; i < probes.size() && probes.size() < MAX_ACTIVE_PROBES; ++i)
+		for (int i = 0; i < probes.size() && i < MAX_ACTIVE_PROBES-1; ++i)
 			activeProbes.push_back(probes[i].entity);
+		activeProbes.push_back(skyboxEntity); // insert skybox as last probe
 
 		return activeProbes;
 	}

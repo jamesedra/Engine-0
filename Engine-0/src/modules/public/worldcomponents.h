@@ -58,5 +58,6 @@ struct EnvironmentProbeComponent
     IBLSettings settings;   // holds the resolution and eqr path
     IBLMaps maps{};         // four IBL texture cubemaps
     bool buildProbe = true;   // for re/building
+    glm::vec3 position;
     float radius = std::numeric_limits<float>::infinity();
 };
