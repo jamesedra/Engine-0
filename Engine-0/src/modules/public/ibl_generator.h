@@ -25,7 +25,14 @@ struct IBLMaps
 class IBLGenerator
 {
 public:
-	static IBLMaps Build(const IBLSettings& settings, Shader& EQRToCubemap, Shader& IrradianceShader, Shader& PrefilterShader, Shader& IntegratedBRDF, unsigned int cubeVAO, unsigned int frameVAO)
+	static IBLMaps Build(
+		const IBLSettings& settings, 
+		Shader& EQRToCubemap, 
+		Shader& IrradianceShader, 
+		Shader& PrefilterShader, 
+		Shader& IntegratedBRDF,
+		unsigned int cubeVAO, 
+		unsigned int frameVAO)
 	{
 		IBLMaps maps{};
 		unsigned int eqrTexture = loadHDR(settings.eqrMapPath.c_str(), true);
