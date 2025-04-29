@@ -253,12 +253,12 @@ int main()
 	Entity floorEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "");
 	idManager.components[floorEntity].ID = "floor";
 	transformManager.components[floorEntity].position = glm::vec3(0.0f, -2.0f, 0.0f);
-	transformManager.components[floorEntity].scale = glm::vec3(5.0f, 0.5f, 5.0f);
+	transformManager.components[floorEntity].scale = glm::vec3(20.0f, 0.5f, 20.0f);
 	sceneRegistry.Register(floorEntity);
 
 	// IBL testing
 	IBLSettings IBLsettings{};
-	IBLsettings.eqrMapPath = "resources/textures/eqr_maps/test.hdr";
+	IBLsettings.eqrMapPath = "resources/textures/eqr_maps/newport_loft.hdr";
 	//IBLsettings.eqrMapPath = "resources/textures/eqr_maps/newport_loft.hdr";
 	IBLMaps IBLmap = IBLGenerator::Build(
 		IBLsettings, 
@@ -431,7 +431,13 @@ int main()
 		gBuffer.bind();
 		glClearColor(0.0, 0.0, 0.0, 0.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		renderSystem.RenderGeometry(sceneRegistry, transformManager, shaderManager, assetManager, materialsGroupManager, camera);
+		renderSystem.RenderGeometry(
+			sceneRegistry, 
+			transformManager, 
+			shaderManager, 
+			assetManager, 
+			materialsGroupManager, 
+			camera);
 		gBuffer.unbind();
 
 		// deferred shading stage
@@ -453,33 +459,20 @@ int main()
 
 			// PBR shading
 			hdrBuffer.bind();
-			pbrBufferShader.use();
-			pbrBufferShader.setVec3("lightPos", lightPos[0], lightPos[1], lightPos[2]);
-			pbrBufferShader.setVec3("lightColor", lightColor);
-			pbrBufferShader.setVec3("viewPos", camera.getCameraPos()); // tentative
-			pbrBufferShader.setInt("gPosition", 0);
-			pbrBufferShader.setInt("gNormal", 1);
-			pbrBufferShader.setInt("gAlbedoRoughness", 2);
-			pbrBufferShader.setInt("gMetallicAO", 3);
-			pbrBufferShader.setInt("irradianceMap", 4);
-			pbrBufferShader.setInt("prefilterMap", 5);
-			pbrBufferShader.setInt("brdfLUT", 6);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, gPosition.id);
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, gNormal.id);
-			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_2D, gAlbedoRoughness.id);
-			glActiveTexture(GL_TEXTURE3);
-			glBindTexture(GL_TEXTURE_2D, gMetallicAO.id);
-			glActiveTexture(GL_TEXTURE4);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, IBLmap.irradianceMap);
-			glActiveTexture(GL_TEXTURE5);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, IBLmap.prefilterMap);
-			glActiveTexture(GL_TEXTURE6);
-			glBindTexture(GL_TEXTURE_2D, IBLmap.brdfLUT);
-			glBindVertexArray(frameVAO);
-			glDrawArrays(GL_TRIANGLES, 0, 6);
+			GBufferAttachments gAttachments{ 
+				gPosition.id, 
+				gNormal.id, 
+				gAlbedoRoughness.id, 
+				gMetallicAO.id };
+			std::vector<IBLMaps> IBLmaps{ IBLmap };
+
+			renderSystem.RenderDeferredPBR(
+				pbrBufferShader, 
+				lightPos, 
+				gAttachments, 
+				IBLmaps, 
+				camera, 
+				frameVAO);
 			hdrBuffer.unbind();
 
 			// Brightness pass
@@ -622,9 +615,7 @@ int main()
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 			debugGBuffer.unbind();
 		}
-
 		glEnable(GL_DEPTH_TEST);
-		
 		
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

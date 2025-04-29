@@ -3,6 +3,7 @@
 #include "camera.h"
 
 constexpr int MAX_ACTIVE_PROBES = 8;
+constexpr Entity INVALID_ENTITY = INT16_MAX;
 
 class ProbeSystem
 {
@@ -47,7 +48,6 @@ public:
 	std::vector<Entity> GetActiveProbes(
 		SceneEntityRegistry& sceneRegistry,
 		EnvironmentProbeManager& probeManager,
-		Entity skyboxEntity, // a bit dirty
 		Camera& camera)
 	{
 		struct ProbeDist
@@ -56,31 +56,43 @@ public:
 			float distance2;
 		};
 
+		Entity skyboxEnt = INVALID_ENTITY;
 		std::vector<ProbeDist> probes;
-
+		
 		for (Entity entity : sceneRegistry.GetAll())
 		{
 			auto* probeComp = probeManager.GetComponent(entity);
 			if (!probeComp) continue;
 			
+			// check if it's the skybox entity
+			if (probeComp->radius == std::numeric_limits<float>::infinity() && skyboxEnt == INVALID_ENTITY)
+			{
+				skyboxEnt = entity;
+				continue;
+			}
+			
+			// get distance squared
 			glm::vec3 pos = probeComp->position;
+			float diff = glm::length(camera.getCameraPos() - pos);
+			float dist2 = glm::dot(diff, diff);
 
-			float dist2 = glm::length(camera.getCameraPos() - pos);
-			dist2 *= dist2;
-			if (dist2 <= probeComp->radius * probeComp->radius 
-				&& probeComp->radius < std::numeric_limits<float>::infinity()) // avoid skybox probe
+			if (dist2 <= probeComp->radius * probeComp->radius)
 				probes.push_back({ entity, dist2 });
 		}
 
+		// sort probes nearest to camera
 		std::sort(probes.begin(), probes.end(),[](auto& a, auto& b)
 			{
 				return a.distance2 < b.distance2;
 			});
 
 		std::vector<Entity> activeProbes;
+
 		for (int i = 0; i < probes.size() && i < MAX_ACTIVE_PROBES-1; ++i)
 			activeProbes.push_back(probes[i].entity);
-		activeProbes.push_back(skyboxEntity); // insert skybox as last probe
+
+		// insert skybox as last probe
+		if (skyboxEnt != INVALID_ENTITY) activeProbes.push_back(skyboxEnt); 
 
 		return activeProbes;
 	}

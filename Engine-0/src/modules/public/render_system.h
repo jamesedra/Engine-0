@@ -3,6 +3,14 @@
 #include "camera.h"
 #include "asset_library.h"
 
+struct GBufferAttachments
+{
+	unsigned int gPosition;
+	unsigned int gNormal;
+	unsigned int gAlbedoRoughness;
+	unsigned int gMetallicAO;
+};
+
 class RenderSystem
 {
 public:
@@ -57,5 +65,43 @@ public:
 				}
 			}
 		}
+	}
+
+	void RenderDeferredPBR(
+		Shader& pbrBufferShader,
+		float lightPos[4], // tentative
+		GBufferAttachments& gAttachments,
+		std::vector<IBLMaps>& IBLmaps,
+		Camera& camera,
+		unsigned int frameVAO
+	)
+	{
+		pbrBufferShader.use();
+		pbrBufferShader.setVec3("lightPos", lightPos[0], lightPos[1], lightPos[2]);
+		pbrBufferShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+		pbrBufferShader.setVec3("viewPos", camera.getCameraPos());
+		pbrBufferShader.setInt("gPosition", 0);
+		pbrBufferShader.setInt("gNormal", 1);
+		pbrBufferShader.setInt("gAlbedoRoughness", 2);
+		pbrBufferShader.setInt("gMetallicAO", 3);
+		pbrBufferShader.setInt("irradianceMap", 4);
+		pbrBufferShader.setInt("prefilterMap", 5);
+		pbrBufferShader.setInt("brdfLUT", 6);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, gAttachments.gPosition);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, gAttachments.gNormal);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, gAttachments.gAlbedoRoughness);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, gAttachments.gMetallicAO);
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, IBLmaps[0].irradianceMap);
+		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, IBLmaps[0].prefilterMap);
+		glActiveTexture(GL_TEXTURE6);
+		glBindTexture(GL_TEXTURE_2D, IBLmaps[0].brdfLUT);
+		glBindVertexArray(frameVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 	}
 };
