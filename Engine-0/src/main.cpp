@@ -210,10 +210,6 @@ int main()
 	Shader ppShader("shaders/frame_out.vert", "shaders/postprocess/pp_celshading.frag");
 	// Skybox and IBL Shading
 	Shader skyboxShader("shaders/skybox/skybox_default.vert", "shaders/skybox/skybox_default.frag");
-	Shader EQRToCubemap("shaders/IBL/cubemap.vert", "shaders/IBL/eqr_to_cubemap.frag");
-	Shader IrradianceShader("shaders/IBL/cubemap.vert", "shaders/IBL/irradiance_convolution.frag");
-	Shader PrefilterShader("shaders/IBL/cubemap.vert", "shaders/IBL/prefilter_cubemap.frag");
-	Shader IntegratedBRDF("shaders/IBL/brdf.vert", "shaders/IBL/brdf.frag");
 
 	// Skybox testing
 	stbi_set_flip_vertically_on_load(false);
@@ -238,6 +234,7 @@ int main()
 	ShaderManager shaderManager;
 	AssetManager assetManager;
 	MaterialsGroupManager materialsGroupManager;
+	EnvironmentProbeManager probeManager;
 
 	// Registries
 	SceneEntityRegistry sceneRegistry;
@@ -256,18 +253,16 @@ int main()
 	transformManager.components[floorEntity].scale = glm::vec3(20.0f, 0.5f, 20.0f);
 	sceneRegistry.Register(floorEntity);
 
+	// probe entity test
+	IBLSettings IBLsettingsTest{};
+	IBLsettingsTest.eqrMapPath = "resources/textures/eqr_maps/kloofendal_43d_clear_puresky_2k.hdr";
+	Entity probeEntity = WorldObjectFactory::CreateEnvironmentProbe(entityManager, probeManager, idManager, "probe test", IBLsettingsTest);
+	sceneRegistry.Register(probeEntity);
+
 	// IBL testing
 	IBLSettings IBLsettings{};
-	IBLsettings.eqrMapPath = "resources/textures/eqr_maps/newport_loft.hdr";
-	//IBLsettings.eqrMapPath = "resources/textures/eqr_maps/newport_loft.hdr";
-	IBLMaps IBLmap = IBLGenerator::Build(
-		IBLsettings, 
-		EQRToCubemap, 
-		IrradianceShader, 
-		PrefilterShader, 
-		IntegratedBRDF, 
-		cubeVAO, 
-		frameVAO);
+	IBLsettings.eqrMapPath = "resources/textures/eqr_maps/kloofendal_43d_clear_puresky_2k.hdr";
+	IBLMaps IBLmap = IBLGenerator::Build(IBLsettings);
 
 	// Systems
 	RenderSystem renderSystem;

@@ -7,16 +7,13 @@ constexpr Entity INVALID_ENTITY = INT16_MAX;
 
 class ProbeSystem
 {
+private:
+	std::vector<Entity> cachedActiveProbes;
+
 public:
 	void RebuildProbes(
 		SceneEntityRegistry& sceneRegistry,
-		EnvironmentProbeManager& probeManager,
-		Shader& EQRToCubemap,
-		Shader& IrradianceShader,
-		Shader& PrefilterShader,
-		Shader& IntegratedBRDF,
-		unsigned int cubeVAO,
-		unsigned int frameVAO)
+		EnvironmentProbeManager& probeManager)
 	{
 		for (Entity entity : sceneRegistry.GetAll())
 		{
@@ -31,15 +28,7 @@ public:
 			}
 
 			// build new IBL maps
-			probeComp->maps = IBLGenerator::Build(
-				probeComp->settings,
-				EQRToCubemap,
-				IrradianceShader,
-				PrefilterShader,
-				IntegratedBRDF,
-				cubeVAO,
-				frameVAO
-			);
+			probeComp->maps = IBLGenerator::Build(probeComp->settings);
 
 			probeComp->buildProbe = false;
 		}
@@ -50,6 +39,15 @@ public:
 		EnvironmentProbeManager& probeManager,
 		Camera& camera)
 	{
+		static glm::vec3 lastCamPos = camera.getCameraPos();
+		static float cacheTresholdSq = 0.5f * 0.5f;
+		glm::vec3 d = camera.getCameraPos() - lastCamPos;
+
+		if (glm::dot(d,d) < cacheTresholdSq && !cachedActiveProbes.empty()) 
+			return cachedActiveProbes;
+
+		lastCamPos = camera.getCameraPos();
+
 		struct ProbeDist
 		{
 			Entity entity;
@@ -73,7 +71,7 @@ public:
 			
 			// get distance squared
 			glm::vec3 pos = probeComp->position;
-			float diff = glm::length(camera.getCameraPos() - pos);
+			glm::vec3 diff = camera.getCameraPos() - pos;
 			float dist2 = glm::dot(diff, diff);
 
 			if (dist2 <= probeComp->radius * probeComp->radius)
@@ -86,14 +84,13 @@ public:
 				return a.distance2 < b.distance2;
 			});
 
-		std::vector<Entity> activeProbes;
-
+		cachedActiveProbes.clear();
 		for (int i = 0; i < probes.size() && i < MAX_ACTIVE_PROBES-1; ++i)
-			activeProbes.push_back(probes[i].entity);
+			cachedActiveProbes.push_back(probes[i].entity);
 
 		// insert skybox as last probe
-		if (skyboxEnt != INVALID_ENTITY) activeProbes.push_back(skyboxEnt); 
-
-		return activeProbes;
+		if (skyboxEnt != INVALID_ENTITY) cachedActiveProbes.push_back(skyboxEnt);
+		
+		return cachedActiveProbes;
 	}
 };

@@ -25,15 +25,15 @@ struct IBLMaps
 class IBLGenerator
 {
 public:
-	static IBLMaps Build(
-		const IBLSettings& settings, 
-		Shader& EQRToCubemap, 
-		Shader& IrradianceShader, 
-		Shader& PrefilterShader, 
-		Shader& IntegratedBRDF,
-		unsigned int cubeVAO, 
-		unsigned int frameVAO)
+	static IBLMaps Build(const IBLSettings& settings)
 	{
+		static Shader EQRToCubemap("shaders/IBL/cubemap.vert", "shaders/IBL/eqr_to_cubemap.frag");
+		static Shader IrradianceShader("shaders/IBL/cubemap.vert", "shaders/IBL/irradiance_convolution.frag");
+		static Shader PrefilterShader("shaders/IBL/cubemap.vert", "shaders/IBL/prefilter_cubemap.frag");
+		static Shader IntegratedBRDF("shaders/IBL/brdf.vert", "shaders/IBL/brdf.frag");
+		static unsigned int cubeVAO = createCubeVAO();
+		static unsigned int frameVAO = createFrameVAO();
+
 		IBLMaps maps{};
 		unsigned int eqrTexture = loadHDR(settings.eqrMapPath.c_str(), true);
 
