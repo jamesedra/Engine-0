@@ -218,13 +218,14 @@ private:
 			stbi_image_free(data);
 			return 0;
 		}
-		float mn = FLT_MAX, mx = -FLT_MAX;
-		for (int i = 0; i < width * height * nrChannels; ++i)
-		{
-			mn = std::min(mn, data[i]);
-			mx = std::max(mx, data[i]);
-		}
-		std::cout << "HDR range: " << mn << " … " << mx << "\n";
+		// for checking
+		//float mn = FLT_MAX, mx = -FLT_MAX;
+		//for (int i = 0; i < width * height * nrChannels; ++i)
+		//{
+		//	mn = std::min(mn, data[i]);
+		//	mx = std::max(mx, data[i]);
+		//}
+		//std::cout << "HDR range: " << mn << " … " << mx << "\n";
 		Texture hdrTexture(width, height, GL_RGB32F, GL_RGB, GL_LINEAR, GL_CLAMP_TO_EDGE, data);
 		stbi_image_free(data);
 		return hdrTexture.id;
