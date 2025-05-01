@@ -4,6 +4,7 @@
 #include "../modules/public/shader_library.h"
 #include "../modules/public/texture_library.h"
 #include "../modules/public/asset_library.h"
+#include "../modules/public/probe_temp_library.h"
 #include <iostream>
 #include <string>
 #include <map>
@@ -454,7 +455,19 @@ public:
 					IBLSettings* settings = &probeComp->settings;
 					std::string environmentMap = settings->eqrMapPath;
 
-					// TODO
+					std::vector<const char*> libIBLSettings = ProbeLibrary::GetLibraryKeys();
+					auto map_selected = std::find_if(libIBLSettings.begin(), libIBLSettings.end(), [&environmentMap](const char* s)
+						{
+							return environmentMap == s;
+						});
+
+					size_t map_index = (map_selected != libIBLSettings.end()) ? std::distance(libIBLSettings.begin(), map_selected) : 0;
+					std::string probeComboLabel = "Map##DropDownPropertiesWindow";
+
+					if (ImGui::BeginCombo(probeComboLabel.c_str(), environmentMap.c_str(), 0))
+					{
+						// TODO
+					}
 				}
 			}
 			
