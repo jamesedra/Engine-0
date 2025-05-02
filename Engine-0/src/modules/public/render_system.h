@@ -71,7 +71,7 @@ public:
 		Shader& pbrBufferShader,
 		float lightPos[4], // tentative
 		GBufferAttachments& gAttachments,
-		std::vector<IBLMaps>& IBLmaps,
+		std::vector<EnvironmentProbeComponent*> IBLProbes,
 		Camera& camera,
 		unsigned int frameVAO
 	)
@@ -80,27 +80,47 @@ public:
 		pbrBufferShader.setVec3("lightPos", lightPos[0], lightPos[1], lightPos[2]);
 		pbrBufferShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
 		pbrBufferShader.setVec3("viewPos", camera.getCameraPos());
-		pbrBufferShader.setInt("gPosition", 0);
-		pbrBufferShader.setInt("gNormal", 1);
-		pbrBufferShader.setInt("gAlbedoRoughness", 2);
-		pbrBufferShader.setInt("gMetallicAO", 3);
-		pbrBufferShader.setInt("irradianceMap", 4);
-		pbrBufferShader.setInt("prefilterMap", 5);
-		pbrBufferShader.setInt("brdfLUT", 6);
+
+		// texture passes
+		unsigned int unit = 0;
+		pbrBufferShader.setInt("gPosition", unit);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, gAttachments.gPosition);
-		glActiveTexture(GL_TEXTURE1);
+
+		pbrBufferShader.setInt("gNormal", ++unit);
+		glActiveTexture(GL_TEXTURE0 + unit);
 		glBindTexture(GL_TEXTURE_2D, gAttachments.gNormal);
-		glActiveTexture(GL_TEXTURE2);
+
+		pbrBufferShader.setInt("gAlbedoRoughness", ++unit);
+		glActiveTexture(GL_TEXTURE0 + unit);
 		glBindTexture(GL_TEXTURE_2D, gAttachments.gAlbedoRoughness);
-		glActiveTexture(GL_TEXTURE3);
+
+		pbrBufferShader.setInt("gMetallicAO", ++unit);
+		glActiveTexture(GL_TEXTURE0 + unit);
 		glBindTexture(GL_TEXTURE_2D, gAttachments.gMetallicAO);
-		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, IBLmaps[0].irradianceMap);
-		glActiveTexture(GL_TEXTURE5);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, IBLmaps[0].prefilterMap);
-		glActiveTexture(GL_TEXTURE6);
-		glBindTexture(GL_TEXTURE_2D, IBLmaps[0].brdfLUT);
+
+		size_t probeCount = IBLProbes.size();
+		pbrBufferShader.setInt("probeCount", probeCount);
+
+		for (size_t i = 0; i < probeCount; i++)
+		{
+			auto* p = IBLProbes[i];
+
+			pbrBufferShader.setInt("probes[" + std::to_string(i) + "].irradianceMap", ++unit);
+			glActiveTexture(GL_TEXTURE0 + unit);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, p->maps.irradianceMap);
+
+			pbrBufferShader.setInt("probes[" + std::to_string(i) + "].prefilterMap", ++unit);
+			glActiveTexture(GL_TEXTURE0 + unit);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, p->maps.prefilterMap);
+
+			pbrBufferShader.setInt("probes[" + std::to_string(i) + "].brdfLUT", ++unit);
+			glActiveTexture(GL_TEXTURE0 + unit);
+			glBindTexture(GL_TEXTURE_2D, p->maps.brdfLUT);
+
+			pbrBufferShader.setVec3("probes[" + std::to_string(i) + "].position", p->position);
+		}
+
 		glBindVertexArray(frameVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 	}

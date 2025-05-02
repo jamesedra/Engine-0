@@ -62,7 +62,7 @@ private:
 		IBLSettings PresetB{};
 		PresetB.eqrMapPath = "resources/textures/eqr_maps/kloofendal_43d_clear_puresky_2k.hdr";
 		IBLSettings PresetC{};
-		PresetC.eqrMapPath = "resources/textures/eqr_maps/kloopenheim_06_puresky_2k.hdr";
+		PresetC.eqrMapPath = "resources/textures/eqr_maps/kloppenheim_06_puresky_2k.hdr";
 		IBLSettings PresetD{};
 		PresetD.eqrMapPath = "resources/textures/eqr_maps/newport_loft.hdr";
 		IBLSettings PresetE{};

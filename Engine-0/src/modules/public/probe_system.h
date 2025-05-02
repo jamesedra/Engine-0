@@ -29,7 +29,6 @@ public:
 
 			// build new IBL maps
 			probeComp->maps = IBLGenerator::Build(probeComp->settings);
-
 			probeComp->buildProbe = false;
 		}
 	}

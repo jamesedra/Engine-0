@@ -466,7 +466,34 @@ public:
 
 					if (ImGui::BeginCombo(probeComboLabel.c_str(), environmentMap.c_str(), 0))
 					{
-						// TODO
+						static ImGuiTextFilter filter;
+						if (ImGui::IsWindowAppearing())
+						{
+							ImGui::SetKeyboardFocusHere();
+							filter.Clear();
+						}
+						ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
+						std::string filterLabel = "##Filter" + std::to_string(expandedEntity);
+						filter.Draw(filterLabel.c_str(), -FLT_MIN);
+
+						for (int n = 0; n < libIBLSettings.size(); n++)
+						{
+							const bool is_selected(map_index == n);
+							if (filter.PassFilter(libIBLSettings[n]))
+							{
+								if (ImGui::Selectable(libIBLSettings[n], is_selected))
+								{
+									if (probeComp->settings.eqrMapPath != libIBLSettings[n])
+									{
+										map_index = n;
+										probeComp->settings = ProbeLibrary::GetSettings(libIBLSettings[n]);
+										probeComp->buildProbe = true;
+									}
+								}
+							}
+						}
+						ImGui::EndCombo();
+
 					}
 				}
 			}
