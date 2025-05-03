@@ -11,7 +11,7 @@ struct IBLSettings
 	uint32_t prefilterSize = 128;
 	uint32_t brdfLUTSize = 512;
 	uint32_t maxMipLevels = 5;
-	std::string eqrMapPath;
+	std::string eqrMapPath = "";
 };
 
 struct IBLMaps
@@ -25,15 +25,26 @@ struct IBLMaps
 class IBLGenerator
 {
 public:
-	static IBLMaps Build(const IBLSettings& settings, Shader& EQRToCubemap, Shader& IrradianceShader, Shader& PrefilterShader, Shader& IntegratedBRDF, unsigned int cubeVAO, unsigned int frameVAO)
+	static IBLMaps Build(const IBLSettings& settings)
 	{
+		static Shader EQRToCubemap("shaders/IBL/cubemap.vert", "shaders/IBL/eqr_to_cubemap.frag");
+		static Shader IrradianceShader("shaders/IBL/cubemap.vert", "shaders/IBL/irradiance_convolution.frag");
+		static Shader PrefilterShader("shaders/IBL/cubemap.vert", "shaders/IBL/prefilter_cubemap.frag");
+		static Shader IntegratedBRDF("shaders/IBL/brdf.vert", "shaders/IBL/brdf.frag");
+		static unsigned int cubeVAO = createCubeVAO();
+		static unsigned int frameVAO = createFrameVAO();
+
 		IBLMaps maps{};
-		//Shader EQRToCubemap("shaders/IBL/cubemap.vert", "shaders/IBL/eqr_to_cubemap.frag");
-		//Shader IrradianceShader("shaders/IBL/cubemap.vert", "shaders/IBL/irradiance_convolution.frag");
-		//Shader PrefilterShader("shaders/IBL/cubemap.vert", "shaders/IBL/prefilter_cubemap.frag");
-		//Shader IntegratedBRDF("shaders/IBL/brdf.vert", "shaders/IBL/brdf.frag");
-		//unsigned int cubeVAO = createCubeVAO();
-		//unsigned int frameVAO = createFrameVAO();
+		if (settings.eqrMapPath.empty())
+		{
+			static unsigned int placeholderCubeMap = createPlaceholderCubemap();
+			static unsigned int placeholderTexture = TextureLibrary::GetTexture("White Texture - Default").id;
+			maps.envMap = placeholderCubeMap;
+			maps.irradianceMap = placeholderCubeMap;
+			maps.prefilterMap = placeholderCubeMap;
+			maps.brdfLUT = placeholderTexture;
+			return maps;
+		}
 
 		unsigned int eqrTexture = loadHDR(settings.eqrMapPath.c_str(), true);
 
@@ -46,7 +57,7 @@ public:
 		glBindTexture(GL_TEXTURE_CUBE_MAP, maps.envMap);
 		for (unsigned int i = 0; i < 6; ++i)
 		{
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, settings.envSize, settings.envSize, 0, GL_RGB, GL_FLOAT, nullptr);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB32F, settings.envSize, settings.envSize, 0, GL_RGB, GL_FLOAT, nullptr);
 		}
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -96,7 +107,7 @@ public:
 		for (unsigned int i = 0; i < 6; ++i)
 		{
 			// no need for high resolution due to low frequency detailing
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, settings.irradianceSize, settings.irradianceSize, 0, GL_RGB, GL_FLOAT, nullptr);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB32F, settings.irradianceSize, settings.irradianceSize, 0, GL_RGB, GL_FLOAT, nullptr);
 		}
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -132,7 +143,7 @@ public:
 		glBindTexture(GL_TEXTURE_CUBE_MAP, maps.prefilterMap);
 		for (unsigned int i = 0; i < 6; ++i)
 		{
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, settings.prefilterSize, settings.prefilterSize, 0, GL_RGB, GL_FLOAT, nullptr);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB32F, settings.prefilterSize, settings.prefilterSize, 0, GL_RGB, GL_FLOAT, nullptr);
 		}
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -218,7 +229,15 @@ private:
 			stbi_image_free(data);
 			return 0;
 		}
-		Texture hdrTexture(width, height, GL_RGB16F, GL_RGB, GL_LINEAR, GL_CLAMP_TO_EDGE, data);
+		// for checking
+		//float mn = FLT_MAX, mx = -FLT_MAX;
+		//for (int i = 0; i < width * height * nrChannels; ++i)
+		//{
+		//	mn = std::min(mn, data[i]);
+		//	mx = std::max(mx, data[i]);
+		//}
+		//std::cout << "HDR range: " << mn << " … " << mx << "\n";
+		Texture hdrTexture(width, height, GL_RGB32F, GL_RGB, GL_LINEAR, GL_CLAMP_TO_EDGE, data);
 		stbi_image_free(data);
 		return hdrTexture.id;
 	}

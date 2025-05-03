@@ -16,14 +16,6 @@ enum class TextureColorSpace {
 	sRGB
 };
 
-// adjusts the viewport when user resizes it
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-
-// process input in the renderer
-void processInput(GLFWwindow* window);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-
 unsigned int loadCubemap(std::vector<std::string> faces);
 unsigned int createDefaultTexture();
 unsigned int loadTexture(const char* path, bool flipVertically, TextureColorSpace space = TextureColorSpace::Linear);
@@ -48,3 +40,5 @@ glm::vec2 getUVPosition(const float* vertices, int index);
 float lerp(float a, float b, float t);
 
 void DisplayFramebufferTexture(Shader shader, unsigned int frame, unsigned int textureID);
+
+unsigned int createPlaceholderCubemap();
