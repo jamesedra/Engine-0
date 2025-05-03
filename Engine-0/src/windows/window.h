@@ -448,9 +448,12 @@ public:
 				if (probeComp)
 				{
 					float position[4] = { probeComp->position.x, probeComp->position.y, probeComp->position.z, 1.0f };
-					std::string posLabel = "Position##ExpandedPropertiesWindow";
+					std::string posLabel = "ProbePosition##ExpandedPropertiesWindow";
 					ImGui::DragFloat3(posLabel.c_str(), position, 0.5f);
 					probeComp->position = glm::vec3(position[0], position[1], position[2]);
+
+					std::string radiusLabel = "ProbeRadius##ExpandedPropertiesWindow";
+					ImGui::InputFloat(radiusLabel.c_str(), &probeComp->radius);
 
 					IBLSettings* settings = &probeComp->settings;
 					std::string environmentMap = settings->eqrMapPath;

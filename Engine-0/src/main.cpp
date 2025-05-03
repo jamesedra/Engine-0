@@ -269,7 +269,7 @@ int main()
 	sceneRegistry.Register(skyboxEntity);
 
 	IBLSettings probeIBLSettings = ProbeLibrary::GetSettings("resources/textures/eqr_maps/newport_loft.hdr");
-	Entity probeEntity = WorldObjectFactory::CreateEnvironmentProbe(entityManager, probeManager, idManager, "probe", probeIBLSettings, glm::vec3(0.f), 25.0f);
+	Entity probeEntity = WorldObjectFactory::CreateEnvironmentProbe(entityManager, probeManager, idManager, "probe", probeIBLSettings, glm::vec3(0.f), 50.0f);
 	sceneRegistry.Register(probeEntity);
 
 	// Systems
