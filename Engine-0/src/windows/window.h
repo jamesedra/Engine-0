@@ -4,6 +4,7 @@
 #include "../modules/public/shader_library.h"
 #include "../modules/public/texture_library.h"
 #include "../modules/public/asset_library.h"
+#include "../modules/public/probe_temp_library.h"
 #include <iostream>
 #include <string>
 #include <map>
@@ -157,6 +158,7 @@ private:
 	ShaderManager* shaderManager = nullptr;
 	AssetManager* assetManager = nullptr;
 	MaterialsGroupManager* materialsGroupManager = nullptr;
+	EnvironmentProbeManager* probeManager = nullptr;
 
 	// Entity to display
 	Entity expandedEntity = INT16_MAX;
@@ -167,13 +169,15 @@ public:
 		TransformManager* transformManager,
 		ShaderManager* shaderManager,
 		AssetManager* assetManager,
-		MaterialsGroupManager* materialsGroupManager)
+		MaterialsGroupManager* materialsGroupManager,
+		EnvironmentProbeManager* probeManager)
 		:
 		Window("Properties", true, ImGuiWindowFlags_NoCollapse),
 		transformManager(transformManager),
 		shaderManager(shaderManager),
 		assetManager(assetManager),
-		materialsGroupManager(materialsGroupManager){ }
+		materialsGroupManager(materialsGroupManager),
+		probeManager(probeManager){ }
 
 	bool BeginRender() override
 	{
@@ -182,99 +186,103 @@ public:
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 		bool renderContent = (ImGui::Begin(title.c_str(), &window_open, window_flags));
 		
-		if (renderContent && transformManager && shaderManager && materialsGroupManager && assetManager)
+		if (renderContent)
 		{
 			// prepare default window
-			// Show transform values
-			TransformComponent* transformComp = transformManager->GetComponent(expandedEntity);
-			if (transformComp)
+			if (transformManager)
 			{
-				float position[4] = { transformComp->position.x, transformComp->position.y, transformComp->position.z, 1.0f };
-				float rotation[4] = { transformComp->rotation.x, transformComp->rotation.y, transformComp->rotation.z, 1.0f };
-				float scale[4] = { transformComp->scale.x, transformComp->scale.y, transformComp->scale.z, 1.0f };
-
-				std::string posLabel = "Position##ExpandedPropertiesWindow";
-				ImGui::DragFloat3(posLabel.c_str(), position, 0.5f);
-				transformComp->position = glm::vec3(position[0], position[1], position[2]);
-
-				std::string rotLabel = "Rotation##ExpandedPropertiesWindow";
-				ImGui::DragFloat3(rotLabel.c_str(), rotation, 0.5f);
-				transformComp->rotation = glm::vec3(rotation[0], rotation[1], rotation[2]);
-
-				std::string scaleLabel = "Scale##ExpandedPropertiesWindow";
-				ImGui::DragFloat3(scaleLabel.c_str(), scale, 0.5f);
-				transformComp->scale = glm::vec3(scale[0], scale[1], scale[2]);
-			}
-
-			AssetComponent* assetComp = assetManager->GetComponent(expandedEntity);
-			MaterialsGroupComponent* materialsGroupComp = materialsGroupManager->GetComponent(expandedEntity);
-			ShaderComponent* shaderComp = shaderManager->GetComponent(expandedEntity);
-			if (shaderComp)
-			{
-				std::string shaderName = shaderComp->shaderName;
-				std::vector<const char*> libShaders = ShaderLibrary::GetLibraryKeys();
-				auto shader_selected = std::find_if(libShaders.begin(), libShaders.end(), [&shaderName](const char* s)
-					{
-						return shaderName == s;
-					});
-				size_t shader_index = (shader_selected != libShaders.end()) ? std::distance(libShaders.begin(), shader_selected) : 0;
-				std::string shaderComboLabel = "Material##DropDownPropertiesWindow";
-
-				if (ImGui::BeginCombo(shaderComboLabel.c_str(), shaderName.c_str(), 0))
+				// Show transform values
+				TransformComponent* transformComp = transformManager->GetComponent(expandedEntity);
+				if (transformComp)
 				{
-					static ImGuiTextFilter filter;
-					if (ImGui::IsWindowAppearing())
-					{
-						ImGui::SetKeyboardFocusHere();
-						filter.Clear();
-					}
-					ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
-					std::string filterLabel = "##Filter" + std::to_string(expandedEntity);
-					filter.Draw(filterLabel.c_str(), -FLT_MIN);
+					float position[4] = { transformComp->position.x, transformComp->position.y, transformComp->position.z, 1.0f };
+					float rotation[4] = { transformComp->rotation.x, transformComp->rotation.y, transformComp->rotation.z, 1.0f };
+					float scale[4] = { transformComp->scale.x, transformComp->scale.y, transformComp->scale.z, 1.0f };
 
-					for (int n = 0; n < libShaders.size(); n++)
-					{
-						const bool is_selected = (shader_index == n);
-						if (filter.PassFilter(libShaders[n]))
+					std::string posLabel = "Position##ExpandedPropertiesWindow";
+					ImGui::DragFloat3(posLabel.c_str(), position, 0.5f);
+					transformComp->position = glm::vec3(position[0], position[1], position[2]);
+
+					std::string rotLabel = "Rotation##ExpandedPropertiesWindow";
+					ImGui::DragFloat3(rotLabel.c_str(), rotation, 0.5f);
+					transformComp->rotation = glm::vec3(rotation[0], rotation[1], rotation[2]);
+
+					std::string scaleLabel = "Scale##ExpandedPropertiesWindow";
+					ImGui::DragFloat3(scaleLabel.c_str(), scale, 0.5f);
+					transformComp->scale = glm::vec3(scale[0], scale[1], scale[2]);
+				}
+			}
+			if (assetManager && materialsGroupManager && shaderManager)
+			{
+				AssetComponent* assetComp = assetManager->GetComponent(expandedEntity);
+				MaterialsGroupComponent* materialsGroupComp = materialsGroupManager->GetComponent(expandedEntity);
+				ShaderComponent* shaderComp = shaderManager->GetComponent(expandedEntity);
+				if (shaderComp)
+				{
+					std::string shaderName = shaderComp->shaderName;
+					std::vector<const char*> libShaders = ShaderLibrary::GetLibraryKeys();
+					auto shader_selected = std::find_if(libShaders.begin(), libShaders.end(), [&shaderName](const char* s)
 						{
-							if (ImGui::Selectable(libShaders[n], is_selected))
-							{
-								if (shaderComp->shaderName != libShaders[n])
-								{
-									shader_index = n;
-									shaderComp->shaderName = libShaders[n];
-									shaderComp->shader = &ShaderLibrary::GetShader(shaderComp->shaderName);
+							return shaderName == s;
+						});
+					size_t shader_index = (shader_selected != libShaders.end()) ? std::distance(libShaders.begin(), shader_selected) : 0;
+					std::string shaderComboLabel = "Material##DropDownPropertiesWindow";
 
-									for (auto& group : materialsGroupComp->materialsGroup)
-										group.material.SetShader(*shaderComp->shader);
+					if (ImGui::BeginCombo(shaderComboLabel.c_str(), shaderName.c_str(), 0))
+					{
+						static ImGuiTextFilter filter;
+						if (ImGui::IsWindowAppearing())
+						{
+							ImGui::SetKeyboardFocusHere();
+							filter.Clear();
+						}
+						ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
+						std::string filterLabel = "##Filter" + std::to_string(expandedEntity);
+						filter.Draw(filterLabel.c_str(), -FLT_MIN);
+
+						for (int n = 0; n < libShaders.size(); n++)
+						{
+							const bool is_selected = (shader_index == n);
+							if (filter.PassFilter(libShaders[n]))
+							{
+								if (ImGui::Selectable(libShaders[n], is_selected))
+								{
+									if (shaderComp->shaderName != libShaders[n])
+									{
+										shader_index = n;
+										shaderComp->shaderName = libShaders[n];
+										shaderComp->shader = &ShaderLibrary::GetShader(shaderComp->shaderName);
+
+										for (auto& group : materialsGroupComp->materialsGroup)
+											group.material.SetShader(*shaderComp->shader);
+									}
 								}
 							}
 						}
+						ImGui::EndCombo();
 					}
-					ImGui::EndCombo();
 				}
-			}
-			
-			if (materialsGroupComp)
-			{
-				auto& materialsGroup = materialsGroupComp->materialsGroup;
-				for (unsigned int i = 0; i < materialsGroup.size(); i++)
+
+				if (materialsGroupComp)
 				{
-					std::string header = assetComp->assetName + " submesh " + std::to_string(i);
-					if (ImGui::TreeNode(header.c_str()))
+					auto& materialsGroup = materialsGroupComp->materialsGroup;
+					for (unsigned int i = 0; i < materialsGroup.size(); i++)
 					{
-						auto& uniforms = materialsGroup[i].material.uniforms;
-						for (auto& pair : uniforms)
+						std::string header = assetComp->assetName + " submesh " + std::to_string(i);
+						if (ImGui::TreeNode(header.c_str()))
 						{
-							std::string uniformName = pair.first;
-							UniformValue& uniformValue = pair.second;
-
-							std::string uniformLabel = uniformName + "##PropertiesWindow";
-
-							float uniformVec[4];
-
-							switch (uniformValue.type)
+							auto& uniforms = materialsGroup[i].material.uniforms;
+							for (auto& pair : uniforms)
 							{
+								std::string uniformName = pair.first;
+								UniformValue& uniformValue = pair.second;
+
+								std::string uniformLabel = uniformName + "##PropertiesWindow";
+
+								float uniformVec[4];
+
+								switch (uniformValue.type)
+								{
 								case UniformValue::Type::Bool:
 									uniformLabel += "bool";
 									ImGui::Checkbox(uniformLabel.c_str(), &uniformValue.boolValue);
@@ -354,82 +362,145 @@ public:
 										ImGui::EndCombo();
 									}
 									break;
+								}
 							}
+							ImGui::TreePop();
 						}
-						ImGui::TreePop();
 					}
 				}
-			}
 
-			// Show mesh values
-			if (assetComp)
-			{
-				std::string assetName = assetComp->assetName;
-				std::vector<const char*> libAssets = AssetLibrary::GetLibraryKeys();
-				auto asset_selected = std::find_if(libAssets.begin(), libAssets.end(), [&assetName](const char* a) { return assetName == a; });
-				size_t asset_index = (asset_selected != libAssets.end()) ? std::distance(libAssets.begin(), asset_selected) : 0;
-
-				std::string assetComboLabel = "Mesh##AssetDropDownPropetiesWindow";
-				if (ImGui::BeginCombo(assetComboLabel.c_str(), assetName.c_str(), 0))
+				// Show mesh values
+				if (assetComp)
 				{
-					static ImGuiTextFilter filter;
-					if (ImGui::IsWindowAppearing())
-					{
-						ImGui::SetKeyboardFocusHere();
-						filter.Clear();
-					}
-					ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
-					std::string filterLabel = "##AssetFilterPropertiesWindow";
-					filter.Draw(filterLabel.c_str(), -FLT_MIN);
-
-					for (int n = 0; n < libAssets.size(); n++)
-					{
-						const bool is_selected = (asset_index == n);
-						if (filter.PassFilter(libAssets[n]))
+					std::string assetName = assetComp->assetName;
+					std::vector<const char*> libAssets = AssetLibrary::GetLibraryKeys();
+					auto asset_selected = std::find_if(libAssets.begin(), libAssets.end(), [&assetName](const char* a)
 						{
-							if (ImGui::Selectable(libAssets[n], is_selected))
+							return assetName == a;
+						});
+					size_t asset_index = (asset_selected != libAssets.end()) ? std::distance(libAssets.begin(), asset_selected) : 0;
+
+					std::string assetComboLabel = "Mesh##AssetDropDownPropetiesWindow";
+					if (ImGui::BeginCombo(assetComboLabel.c_str(), assetName.c_str(), 0))
+					{
+						static ImGuiTextFilter filter;
+						if (ImGui::IsWindowAppearing())
+						{
+							ImGui::SetKeyboardFocusHere();
+							filter.Clear();
+						}
+						ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
+						std::string filterLabel = "##AssetFilterPropertiesWindow";
+						filter.Draw(filterLabel.c_str(), -FLT_MIN);
+
+						for (int n = 0; n < libAssets.size(); n++)
+						{
+							const bool is_selected = (asset_index == n);
+							if (filter.PassFilter(libAssets[n]))
 							{
-								if (assetComp->assetName != libAssets[n])
+								if (ImGui::Selectable(libAssets[n], is_selected))
 								{
-									asset_index = n;
-									assetComp->assetName = libAssets[n];
-
-									Asset& asset = AssetLibrary::GetAsset(libAssets[n]);
-									
-									MaterialsGroupComponent materialsGroupComp;
-
-									using TexturePaths = std::vector<std::string>;
-									std::map<TexturePaths, std::vector<unsigned int>> textureIndexMap;
-									for (unsigned int i = 0; i < asset.parts.size(); i++)
+									if (assetComp->assetName != libAssets[n])
 									{
-										TexturePaths texturePaths;
-										for (auto& textureMetaData : asset.parts[i].textures)
+										asset_index = n;
+										assetComp->assetName = libAssets[n];
+
+										Asset& asset = AssetLibrary::GetAsset(libAssets[n]);
+
+										MaterialsGroupComponent materialsGroupComp;
+
+										using TexturePaths = std::vector<std::string>;
+										std::map<TexturePaths, std::vector<unsigned int>> textureIndexMap;
+										for (unsigned int i = 0; i < asset.parts.size(); i++)
 										{
-											texturePaths.push_back(textureMetaData.path);
+											TexturePaths texturePaths;
+											for (auto& textureMetaData : asset.parts[i].textures)
+											{
+												texturePaths.push_back(textureMetaData.path);
+											}
+											textureIndexMap[texturePaths].push_back(i);
 										}
-										textureIndexMap[texturePaths].push_back(i);
-									}
 
-									materialsGroupComp.materialsGroup.reserve(textureIndexMap.size());
-									for (auto& [paths, indices] : textureIndexMap)
-									{
-										std::vector<TextureMetadata> textures = asset.parts[indices[0]].textures;
-										Material material(*shaderComp->shader, textures);
-										MaterialsGroup materialsGroup{
-											material, std::move(indices)
-										};
-										materialsGroupComp.materialsGroup.push_back(materialsGroup);
-									}
+										materialsGroupComp.materialsGroup.reserve(textureIndexMap.size());
+										for (auto& [paths, indices] : textureIndexMap)
+										{
+											std::vector<TextureMetadata> textures = asset.parts[indices[0]].textures;
+											Material material(*shaderComp->shader, textures);
+											MaterialsGroup materialsGroup{
+												material, std::move(indices)
+											};
+											materialsGroupComp.materialsGroup.push_back(materialsGroup);
+										}
 
-									materialsGroupManager->components[expandedEntity] = std::move(materialsGroupComp);
+										materialsGroupManager->components[expandedEntity] = std::move(materialsGroupComp);
+									}
 								}
 							}
 						}
+						ImGui::EndCombo();
 					}
-					ImGui::EndCombo();
-				}
 
+				}
 			}
+			if (probeManager)
+			{
+				EnvironmentProbeComponent* probeComp = probeManager->GetComponent(expandedEntity);
+				if (probeComp)
+				{
+					float position[4] = { probeComp->position.x, probeComp->position.y, probeComp->position.z, 1.0f };
+					std::string posLabel = "ProbePosition##ExpandedPropertiesWindow";
+					ImGui::DragFloat3(posLabel.c_str(), position, 0.5f);
+					probeComp->position = glm::vec3(position[0], position[1], position[2]);
+
+					std::string radiusLabel = "ProbeRadius##ExpandedPropertiesWindow";
+					ImGui::InputFloat(radiusLabel.c_str(), &probeComp->radius);
+
+					IBLSettings* settings = &probeComp->settings;
+					std::string environmentMap = settings->eqrMapPath;
+
+					std::vector<const char*> libIBLSettings = ProbeLibrary::GetLibraryKeys();
+					auto map_selected = std::find_if(libIBLSettings.begin(), libIBLSettings.end(), [&environmentMap](const char* s)
+						{
+							return environmentMap == s;
+						});
+
+					size_t map_index = (map_selected != libIBLSettings.end()) ? std::distance(libIBLSettings.begin(), map_selected) : 0;
+					std::string probeComboLabel = "Map##DropDownPropertiesWindow";
+
+					if (ImGui::BeginCombo(probeComboLabel.c_str(), environmentMap.c_str(), 0))
+					{
+						static ImGuiTextFilter filter;
+						if (ImGui::IsWindowAppearing())
+						{
+							ImGui::SetKeyboardFocusHere();
+							filter.Clear();
+						}
+						ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
+						std::string filterLabel = "##Filter" + std::to_string(expandedEntity);
+						filter.Draw(filterLabel.c_str(), -FLT_MIN);
+
+						for (int n = 0; n < libIBLSettings.size(); n++)
+						{
+							const bool is_selected(map_index == n);
+							if (filter.PassFilter(libIBLSettings[n]))
+							{
+								if (ImGui::Selectable(libIBLSettings[n], is_selected))
+								{
+									if (probeComp->settings.eqrMapPath != libIBLSettings[n])
+									{
+										map_index = n;
+										probeComp->settings = ProbeLibrary::GetSettings(libIBLSettings[n]);
+										probeComp->buildProbe = true;
+									}
+								}
+							}
+						}
+						ImGui::EndCombo();
+
+					}
+				}
+			}
+			
 		}
 		ImGui::PopStyleVar(2);
 		return true;

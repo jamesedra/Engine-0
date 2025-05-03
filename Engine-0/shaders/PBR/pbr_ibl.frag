@@ -86,16 +86,17 @@ void main() {
 	vec3 R = reflect(-v, n);
 	const float MAX_REFLECTION_LOD = 4.0;
 
-	kS = FresnelRoughness(max(dot(n, v), 0.0), F0, roughness);
+	vec3 F_ibl = FresnelRoughness(nDotV, F0, roughness);
+	kS = F_ibl;
 	kD = 1.0 - kS;
 	kD *= 1.0 - metallic;
 
 	vec3 irradiance = texture(irradianceMap, n).rgb;
-	vec3 diffuse = irradiance * albedo;
+	vec3 diffuseIBL = irradiance * albedo;
 	vec3 prefilteredColor = textureLod(prefilterMap, R, roughness * MAX_REFLECTION_LOD).rgb;
-	vec2 envBRDF = texture(brdfLUT, vec2(max(dot(n, v), 0.0), roughness)).rg;
-	vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
-	vec3 ambient = (kD * diffuse + specular) * ao;
+	vec2 envBRDF = texture(brdfLUT, vec2(nDotV, roughness)).rg;
+	vec3 specularIBL = prefilteredColor * (F_ibl * envBRDF.x + envBRDF.y);
+	vec3 ambient = (kD * diffuseIBL + specularIBL) * ao;
 
 	vec3 color = ambient + Lo;
 

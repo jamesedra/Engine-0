@@ -9,12 +9,32 @@
 #include "modules/public/texture.h"
 #include "windows/window.h"
 #include "modules/public/render_system.h"
+#include "modules/public/probe_system.h"
 #include "modules/public/factory.h"
 #include "modules/public/contexts.h"
 #include "modules/public/ibl_generator.h"
 
 constexpr int W_WIDTH = 1600;
 constexpr int W_HEIGHT = 1200;
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+
+// mouse stuff
+bool firstMouse = false;
+float lastX = 400;
+float lastY = 300;
+float pitch = 0.0f;
+float yaw = -90.0f;
+float zoom = 45.0f;
+
+// adjusts the viewport when user resizes it
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+// process input in the renderer
+void processInput(GLFWwindow* window);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+
+static bool gViewportCaptured = false;
 
 int main()
 {
@@ -168,6 +188,14 @@ int main()
 	Texture ppScene(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
 	postprocessBuffer.attachTexture2D(ppScene, GL_COLOR_ATTACHMENT0);
 	postprocessBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+
+	GBufferAttachments gAttachments
+	{
+		gPosition.id,
+		gNormal.id,
+		gAlbedoRoughness.id,
+		gMetallicAO.id 
+	};
 	
 	// Textures
 	unsigned int tex_diff = loadTexture("resources/textures/brickwall.jpg", true, TextureColorSpace::sRGB);
@@ -182,7 +210,7 @@ int main()
 	Shader outShader("shaders/frame_out.vert", "shaders/frame_out.frag");
 	Shader outputFrame("shaders/frame_out.vert", "shaders/frame_out.frag");
 	Shader debugBufferShader("shaders/gbuffer/gbuffer_debug_out.vert", "shaders/gbuffer/gbuffer_debug_out.frag");
-	Shader pbrBufferShader("shaders/PBR/pbr_def.vert", "shaders/PBR/pbr_ibl.frag");
+	Shader pbrBufferShader("shaders/PBR/pbr_def.vert", "shaders/PBR/pbr_ibl_v1.frag");
 	Shader brightPassShader("shaders/frame_out.vert", "shaders/PBR/bright_pass.frag");
 	Shader blurShader("shaders/frame_out.vert", "shaders/blur/gaussian.frag");
 	Shader bloomShader("shaders/frame_out.vert", "shaders/bloom/bloom.frag");
@@ -191,10 +219,6 @@ int main()
 	Shader ppShader("shaders/frame_out.vert", "shaders/postprocess/pp_celshading.frag");
 	// Skybox and IBL Shading
 	Shader skyboxShader("shaders/skybox/skybox_default.vert", "shaders/skybox/skybox_default.frag");
-	Shader EQRToCubemap("shaders/IBL/cubemap.vert", "shaders/IBL/eqr_to_cubemap.frag");
-	Shader IrradianceShader("shaders/IBL/cubemap.vert", "shaders/IBL/irradiance_convolution.frag");
-	Shader PrefilterShader("shaders/IBL/cubemap.vert", "shaders/IBL/prefilter_cubemap.frag");
-	Shader IntegratedBRDF("shaders/IBL/brdf.vert", "shaders/IBL/brdf.frag");
 
 	// Skybox testing
 	stbi_set_flip_vertically_on_load(false);
@@ -219,6 +243,7 @@ int main()
 	ShaderManager shaderManager;
 	AssetManager assetManager;
 	MaterialsGroupManager materialsGroupManager;
+	EnvironmentProbeManager probeManager;
 
 	// Registries
 	SceneEntityRegistry sceneRegistry;
@@ -234,23 +259,22 @@ int main()
 	Entity floorEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "");
 	idManager.components[floorEntity].ID = "floor";
 	transformManager.components[floorEntity].position = glm::vec3(0.0f, -2.0f, 0.0f);
-	transformManager.components[floorEntity].scale = glm::vec3(5.0f, 0.5f, 5.0f);
+	transformManager.components[floorEntity].scale = glm::vec3(20.0f, 0.5f, 20.0f);
 	sceneRegistry.Register(floorEntity);
 
 	// IBL testing
-	IBLSettings IBLsettings{};
-	IBLsettings.eqrMapPath = "resources/textures/eqr_maps/newport_loft.hdr";
-	IBLMaps IBLmap = IBLGenerator::Build(
-		IBLsettings, 
-		EQRToCubemap, 
-		IrradianceShader, 
-		PrefilterShader, 
-		IntegratedBRDF, 
-		cubeVAO, 
-		frameVAO);
+	// probe entity test
+	IBLSettings skyboxIBLSettings = ProbeLibrary::GetSettings("resources/textures/eqr_maps/kloofendal_43d_clear_puresky_2k.hdr");
+	Entity skyboxEntity = WorldObjectFactory::CreateEnvironmentProbe(entityManager, probeManager, idManager, "skybox", skyboxIBLSettings, glm::vec3(0.f), std::numeric_limits<float>::infinity());
+	sceneRegistry.Register(skyboxEntity);
+
+	IBLSettings probeIBLSettings = ProbeLibrary::GetSettings("resources/textures/eqr_maps/newport_loft.hdr");
+	Entity probeEntity = WorldObjectFactory::CreateEnvironmentProbe(entityManager, probeManager, idManager, "probe", probeIBLSettings, glm::vec3(0.f), 50.0f);
+	sceneRegistry.Register(probeEntity);
 
 	// Systems
 	RenderSystem renderSystem;
+	ProbeSystem probeSystem;
 
 	// Setup imgui context
 	IMGUI_CHECKVERSION();
@@ -275,7 +299,7 @@ int main()
 	MainDockWindow mainWindow;
 	ViewportWindow viewportWindow;
 	OutlinerWindow outlinerWindow(&sceneRegistry, &idManager);
-	PropertiesWindow propertiesWindow(&transformManager, &shaderManager, &assetManager, &materialsGroupManager);
+	PropertiesWindow propertiesWindow(&transformManager, &shaderManager, &assetManager, &materialsGroupManager, &probeManager);
 
 	float my_color[4] = { 1.0, 1.0, 1.0, 1.0 };
 	static bool viewport_active;
@@ -321,8 +345,8 @@ int main()
 			tex_curr = ppScene.id;
 			break;
 		}
-
 		processInput(window);
+		
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
@@ -362,14 +386,21 @@ int main()
 			float offset_x = (window_width - display_width) * 0.5f;
 			float offset_y = (window_height - display_height) * 0.5f;
 
-			ImGui::GetWindowDrawList()->AddImage(
-				tex_curr,           
-				ImVec2(pos.x + offset_x, pos.y + offset_y),
-				ImVec2(pos.x + offset_x + display_width, pos.y + offset_y + display_height),
-				ImVec2(0, 1),
-				ImVec2(1, 0)
-			);
-			
+			ImGui::SetCursorScreenPos({ pos.x + offset_x, pos.y + offset_y });
+
+			ImGui::Image(tex_curr, { display_width, display_height }, { 0,1 }, { 1,0 }, ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
+
+			bool imageHovered = ImGui::IsItemHovered();
+			if (imageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+			{
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+				gViewportCaptured = true;
+			}
+			if (!imageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+			{
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+				gViewportCaptured = false;
+			}
 			viewportWindow.EndRender();
 		}
 		outliner_active = outlinerWindow.BeginRender();
@@ -404,7 +435,13 @@ int main()
 		gBuffer.bind();
 		glClearColor(0.0, 0.0, 0.0, 0.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		renderSystem.RenderGeometry(sceneRegistry, transformManager, shaderManager, assetManager, materialsGroupManager, camera);
+		renderSystem.RenderGeometry(
+			sceneRegistry, 
+			transformManager, 
+			shaderManager, 
+			assetManager, 
+			materialsGroupManager, 
+			camera);
 		gBuffer.unbind();
 
 		// deferred shading stage
@@ -426,33 +463,24 @@ int main()
 
 			// PBR shading
 			hdrBuffer.bind();
-			pbrBufferShader.use();
-			pbrBufferShader.setVec3("lightPos", lightPos[0], lightPos[1], lightPos[2]);
-			pbrBufferShader.setVec3("lightColor", lightColor);
-			pbrBufferShader.setVec3("viewPos", glm::vec3(5.0f, 2.5f, 5.0f)); // tentative
-			pbrBufferShader.setInt("gPosition", 0);
-			pbrBufferShader.setInt("gNormal", 1);
-			pbrBufferShader.setInt("gAlbedoRoughness", 2);
-			pbrBufferShader.setInt("gMetallicAO", 3);
-			pbrBufferShader.setInt("irradianceMap", 4);
-			pbrBufferShader.setInt("prefilterMap", 5);
-			pbrBufferShader.setInt("brdfLUT", 6);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, gPosition.id);
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, gNormal.id);
-			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_2D, gAlbedoRoughness.id);
-			glActiveTexture(GL_TEXTURE3);
-			glBindTexture(GL_TEXTURE_2D, gMetallicAO.id);
-			glActiveTexture(GL_TEXTURE4);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, IBLmap.irradianceMap);
-			glActiveTexture(GL_TEXTURE5);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, IBLmap.prefilterMap);
-			glActiveTexture(GL_TEXTURE6);
-			glBindTexture(GL_TEXTURE_2D, IBLmap.brdfLUT);
-			glBindVertexArray(frameVAO);
-			glDrawArrays(GL_TRIANGLES, 0, 6);
+			probeSystem.RebuildProbes(sceneRegistry, probeManager);
+
+			std::vector<Entity> activeProbes = 
+				probeSystem.GetActiveProbes(
+					sceneRegistry, 
+					probeManager, 
+					camera);
+			std::vector<EnvironmentProbeComponent*> IBLProbes;
+
+			for (auto& p : activeProbes) IBLProbes.push_back(probeManager.GetComponent(p));
+
+			renderSystem.RenderDeferredPBR(
+				pbrBufferShader, 
+				lightPos, 
+				gAttachments, 
+				IBLProbes, 
+				camera, 
+				frameVAO);
 			hdrBuffer.unbind();
 
 			// Brightness pass
@@ -512,11 +540,8 @@ int main()
 			// Composite output
 			compositeBuffer.bind();
 			compositeShader.use();
-			glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)1600 / (float)1200, 0.1f, 10.0f);
-			glm::vec3 cameraPos(5.0f, 2.5f, 5.0f);
-			glm::vec3 target(0.0f, 0.0f, 0.0f);
-			glm::vec3 up(0.0f, 1.0f, 0.0f);
-			glm::mat4 view = glm::lookAt(cameraPos, target, up);
+			glm::mat4 projection = camera.getProjectionMatrix(W_WIDTH, W_HEIGHT, 0.1f, 1000.0f);
+			glm::mat4 view = camera.getViewMatrix();
 			glm::mat4 viewNoTrans = glm::mat4(glm::mat3(view));
 			glm::mat4 invProjection = glm::inverse(projection);
 			glm::mat4 invView = glm::inverse(viewNoTrans);
@@ -529,7 +554,7 @@ int main()
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, gDepth.id);
 			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, IBLmap.envMap);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, IBLProbes[IBLProbes.size() - 1]->maps.envMap);
 			compositeShader.setMat4("invProjection", invProjection);
 			compositeShader.setMat4("invView", invView);
 			glBindVertexArray(frameVAO);
@@ -598,9 +623,7 @@ int main()
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 			debugGBuffer.unbind();
 		}
-
 		glEnable(GL_DEPTH_TEST);
-		
 		
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -624,4 +647,108 @@ int main()
 	glfwTerminate();
 
 	return 0;
+}
+
+void processInput(GLFWwindow* window)
+{
+	bool escPressed = glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS;
+	static bool escPressedLastFrame = false;
+
+	if (escPressed && !escPressedLastFrame)
+	{
+		if (gViewportCaptured)
+		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			gViewportCaptured = false;
+		}
+		else glfwSetWindowShouldClose(window, true);
+	}
+	escPressedLastFrame = escPressed;
+
+	Camera* camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
+	if (!camera) return;
+
+	float currentFrame = glfwGetTime();
+	deltaTime = currentFrame - lastFrame;
+	lastFrame = currentFrame;
+
+	const float cameraSpeed = 12.5f * deltaTime; // Adjust as needed.
+
+	// Update camera position based on key input:
+	if (gViewportCaptured)
+	{
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		{
+			camera->setCameraPos(camera->getCameraPos() + cameraSpeed * camera->getCameraFront());
+		}
+		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		{
+			camera->setCameraPos(camera->getCameraPos() - cameraSpeed * camera->getCameraFront());
+		}
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		{
+			// Calculate the right vector: normalized cross product of front and up.
+			glm::vec3 right = glm::normalize(glm::cross(camera->getCameraFront(), camera->getCameraUp()));
+			camera->setCameraPos(camera->getCameraPos() - right * cameraSpeed);
+		}
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		{
+			glm::vec3 right = glm::normalize(glm::cross(camera->getCameraFront(), camera->getCameraUp()));
+			camera->setCameraPos(camera->getCameraPos() + right * cameraSpeed);
+		}
+	}
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+	if (!gViewportCaptured) return;
+
+	Camera* camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
+	if (!camera) return;
+
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos;
+	lastX = xpos;
+	lastY = ypos;
+
+	const float sensitivity = 0.1f;
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
+
+	yaw += xoffset;
+	pitch += yoffset;
+
+	if (pitch > 89.0f) pitch = 89.0f;
+	if (pitch < -89.0f) pitch = -89.0f;
+
+	glm::vec3 direction;
+	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	direction.y = sin(glm::radians(pitch));
+	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+
+	camera->setCameraFront(glm::normalize(direction));
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	Camera* camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
+	if (!camera) return;
+
+	zoom -= (float)yoffset;
+	if (zoom < 1.0f) zoom = 1.0f;
+	if (zoom > 45.0f) zoom = 45.0f;
+
+	camera->setFOV(zoom);
+}
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+	glViewport(0, 0, width, height);
 }
