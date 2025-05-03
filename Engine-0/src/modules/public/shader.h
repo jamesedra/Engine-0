@@ -39,5 +39,6 @@ public:
 	void setVec3(const std::string& name, const glm::vec3& vec) const;
 	void setVec4(const std::string& name, const glm::vec4& vec) const;
 	void setMat4(const std::string& name, const glm::mat4& mat) const;
+	void setSamplerArray(const std::string& name, const std::vector<GLuint> texIDs, int firstUnit, GLenum target) const;
 	GLint getUniformLocation(const std::string& name) const;
 };

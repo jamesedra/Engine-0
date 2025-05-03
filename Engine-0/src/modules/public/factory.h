@@ -74,4 +74,28 @@ public:
         worldContext.materialsGroupManager->components[entity] = std::move(materialsGroupComponent);
         return entity;
     }
+
+    static Entity CreateEnvironmentProbe(
+        EntityManager& entityManager,
+        EnvironmentProbeManager& probeManager,
+        IDManager& idManager,
+        std::string name,
+        IBLSettings& settings,
+        glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f),
+        float radius = 5.0f)
+    {
+        Entity entity = entityManager.CreateEntity();
+
+        EnvironmentProbeComponent probeComp;
+        probeComp.settings = settings;
+        probeComp.maps = IBLGenerator::Build(probeComp.settings);
+        probeComp.buildProbe = false;
+        probeComp.position = position;
+        probeComp.radius = radius;
+
+        idManager.components[entity].ID = name;
+        probeManager.components[entity] = std::move(probeComp);
+
+        return entity;
+    }
 };

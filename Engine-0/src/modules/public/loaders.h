@@ -379,6 +379,14 @@ public:
 		return whiteTex;
 	}
 
+	static Texture CreateBlackTexture()
+	{
+		unsigned char black[4] = { 0, 0, 0, 255 };
+		Texture blackTex(1, 1, GL_RGBA, GL_RGBA, black);
+		blackTex.setTexFilter(GL_NEAREST);
+		return blackTex;
+	}
+
 	static Texture CreateNormalTexture()
 	{
 		unsigned char norm[3] = { 128, 128, 255 };

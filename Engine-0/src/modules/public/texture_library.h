@@ -45,9 +45,11 @@ private:
 	static void InitializeLibrary()
 	{
 		Texture whiteTexture = TextureLoader::CreateWhiteTexture();
+		Texture blackTexture = TextureLoader::CreateBlackTexture();
 		Texture normalTexture = TextureLoader::CreateNormalTexture();
 		Texture importedTexture = TextureLoader::CreateTextureFromImport("resources/textures/brickwall.jpg");
 		GetLibrary().emplace("White Texture - Default", std::move(whiteTexture));
+		GetLibrary().emplace("Black Texture - Default", std::move(blackTexture));
 		GetLibrary().emplace("Normal Texture - Default", std::move(normalTexture));
 		GetLibrary().emplace("Imported Texture - Sample", std::move(importedTexture));
 	}

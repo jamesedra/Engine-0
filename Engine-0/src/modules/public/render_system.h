@@ -3,6 +3,14 @@
 #include "camera.h"
 #include "asset_library.h"
 
+struct GBufferAttachments
+{
+	unsigned int gPosition;
+	unsigned int gNormal;
+	unsigned int gAlbedoRoughness;
+	unsigned int gMetallicAO;
+};
+
 class RenderSystem
 {
 public:
@@ -40,12 +48,10 @@ public:
 			}
 
 			shader->setMat4("model", model);
-			glm::vec3 cameraPos(5.0f, 2.5f, 5.0f);
-			glm::vec3 target(0.0f, 0.0f, 0.0f);
-			glm::vec3 up(0.0f, 1.0f, 0.0f);
-			glm::mat4 view = glm::lookAt(cameraPos, target, up);
-			shader->setMat4("view", view);
-			shader->setMat4("projection", glm::perspective(glm::radians(45.0f), (float)1600 / (float)1200, 0.1f, 10.0f));
+			shader->setMat4("view", camera.getViewMatrix());
+			int WIDTH = 1600;
+			int HEIGHT = 1200;
+			shader->setMat4("projection", camera.getProjectionMatrix(WIDTH, HEIGHT, 0.1f, 1000.0f));
 
 			Asset& asset = AssetLibrary::GetAsset(assetComp->assetName);
 			auto& parts = asset.parts;
@@ -59,5 +65,93 @@ public:
 				}
 			}
 		}
+	}
+
+	void RenderDeferredPBR(
+		Shader& pbrBufferShader,
+		float lightPos[4], // tentative
+		GBufferAttachments& gAttachments,
+		std::vector<EnvironmentProbeComponent*> IBLProbes,
+		Camera& camera,
+		unsigned int frameVAO
+	)
+	{
+		pbrBufferShader.use();
+		pbrBufferShader.setVec3("lightPos", lightPos[0], lightPos[1], lightPos[2]);
+		pbrBufferShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+		pbrBufferShader.setVec3("viewPos", camera.getCameraPos());
+
+		// texture passes
+		unsigned int unit = 0;
+		pbrBufferShader.setInt("gPosition", unit);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, gAttachments.gPosition);
+
+		pbrBufferShader.setInt("gNormal", ++unit);
+		glActiveTexture(GL_TEXTURE0 + unit);
+		glBindTexture(GL_TEXTURE_2D, gAttachments.gNormal);
+
+		pbrBufferShader.setInt("gAlbedoRoughness", ++unit);
+		glActiveTexture(GL_TEXTURE0 + unit);
+		glBindTexture(GL_TEXTURE_2D, gAttachments.gAlbedoRoughness);
+
+		pbrBufferShader.setInt("gMetallicAO", ++unit);
+		glActiveTexture(GL_TEXTURE0 + unit);
+		glBindTexture(GL_TEXTURE_2D, gAttachments.gMetallicAO);
+
+		size_t probeCount = IBLProbes.size();
+		pbrBufferShader.setInt("probeCount", probeCount);
+
+		std::vector<GLuint> irradianceMaps;
+		std::vector<GLuint> prefilterMaps;
+		std::vector<GLuint> brdfLUTs;
+
+		const GLuint MAX_PROBES = 4;
+		for (size_t i = 0; i < probeCount; i++)
+		{
+			auto* p = IBLProbes[i];
+
+			irradianceMaps.push_back(p->maps.irradianceMap);
+			prefilterMaps.push_back(p->maps.prefilterMap);
+			brdfLUTs.push_back(p->maps.brdfLUT);
+
+			pbrBufferShader.setVec3("probePosition[" + std::to_string(i) + "]", p->position);
+		}
+
+		for (size_t i = probeCount; i < MAX_PROBES; i++)
+		{
+			static unsigned int placeholderCubemap = createPlaceholderCubemap();
+			static unsigned int placeholderTexture = TextureLibrary::GetTexture("White Texture - Default").id;
+
+			irradianceMaps.push_back(placeholderCubemap);
+			prefilterMaps.push_back(placeholderCubemap);
+			brdfLUTs.push_back(placeholderTexture);
+
+			pbrBufferShader.setVec3("probePosition[" + std::to_string(i) + "]", glm::vec3(FLT_MAX));
+		}
+		
+		GLuint firstUnit = ++unit;
+
+		pbrBufferShader.setSamplerArray("irradianceMap[0]",
+			irradianceMaps,
+			firstUnit,
+			GL_TEXTURE_CUBE_MAP);
+
+		firstUnit += MAX_PROBES;
+
+		pbrBufferShader.setSamplerArray("prefilterMap[0]",
+			prefilterMaps,
+			firstUnit,
+			GL_TEXTURE_CUBE_MAP);
+
+		firstUnit += MAX_PROBES;
+
+		pbrBufferShader.setSamplerArray("brdfLUT[0]",
+			brdfLUTs,
+			firstUnit,
+			GL_TEXTURE_2D);
+
+		glBindVertexArray(frameVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 	}
 };
