@@ -211,5 +211,10 @@
     <None Include="shaders\IBL\brdf.frag" />
     <None Include="shaders\PBR\pbr_ibl.frag" />
     <None Include="shaders\composite\composite.frag" />
+<<<<<<< Updated upstream
+=======
+    <None Include="shaders\PBR\pbr_ibl_v1.frag" />
+    <None Include="shaders\PBR\pbr_ibl_v2.frag" />
+>>>>>>> Stashed changes
   </ItemGroup>
 </Project>

@@ -11,10 +11,9 @@ in vec3 Normal;
 in mat3 TBNMatrix;
 
 struct Material {
-	bool useDiffuseTexture;
-	bool useRoughnessTexture;
-	bool useMetallicTexture;
-	bool useAmbientOcclusionTexture;
+	bool useDiffuseValue;
+	bool useRoughnessValue;
+	bool useMetallicValue;
 
 	vec3 diffuse;
 	float roughness;
@@ -34,10 +33,10 @@ void main() {
 	vec3 normal = texture(material.texture_normal1, TexCoords).xyz * 2.0 - 1.0;
 	gNormal = normalize(TBNMatrix * normal);
 
-	vec3 diffuse = material.useDiffuseTexture ? texture(material.texture_diffuse1, TexCoords).rgb : material.diffuse;
-	float roughness = material.useRoughnessTexture ? texture(material.texture_roughness1, TexCoords).r : material.roughness;
-	float metallic = material.useMetallicTexture ? texture(material.texture_metallic1, TexCoords).r : material.metallic;
-	float ao = material.useAmbientOcclusionTexture ? texture(material.texture_ao1, TexCoords).r : 0.0;
+	vec3 diffuse = material.useDiffuseValue ? material.diffuse : texture(material.texture_diffuse1, TexCoords).rgb;
+	float roughness = material.useRoughnessValue ? material.roughness : texture(material.texture_roughness1, TexCoords).r;
+	float metallic = material.useMetallicValue ? material.metallic : texture(material.texture_metallic1, TexCoords).r;
+	float ao = texture(material.texture_ao1, TexCoords).r;
 
 	gAlbedoRoughness = vec4(diffuse, roughness);
 	gMetallicAO = vec2(metallic, ao);
