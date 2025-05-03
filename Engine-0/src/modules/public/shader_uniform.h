@@ -90,6 +90,33 @@ UniformValue UniformTypeToValue(GLenum type)
 	}
 }
 
+// ran when uniform type detected is sampler 2D to auto assign default textures correctly.
+UniformValue UniformSampler2DToValue(std::string name)
+{
+	struct TexAssignments
+	{
+		std::string keyword;
+		UniformValue value;
+	};
+
+	std::vector<TexAssignments> assignments = {
+		{ "diffuse", UniformValue::Sampler2D("White Texture - Default") },
+		{ "normal", UniformValue::Sampler2D("Normal Texture - Default") },
+		{ "specular", UniformValue::Sampler2D("White Texture - Default") },
+		{ "ao", UniformValue::Sampler2D("White Texture - Default") },
+		{ "roughness", UniformValue::Sampler2D("White Texture - Default") },
+		{ "metallic", UniformValue::Sampler2D("Black Texture - Default") },
+	};
+
+	for (auto& a : assignments)
+		if (name.find(a.keyword) != std::string::npos)
+			return a.value;
+
+	// fallback if none
+	return UniformValue::Sampler2D("White Texture - Default");
+}
+
+
 bool containsAnyForTransformUniforms(std::string data_name)
 {
 	std::vector<std::string> substrings = { "model", "view", "projection" };
@@ -134,10 +161,10 @@ std::unordered_map<std::string, UniformValue> InitializeMaterialComponent(unsign
 		
 		if ((includeTransformUniforms || !containsAnyForTransformUniforms(data_name)))
 		{
-			uniforms[data_name] = UniformTypeToValue(type);
+			uniforms[data_name] = type != GL_SAMPLER_2D ? 
+				UniformTypeToValue(type) : UniformSampler2DToValue(data_name);
 		}
 	}
-
 	return uniforms;
 }
 

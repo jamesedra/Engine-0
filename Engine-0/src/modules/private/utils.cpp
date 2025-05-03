@@ -514,7 +514,7 @@ float lerp(float a, float b, float t)
 	return a + t * (b - a);
 }
 
-void DisplayFramebufferTexture(Shader shader, unsigned int frame, unsigned int textureID) {
+void displayFramebufferTexture(Shader shader, unsigned int frame, unsigned int textureID) {
 	shader.use();
 	shader.setInt("fboAttachment", 0);
 	glActiveTexture(GL_TEXTURE0);
