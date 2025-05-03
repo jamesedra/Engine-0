@@ -107,15 +107,27 @@ public:
 		std::vector<GLuint> brdfLUTs;
 
 		const GLuint MAX_PROBES = 4;
-		for (size_t i = 0; i < MAX_PROBES; i++)
+		for (size_t i = 0; i < probeCount; i++)
 		{
-			auto* p = IBLProbes[fmin(i, fmax(probeCount-1, 0))];
+			auto* p = IBLProbes[i];
 
 			irradianceMaps.push_back(p->maps.irradianceMap);
 			prefilterMaps.push_back(p->maps.prefilterMap);
 			brdfLUTs.push_back(p->maps.brdfLUT);
 
 			pbrBufferShader.setVec3("probePosition[" + std::to_string(i) + "]", p->position);
+		}
+
+		for (size_t i = probeCount; i < MAX_PROBES; i++)
+		{
+			static unsigned int placeholderCubemap = createPlaceholderCubemap();
+			static unsigned int placeholderTexture = TextureLibrary::GetTexture("White Texture - Default").id;
+
+			irradianceMaps.push_back(placeholderCubemap);
+			prefilterMaps.push_back(placeholderCubemap);
+			brdfLUTs.push_back(placeholderTexture);
+
+			pbrBufferShader.setVec3("probePosition[" + std::to_string(i) + "]", glm::vec3(FLT_MAX));
 		}
 		
 		GLuint firstUnit = ++unit;

@@ -11,7 +11,7 @@ struct IBLSettings
 	uint32_t prefilterSize = 128;
 	uint32_t brdfLUTSize = 512;
 	uint32_t maxMipLevels = 5;
-	std::string eqrMapPath;
+	std::string eqrMapPath = "";
 };
 
 struct IBLMaps
@@ -35,6 +35,17 @@ public:
 		static unsigned int frameVAO = createFrameVAO();
 
 		IBLMaps maps{};
+		if (settings.eqrMapPath.empty())
+		{
+			static unsigned int placeholderCubeMap = createPlaceholderCubemap();
+			static unsigned int placeholderTexture = TextureLibrary::GetTexture("White Texture - Default").id;
+			maps.envMap = placeholderCubeMap;
+			maps.irradianceMap = placeholderCubeMap;
+			maps.prefilterMap = placeholderCubeMap;
+			maps.brdfLUT = placeholderTexture;
+			return maps;
+		}
+
 		unsigned int eqrTexture = loadHDR(settings.eqrMapPath.c_str(), true);
 
 		// FBO helper

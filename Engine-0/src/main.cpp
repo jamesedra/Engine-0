@@ -188,6 +188,14 @@ int main()
 	Texture ppScene(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
 	postprocessBuffer.attachTexture2D(ppScene, GL_COLOR_ATTACHMENT0);
 	postprocessBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+
+	GBufferAttachments gAttachments
+	{
+		gPosition.id,
+		gNormal.id,
+		gAlbedoRoughness.id,
+		gMetallicAO.id 
+	};
 	
 	// Textures
 	unsigned int tex_diff = loadTexture("resources/textures/brickwall.jpg", true, TextureColorSpace::sRGB);
@@ -254,15 +262,15 @@ int main()
 	transformManager.components[floorEntity].scale = glm::vec3(20.0f, 0.5f, 20.0f);
 	sceneRegistry.Register(floorEntity);
 
-	// probe entity test
-	IBLSettings IBLsettingsTest = ProbeLibrary::GetSettings("resources/textures/eqr_maps/kloofendal_43d_clear_puresky_2k.hdr");
-	Entity probeEntity = WorldObjectFactory::CreateEnvironmentProbe(entityManager, probeManager, idManager, "skybox", IBLsettingsTest, glm::vec3(0.f), std::numeric_limits<float>::infinity());
-	sceneRegistry.Register(probeEntity);
-
 	// IBL testing
-	IBLSettings IBLsettings{};
-	IBLsettings.eqrMapPath = "resources/textures/eqr_maps/kloofendal_43d_clear_puresky_2k.hdr";
-	IBLMaps IBLmap = IBLGenerator::Build(IBLsettings);
+	// probe entity test
+	IBLSettings skyboxIBLSettings = ProbeLibrary::GetSettings("resources/textures/eqr_maps/kloofendal_43d_clear_puresky_2k.hdr");
+	Entity skyboxEntity = WorldObjectFactory::CreateEnvironmentProbe(entityManager, probeManager, idManager, "skybox", skyboxIBLSettings, glm::vec3(0.f), std::numeric_limits<float>::infinity());
+	sceneRegistry.Register(skyboxEntity);
+
+	IBLSettings probeIBLSettings = ProbeLibrary::GetSettings("resources/textures/eqr_maps/newport_loft.hdr");
+	Entity probeEntity = WorldObjectFactory::CreateEnvironmentProbe(entityManager, probeManager, idManager, "probe", probeIBLSettings, glm::vec3(0.f), 25.0f);
+	sceneRegistry.Register(probeEntity);
 
 	// Systems
 	RenderSystem renderSystem;
@@ -455,23 +463,16 @@ int main()
 
 			// PBR shading
 			hdrBuffer.bind();
-			GBufferAttachments gAttachments{ 
-				gPosition.id, 
-				gNormal.id, 
-				gAlbedoRoughness.id, 
-				gMetallicAO.id };
-
 			probeSystem.RebuildProbes(sceneRegistry, probeManager);
-			std::vector<Entity> activeProbes = probeSystem.GetActiveProbes(
-				sceneRegistry,
-				probeManager,
-				camera);
 
+			std::vector<Entity> activeProbes = 
+				probeSystem.GetActiveProbes(
+					sceneRegistry, 
+					probeManager, 
+					camera);
 			std::vector<EnvironmentProbeComponent*> IBLProbes;
-			for (auto& p : activeProbes)
-			{
-				IBLProbes.push_back(probeManager.GetComponent(p));
-			}
+
+			for (auto& p : activeProbes) IBLProbes.push_back(probeManager.GetComponent(p));
 
 			renderSystem.RenderDeferredPBR(
 				pbrBufferShader, 
@@ -553,7 +554,7 @@ int main()
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, gDepth.id);
 			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, IBLProbes[0]->maps.envMap);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, IBLProbes[IBLProbes.size() - 1]->maps.envMap);
 			compositeShader.setMat4("invProjection", invProjection);
 			compositeShader.setMat4("invView", invView);
 			glBindVertexArray(frameVAO);
