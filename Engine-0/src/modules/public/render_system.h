@@ -102,24 +102,42 @@ public:
 		size_t probeCount = IBLProbes.size();
 		pbrBufferShader.setInt("probeCount", probeCount);
 
-		for (size_t i = 0; i < probeCount; i++)
+		std::vector<GLuint> irradianceMaps;
+		std::vector<GLuint> prefilterMaps;
+		std::vector<GLuint> brdfLUTs;
+
+		const GLuint MAX_PROBES = 4;
+		for (size_t i = 0; i < MAX_PROBES; i++)
 		{
-			auto* p = IBLProbes[i];
+			auto* p = IBLProbes[fmin(i, fmax(probeCount-1, 0))];
 
-			pbrBufferShader.setInt("probes[" + std::to_string(i) + "].irradianceMap", ++unit);
-			glActiveTexture(GL_TEXTURE0 + unit);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, p->maps.irradianceMap);
+			irradianceMaps.push_back(p->maps.irradianceMap);
+			prefilterMaps.push_back(p->maps.prefilterMap);
+			brdfLUTs.push_back(p->maps.brdfLUT);
 
-			pbrBufferShader.setInt("probes[" + std::to_string(i) + "].prefilterMap", ++unit);
-			glActiveTexture(GL_TEXTURE0 + unit);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, p->maps.prefilterMap);
-
-			pbrBufferShader.setInt("probes[" + std::to_string(i) + "].brdfLUT", ++unit);
-			glActiveTexture(GL_TEXTURE0 + unit);
-			glBindTexture(GL_TEXTURE_2D, p->maps.brdfLUT);
-
-			pbrBufferShader.setVec3("probes[" + std::to_string(i) + "].position", p->position);
+			pbrBufferShader.setVec3("probePosition[" + std::to_string(i) + "]", p->position);
 		}
+		
+		GLuint firstUnit = ++unit;
+
+		pbrBufferShader.setSamplerArray("irradianceMap[0]",
+			irradianceMaps,
+			firstUnit,
+			GL_TEXTURE_CUBE_MAP);
+
+		firstUnit += MAX_PROBES;
+
+		pbrBufferShader.setSamplerArray("prefilterMap[0]",
+			prefilterMaps,
+			firstUnit,
+			GL_TEXTURE_CUBE_MAP);
+
+		firstUnit += MAX_PROBES;
+
+		pbrBufferShader.setSamplerArray("brdfLUT[0]",
+			brdfLUTs,
+			firstUnit,
+			GL_TEXTURE_2D);
 
 		glBindVertexArray(frameVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);

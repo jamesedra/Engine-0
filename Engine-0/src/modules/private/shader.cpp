@@ -229,6 +229,23 @@ void Shader::setMat4(const std::string& name, const glm::mat4& mat) const
 	glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, &mat[0][0]);
 }
 
+void Shader::setSamplerArray(const std::string& name, const std::vector<GLuint> texIDs, int firstUnit, GLenum target) const
+{
+	std::vector<GLint> units(texIDs.size());
+	for (std::size_t i = 0; i < texIDs.size(); ++i)
+		units[i] = static_cast<GLint>(firstUnit + i);
+
+	GLint location = glGetUniformLocation(ID, name.c_str());
+	glUniform1iv(location, static_cast<GLsizei>(units.size()), units.data());
+
+	for (unsigned int i = 0; i < texIDs.size(); i++)
+	{
+		glActiveTexture(GL_TEXTURE0 + units[i]);
+		glBindTexture(target, texIDs[i]);
+	}
+}
+
+
 GLint Shader::getUniformLocation(const std::string& name) const
 {
 	if (uniformLocationCache.find(name) != uniformLocationCache.end()) return uniformLocationCache[name];

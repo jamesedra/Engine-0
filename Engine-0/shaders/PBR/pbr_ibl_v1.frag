@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 #define MAX_PROBES 4
 out vec4 FragColor;
@@ -11,14 +11,11 @@ uniform sampler2D gAlbedoRoughness;
 uniform sampler2D gMetallicAO;
 
 // IBL
-struct IBLProbes {
-	samplerCube irradianceMap;
-	samplerCube prefilterMap;
-	sampler2D brdfLUT;
-	vec3 position;
-};
-uniform IBLProbes probes[MAX_PROBES];
 uniform int probeCount;
+uniform samplerCube irradianceMap[MAX_PROBES];
+uniform samplerCube prefilterMap[MAX_PROBES];
+uniform sampler2D brdfLUT[MAX_PROBES];
+uniform vec3 probePosition[MAX_PROBES];
 
 // temp lighting values
 uniform vec3 lightPos;
@@ -109,41 +106,40 @@ void main() {
 	} 
 	else if (probeCount == 1) {
 		// get maps from probes[0]
-		vec3 irradiance = texture(probes[0].irradianceMap, n).rgb;
+		vec3 irradiance = texture(irradianceMap[0], n).rgb;
 		vec3 diffuseIBL = irradiance * albedo;
-		vec3 prefilteredColor = textureLod(probes[0].prefilterMap, R, roughness * MAX_REFLECTION_LOD).rgb;
-		vec2 envBRDF = texture(probes[0].brdfLUT, vec2(nDotV, roughness)).rg;
+		vec3 prefilteredColor = textureLod(prefilterMap[0], R, roughness * MAX_REFLECTION_LOD).rgb;
+		vec2 envBRDF = texture(brdfLUT[0], vec2(nDotV, roughness)).rg;
 		vec3 specularIBL = prefilteredColor * (F_ibl * envBRDF.x + envBRDF.y);
 
 		ambient = (kD * diffuseIBL + specularIBL) * ao;
 	}
-// weird bug here
-//	else if (probeCount >= 2) {
-//		// get two nearest probes and blend
-//		ivec2 probeIdx = FindClosestProbes(fragPos);
-//		int i0 = probeIdx.x;
-//		int i1 = probeIdx.y;
-//
-//		float d0 = length(fragPos - probes[i0].position);
-//		float d1 = length(fragPos - probes[i1].position);
-//
-//		float w0 = d1 / (d0 + d1);
-//		float w1 = 1.0 - w0;
-//
-//		vec3 irr0 = texture(probes[i0].irradianceMap, n).rgb;
-//		vec3 irr1 = texture(probes[i1].irradianceMap, n).rgb;
-//		irradiance = mix(irr0, irr1, w1);
-//
-//		vec3 pre0 = textureLod(probes[i0].prefilterMap, R, roughness * MAX_REFLECTION_LOD).rgb;
-//		vec3 pre1 = textureLod(probes[i1].prefilterMap, R, roughness * MAX_REFLECTION_LOD).rgb;
-//		prefilteredColor = mix(pre0, pre1, w1);
-//
-//		envBRDF = texture(probes[i0].brdfLUT, vec2(nDotV, roughness)).rg;  
-//
-//		vec3 diffuseIBL = irradiance * albedo;
-//		vec3 specularIBL = prefilteredColor * (F_ibl * envBRDF.x + envBRDF.y);
-//		ambient = (kD * diffuseIBL + specularIBL) * ao;
-//	}
+	else if (probeCount >= 2) {
+		// get two nearest probes and blend
+		ivec2 probeIdx = FindClosestProbes(fragPos);
+		int i0 = probeIdx.x;
+		int i1 = probeIdx.y;
+
+		float d0 = length(fragPos - probePosition[i0]);
+		float d1 = length(fragPos - probePosition[i1]);
+
+		float w0 = d1 / (d0 + d1);
+		float w1 = 1.0 - w0;
+
+		vec3 irr0 = texture(irradianceMap[i0], n).rgb;
+		vec3 irr1 = texture(irradianceMap[i1], n).rgb;
+		irradiance = mix(irr0, irr1, w1);
+
+		vec3 pre0 = textureLod(prefilterMap[i0], R, roughness * MAX_REFLECTION_LOD).rgb;
+		vec3 pre1 = textureLod(prefilterMap[i1], R, roughness * MAX_REFLECTION_LOD).rgb;
+		prefilteredColor = mix(pre0, pre1, w1);
+
+		envBRDF = texture(brdfLUT[i0], vec2(nDotV, roughness)).rg;  
+
+		vec3 diffuseIBL = irradiance * albedo;
+		vec3 specularIBL = prefilteredColor * (F_ibl * envBRDF.x + envBRDF.y);
+		ambient = (kD * diffuseIBL + specularIBL) * ao;
+	}
 
 	vec3 color = ambient + Lo;
 	FragColor = vec4(color, 1.0);
@@ -177,7 +173,7 @@ ivec2 FindClosestProbes(vec3 fragPos) {
 	float d0 = 1e20, d1 = 1e20;
 
 	for (int i = 0; i < probeCount && i < MAX_PROBES; i++) {
-		float di = length(fragPos - probes[i].position);
+		float di = length(fragPos - probePosition[i]);
 
 		if (di < d0) {
 			d1 = d0;  
