@@ -160,6 +160,7 @@
     <ClInclude Include="src\modules\public\asset_library.h" />
     <ClInclude Include="src\modules\public\camera.h" />
     <ClInclude Include="src\modules\public\component_manager.h" />
+    <ClInclude Include="src\modules\public\compute.h" />
     <ClInclude Include="src\modules\public\contexts.h" />
     <ClInclude Include="src\modules\public\entity_manager.h" />
     <ClInclude Include="src\modules\public\factory.h" />
