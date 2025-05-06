@@ -61,3 +61,11 @@ struct EnvironmentProbeComponent
     glm::vec3 position;
     float radius = std::numeric_limits<float>::infinity();
 };
+
+struct LightComponent
+{
+    glm::vec3 color;
+    float intensity;
+    float radius;
+    bool enabled = true;
+};

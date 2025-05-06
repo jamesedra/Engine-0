@@ -70,3 +70,14 @@ public:
 	}
 };
 
+class LightManager
+{
+public:
+	std::unordered_map<Entity, LightComponent> components;
+	LightComponent* GetComponent(Entity entity)
+	{
+		auto it = components.find(entity);
+		return (it != components.end()) ? &it->second : nullptr;
+	}
+};
+

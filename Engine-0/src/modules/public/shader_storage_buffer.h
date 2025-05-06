@@ -26,9 +26,9 @@ public:
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBO);
 	}
 
-	void setData(GLenum target, GLintptr offset, GLsizeiptr size, const void* data)
+	void setData(GLintptr offset, GLsizeiptr size, const void* data)
 	{
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBO);
-		glBufferSubData(target, offset, size, data);
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, size, data);
 	}
 };
