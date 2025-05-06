@@ -176,6 +176,7 @@
     <ClInclude Include="src\modules\public\render_system.h" />
     <ClInclude Include="src\modules\public\shader.h" />
     <ClInclude Include="src\modules\public\shader_library.h" />
+    <ClInclude Include="src\modules\public\shader_storage_buffer.h" />
     <ClInclude Include="src\modules\public\shader_uniform.h" />
     <ClInclude Include="src\modules\public\texture.h" />
     <ClInclude Include="src\modules\public\texture_library.h" />

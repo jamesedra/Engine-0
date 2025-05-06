@@ -220,21 +220,6 @@ int main()
 	// Skybox and IBL Shading
 	Shader skyboxShader("shaders/skybox/skybox_default.vert", "shaders/skybox/skybox_default.frag");
 
-	// Skybox testing
-	stbi_set_flip_vertically_on_load(false);
-
-	std::vector<std::string> faces = {
-		"resources/skybox/right.jpg",
-		"resources/skybox/left.jpg",
-		"resources/skybox/top.jpg",
-		"resources/skybox/bottom.jpg",
-		"resources/skybox/front.jpg",
-		"resources/skybox/back.jpg"
-	};
-
-	unsigned int skyboxTexture = loadCubemap(faces);
-	stbi_set_flip_vertically_on_load(true);
-
 	// -------------------
 	// Component Managers
 	EntityManager entityManager;

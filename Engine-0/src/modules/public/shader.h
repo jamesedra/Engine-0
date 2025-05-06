@@ -27,6 +27,9 @@ public:
 	// vert, geom, and frag shader constructor
 	Shader(const char* vertexPath, const char* geometryPath, const char* fragmentPath);
 
+	// compute shader
+	Shader(const char* computePath);
+
 	// use and activate the shader
 	void use();
 
