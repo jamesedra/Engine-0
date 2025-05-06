@@ -21,12 +21,11 @@ public:
 	// program ID
 	unsigned int ID;
 
+	Shader() = default;
 	// vert and frag shader constructor. Paths should start at root directory.
 	Shader(const char* vertexPath, const char* fragmentPath);
-
 	// vert, geom, and frag shader constructor
 	Shader(const char* vertexPath, const char* geometryPath, const char* fragmentPath);
-
 	// compute shader
 	Shader(const char* computePath);
 

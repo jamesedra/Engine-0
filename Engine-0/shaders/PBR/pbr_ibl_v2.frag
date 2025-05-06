@@ -1,6 +1,9 @@
 #version 450 core
 
+#define MAX_LIGHTS 128
+#define MAX_LIGHTS_PER_TILE 64
 #define MAX_PROBES 4
+
 out vec4 FragColor;
 in vec2 TexCoords;
 
@@ -17,10 +20,27 @@ uniform samplerCube prefilterMap[MAX_PROBES];
 uniform sampler2D brdfLUT[MAX_PROBES];
 uniform vec3 probePosition[MAX_PROBES];
 
-// temp lighting values
-uniform vec3 lightPos;
-uniform vec3 lightColor;
+// Lighting
+struct Light {
+	vec4 pos_radius;
+	vec4 color_intensity;
+};
 
+layout(std430, binding = 0) readonly buffer LightBuf {
+	Light lights[MAX_LIGHTS];
+};
+
+layout(std430, binding = 1) readonly buffer TileInfoBuf {
+	uvec2 tileInfo[];
+};
+
+layout(std430, binding = 2) readonly buffer LightIndexBuf {
+	uint lightIndices[];
+};
+
+uniform ivec2 screenSize;
+uniform ivec2 tileCount;
+uniform int tileSize;
 uniform vec3 viewPos;
 
 vec3 Fresnel(float cosTheta, vec3 F0);
@@ -38,60 +58,77 @@ void main() {
 	vec4 ar = texture(gAlbedoRoughness, TexCoords);
 	vec3 albedo = ar.rgb;
 	float roughness = ar.a;
+	roughness = max(roughness, 0.0001);
 	vec2 ma = texture(gMetallicAO, TexCoords).rg;
 	float metallic = ma.r;
 	float ao = ma.g;
 
-	roughness = max(roughness, 0.0001);
+	vec3 v = normalize(viewPos - fragPos);
+	float nDotV = max(dot(n, v), 0.0);
+
+	ivec2 pixel = ivec2(gl_FragCoord.xy);
+    ivec2 tile = pixel / tileSize;
+    int tileID = tile.y * tileCount.x + tile.x;
+
+	uint offset = tileInfo[tileID].x;
+    uint count  = tileInfo[tileID].y;
 
 	vec3 F0 = mix(vec3(0.04), albedo, metallic);
 	vec3 Lo = vec3(0.0); // outgoing radiance
 
-	vec3 v = normalize(viewPos - fragPos);
-	vec3 l = normalize(lightPos - fragPos);
-	vec3 h = normalize(v + l);
+	for (uint i = 0u; i < count; i++) {
+		uint lightID = lightIndices[offset + i];
+		Light light = lights[lightID];
 
-	// Non-PBR, but lighting helper // tentative for brightness check
-	float intensity = 10.0;
-	float radius = 2.5;
-	float radius2 = radius * radius;
-	float distance = length(lightPos - fragPos);
-	float dist2   = dot(lightPos - fragPos, lightPos - fragPos);
-	float attenuation = dist2 < radius2 ? 1.0 : clamp(radius2 / dist2, 0.0, 1.0);
-	vec3 radiance = lightColor * attenuation * intensity;
+		// light unpacking
+		vec3 lightPos = light.pos_radius.rgb;
+		float lightRadius = light.pos_radius.a;
+		vec3 lightColor = light.color_intensity.rgb;
+		float lightIntensity = light.color_intensity.a;
 
-	// Dot product setup
-	float nDotL = max(dot(n, l), 0.0);
-	float vDotH = max(dot(v, h), 0.0);
-	float nDotH = max(dot(n, h), 0.0);
-	float nDotV = max(dot(n, v), 0.0);
+		vec3 l = normalize(lightPos - fragPos);
+		vec3 h = normalize(v + l);
 
-	// Specular BRDF
-	vec3 F = Fresnel(vDotH, F0);
-	float D = NormalDistribution(nDotH, roughness);
-	float G = GeometryEq(nDotL, roughness) * GeometryEq(nDotV, roughness);
+		// lighting helper, tentative
+		float radius2 = lightRadius * lightRadius;
+		float distance = length(lightPos - fragPos);
+		float dist2   = dot(lightPos - fragPos, lightPos - fragPos);
+		float attenuation = dist2 < radius2 ? 1.0 : clamp(radius2 / dist2, 0.0, 1.0);
 
-	vec3 SpecBRDF_nom = D * G * F;
-	float SpecBRDF_denom = 4.0 * nDotV * nDotL;
-	vec3 SpecBRDF = SpecBRDF_nom / max(SpecBRDF_denom, 0.001);
-
-	// Diffuse BRDF
-	vec3 kS = F;
-	vec3 kD = vec3(1.0) - kS;
-	kD *= 1.0 - metallic;
+		// Dot product setup
+		float nDotL = max(dot(n, l), 0.0);
+		float vDotH = max(dot(v, h), 0.0);
+		float nDotH = max(dot(n, h), 0.0);
 		
-	vec3 fLambert = albedo;
-	vec3 DiffuseBRDF = kD * fLambert / PI;
+		if (nDotL > 0.0) {
+			// Specular BRDF
+			vec3 F = Fresnel(vDotH, F0);
+			float D = NormalDistribution(nDotH, roughness);
+			float G = GeometryEq(nDotL, roughness) * GeometryEq(nDotV, roughness);
 
-	Lo += (DiffuseBRDF + SpecBRDF) * radiance * nDotL;
+			vec3 SpecBRDF_nom = D * G * F;
+			float SpecBRDF_denom = 4.0 * nDotV * nDotL;
+			vec3 SpecBRDF = SpecBRDF_nom / max(SpecBRDF_denom, 0.001);
+
+			// Diffuse BRDF
+			vec3 kS = F;
+			vec3 kD = vec3(1.0) - kS;
+			kD *= 1.0 - metallic;
+			vec3 fLambert = albedo;
+			vec3 DiffuseBRDF = kD * fLambert / PI;
+
+			vec3 radiance = lightColor * attenuation * lightIntensity;
+			Lo += (DiffuseBRDF + SpecBRDF) * radiance * nDotL;
+		}
+	}
 
 	// IBL
 	vec3 R = reflect(-v, n);
 	const float MAX_REFLECTION_LOD = 4.0;
 
 	vec3 F_ibl = FresnelRoughness(nDotV, F0, roughness);
-	kS = F_ibl;
-	kD = 1.0 - kS;
+	vec3 kS = F_ibl;
+	vec3 kD = 1.0 - kS;
 	kD *= 1.0 - metallic;
 
 	vec3 irradiance;

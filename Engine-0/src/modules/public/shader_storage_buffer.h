@@ -12,7 +12,7 @@ class ShaderStorageBuffer
 {
 public:
 	unsigned int SSBO;
-
+	ShaderStorageBuffer() = default;
 	ShaderStorageBuffer(GLuint bindingPoint, GLsizei bufferSize, GLsizeiptr bufferDataSize, const void* data = nullptr, GLenum usage = GL_DYNAMIC_DRAW)
 	{
 		glGenBuffers(bufferSize, &SSBO);

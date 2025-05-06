@@ -8,6 +8,7 @@
 #include "modules/public/framebuffer.h"
 #include "modules/public/texture.h"
 #include "windows/window.h"
+#include "modules/public/light_system.h"
 #include "modules/public/render_system.h"
 #include "modules/public/probe_system.h"
 #include "modules/public/factory.h"
@@ -258,8 +259,11 @@ int main()
 	sceneRegistry.Register(probeEntity);
 
 	// Systems
+	LightSystem lightSystem;
 	RenderSystem renderSystem;
 	ProbeSystem probeSystem;
+
+	lightSystem.Initialize(W_WIDTH, W_HEIGHT);
 
 	// Setup imgui context
 	IMGUI_CHECKVERSION();
