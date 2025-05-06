@@ -1,5 +1,4 @@
 #pragma once
-
 #include "camera.h"
 #include "component_manager.h"
 #include "shader.h"
@@ -7,13 +6,6 @@
 
 static constexpr int MAX_LIGHTS = 128;
 static constexpr int MAX_LIGHTS_PER_TILE = 64;
-
-
-
-struct LightCullSSBO
-{
-    
-};
 
 // mirror struct from comp shader
 struct GPULight
@@ -26,11 +18,9 @@ class LightSystem
 {
 private:
     Shader lightCompShader;
-
     ShaderStorageBuffer lightSSBO;
     ShaderStorageBuffer lightIndexSSBO;
     ShaderStorageBuffer tileInfoSSBO;
-    
     int screenWidth, screenHeight;
     int tileSize, tileCount;
     int numTilesX,numTilesY;
