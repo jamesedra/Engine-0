@@ -182,6 +182,15 @@
     <ClInclude Include="src\modules\public\probe_temp_library.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\modules\public\compute.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\public\shader_storage_buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\public\light_system.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\default.vert" />
@@ -215,5 +224,6 @@
     <None Include="shaders\PBR\pbr_ibl.frag" />
     <None Include="shaders\composite\composite.frag" />
     <None Include="shaders\PBR\pbr_ibl_v1.frag" />
+    <None Include="shaders\PBR\pbr_ibl_v2.frag" />
   </ItemGroup>
 </Project>

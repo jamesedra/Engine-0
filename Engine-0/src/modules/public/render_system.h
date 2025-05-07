@@ -69,7 +69,6 @@ public:
 
 	void RenderDeferredPBR(
 		Shader& pbrBufferShader,
-		float lightPos[4], // tentative
 		GBufferAttachments& gAttachments,
 		std::vector<EnvironmentProbeComponent*> IBLProbes,
 		Camera& camera,
@@ -77,8 +76,6 @@ public:
 	)
 	{
 		pbrBufferShader.use();
-		pbrBufferShader.setVec3("lightPos", lightPos[0], lightPos[1], lightPos[2]);
-		pbrBufferShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
 		pbrBufferShader.setVec3("viewPos", camera.getCameraPos());
 
 		// texture passes

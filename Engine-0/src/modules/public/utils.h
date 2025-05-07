@@ -39,6 +39,6 @@ glm::vec2 getUVPosition(const float* vertices, int index);
 
 float lerp(float a, float b, float t);
 
-void DisplayFramebufferTexture(Shader shader, unsigned int frame, unsigned int textureID);
+void displayFramebufferTexture(Shader shader, unsigned int frame, unsigned int textureID);
 
 unsigned int createPlaceholderCubemap();

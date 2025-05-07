@@ -75,13 +75,39 @@ public:
         return entity;
     }
 
+    static Entity CreatePointLight(
+        EntityManager& entityManager,
+        LightManager& lightManager,
+        TransformManager& transformManager,
+        IDManager& idManager,
+        std::string name,
+        glm::vec3 position = glm::vec3(0.f),
+        glm::vec3 color = glm::vec3(1.0f),
+        float intensity = 10.0f,
+        float radius = 2.5f,
+        bool enabled = true
+    )
+    {
+        Entity entity = entityManager.CreateEntity();
+
+        LightComponent lightComp{ color, intensity, radius, enabled };
+        TransformComponent transformComp;
+        transformComp.position = position;
+
+        idManager.components[entity].ID = name;
+        lightManager.components[entity] = std::move(lightComp);
+        transformManager.components[entity] = std::move(transformComp);
+
+        return entity;
+    }
+
     static Entity CreateEnvironmentProbe(
         EntityManager& entityManager,
         EnvironmentProbeManager& probeManager,
         IDManager& idManager,
         std::string name,
         IBLSettings& settings,
-        glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3 position = glm::vec3(0.0f),
         float radius = 5.0f)
     {
         Entity entity = entityManager.CreateEntity();

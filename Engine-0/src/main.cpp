@@ -8,6 +8,7 @@
 #include "modules/public/framebuffer.h"
 #include "modules/public/texture.h"
 #include "windows/window.h"
+#include "modules/public/light_system.h"
 #include "modules/public/render_system.h"
 #include "modules/public/probe_system.h"
 #include "modules/public/factory.h"
@@ -210,7 +211,7 @@ int main()
 	Shader outShader("shaders/frame_out.vert", "shaders/frame_out.frag");
 	Shader outputFrame("shaders/frame_out.vert", "shaders/frame_out.frag");
 	Shader debugBufferShader("shaders/gbuffer/gbuffer_debug_out.vert", "shaders/gbuffer/gbuffer_debug_out.frag");
-	Shader pbrBufferShader("shaders/PBR/pbr_def.vert", "shaders/PBR/pbr_ibl_v1.frag");
+	Shader pbrBufferShader("shaders/PBR/pbr_def.vert", "shaders/PBR/pbr_ibl_v2.frag");
 	Shader brightPassShader("shaders/frame_out.vert", "shaders/PBR/bright_pass.frag");
 	Shader blurShader("shaders/frame_out.vert", "shaders/blur/gaussian.frag");
 	Shader bloomShader("shaders/frame_out.vert", "shaders/bloom/bloom.frag");
@@ -219,21 +220,6 @@ int main()
 	Shader ppShader("shaders/frame_out.vert", "shaders/postprocess/pp_celshading.frag");
 	// Skybox and IBL Shading
 	Shader skyboxShader("shaders/skybox/skybox_default.vert", "shaders/skybox/skybox_default.frag");
-
-	// Skybox testing
-	stbi_set_flip_vertically_on_load(false);
-
-	std::vector<std::string> faces = {
-		"resources/skybox/right.jpg",
-		"resources/skybox/left.jpg",
-		"resources/skybox/top.jpg",
-		"resources/skybox/bottom.jpg",
-		"resources/skybox/front.jpg",
-		"resources/skybox/back.jpg"
-	};
-
-	unsigned int skyboxTexture = loadCubemap(faces);
-	stbi_set_flip_vertically_on_load(true);
 
 	// -------------------
 	// Component Managers
@@ -244,6 +230,7 @@ int main()
 	AssetManager assetManager;
 	MaterialsGroupManager materialsGroupManager;
 	EnvironmentProbeManager probeManager;
+	LightManager lightManager;
 
 	// Registries
 	SceneEntityRegistry sceneRegistry;
@@ -259,8 +246,22 @@ int main()
 	Entity floorEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "");
 	idManager.components[floorEntity].ID = "floor";
 	transformManager.components[floorEntity].position = glm::vec3(0.0f, -2.0f, 0.0f);
-	transformManager.components[floorEntity].scale = glm::vec3(20.0f, 0.5f, 20.0f);
+	transformManager.components[floorEntity].scale = glm::vec3(100.0f, 0.5f, 100.0f);
 	sceneRegistry.Register(floorEntity);
+
+	// Light Objects
+	//Entity lightEntity = WorldObjectFactory::CreatePointLight(entityManager, lightManager, transformManager, idManager, "light");
+	//sceneRegistry.Register(lightEntity);
+
+	// lights
+	for (int i = 0; i < 20; i++)
+	{
+		for (int j = 0; j < 20; j++)
+		{
+			Entity lightEntity = WorldObjectFactory::CreatePointLight(entityManager, lightManager, transformManager, idManager, "light " + std::to_string(i) + std::to_string(j), glm::vec3(i*5, 0.0f, j*5));
+			sceneRegistry.Register(lightEntity);
+		}
+	}
 
 	// IBL testing
 	// probe entity test
@@ -273,8 +274,11 @@ int main()
 	sceneRegistry.Register(probeEntity);
 
 	// Systems
+	LightSystem lightSystem;
 	RenderSystem renderSystem;
 	ProbeSystem probeSystem;
+
+	lightSystem.Initialize(W_WIDTH, W_HEIGHT);
 
 	// Setup imgui context
 	IMGUI_CHECKVERSION();
@@ -309,8 +313,6 @@ int main()
 	static int tex_type = 6;
 	unsigned int tex_curr;
 
-	static float lightPos[4] = { 0.0f, 0.0f, 0.5f, 0.0f };
-	glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
 	while (!glfwWindowShouldClose(window))
 	{
 		if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0)
@@ -425,7 +427,6 @@ int main()
 			ImGui::RadioButton("Lit", &tex_type, 6);
 			ImGui::RadioButton("Cel Shaded", &tex_type, 7);
 
-			ImGui::DragFloat3("Light Position", lightPos, 0.5f, -50.0f, 50.0f);
 			propertiesWindow.EndRender();
 		}
 
@@ -465,22 +466,14 @@ int main()
 			hdrBuffer.bind();
 			probeSystem.RebuildProbes(sceneRegistry, probeManager);
 
-			std::vector<Entity> activeProbes = 
-				probeSystem.GetActiveProbes(
-					sceneRegistry, 
-					probeManager, 
-					camera);
+			std::vector<Entity> activeProbes = probeSystem.GetActiveProbes(sceneRegistry, probeManager, camera);
 			std::vector<EnvironmentProbeComponent*> IBLProbes;
-
 			for (auto& p : activeProbes) IBLProbes.push_back(probeManager.GetComponent(p));
 
-			renderSystem.RenderDeferredPBR(
-				pbrBufferShader, 
-				lightPos, 
-				gAttachments, 
-				IBLProbes, 
-				camera, 
-				frameVAO);
+			lightSystem.TileLighting(sceneRegistry, lightManager, transformManager, camera);
+			lightSystem.ConfigurePBRUniforms(pbrBufferShader);
+
+			renderSystem.RenderDeferredPBR(pbrBufferShader, gAttachments, IBLProbes, camera, frameVAO);
 			hdrBuffer.unbind();
 
 			// Brightness pass

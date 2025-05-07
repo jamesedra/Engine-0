@@ -21,11 +21,13 @@ public:
 	// program ID
 	unsigned int ID;
 
+	Shader() = default;
 	// vert and frag shader constructor. Paths should start at root directory.
 	Shader(const char* vertexPath, const char* fragmentPath);
-
 	// vert, geom, and frag shader constructor
 	Shader(const char* vertexPath, const char* geometryPath, const char* fragmentPath);
+	// compute shader
+	Shader(const char* computePath);
 
 	// use and activate the shader
 	void use();
@@ -35,6 +37,7 @@ public:
 	void setInt(const std::string& name, int value) const;
 	void setFloat(const std::string& name, float value) const;
 	void setVec2(const std::string& name, const glm::vec2& vec) const;
+	void setIVec2(const std::string& name, float x, float y) const;
 	void setVec3(const std::string& name, float x, float y, float z) const;
 	void setVec3(const std::string& name, const glm::vec3& vec) const;
 	void setVec4(const std::string& name, const glm::vec4& vec) const;
