@@ -4,7 +4,7 @@
 #include "shader.h"
 #include "shader_storage_buffer.h"
 
-static constexpr int MAX_LIGHTS = 128;
+static constexpr int MAX_LIGHTS = 512;
 static constexpr int MAX_LIGHTS_PER_TILE = 64;
 
 // mirror struct from comp shader
@@ -38,15 +38,14 @@ public:
         lightCompShader = Shader("shaders/lighting/lighting_tiled.comp");
 
         lightSSBO = ShaderStorageBuffer(0, 1, sizeof(GPULight) * MAX_LIGHTS);
-        tileInfoSSBO = ShaderStorageBuffer(1, 1, sizeof(glm::uvec2) * numTilesX * numTilesY);
-        lightIndexSSBO = ShaderStorageBuffer(2, 1, sizeof(GLuint) * numTilesX * numTilesY * MAX_LIGHTS_PER_TILE);
+        tileInfoSSBO = ShaderStorageBuffer(1, 1, sizeof(glm::uvec2) * tileCount);
+        lightIndexSSBO = ShaderStorageBuffer(2, 1, sizeof(GLuint) * tileCount * MAX_LIGHTS_PER_TILE);
     }
 
     void TileLighting(
         SceneEntityRegistry& sceneRegistry,
         LightManager& lightManager,
         TransformManager& transformManager,
-        Shader& lightCompShader,
         Camera& camera)
     {
         std::vector<GPULight> lights;
@@ -66,12 +65,19 @@ public:
             };
 
             lights.push_back(light);
-            if ((int)lights.size() >= MAX_LIGHTS) break;
+            if (lights.size() >= MAX_LIGHTS) break;
         }
         int lightCount = (int)lights.size();
-        
         lightSSBO.setData(0, sizeof(GPULight) * lightCount, lights.data());
-        tileInfoSSBO.setData(0, sizeof(glm::uvec2) * tileDefault.size(), tileDefault.data());
+
+        std::vector<glm::uvec2> tileData(tileCount);
+        for (int t = 0; t < tileCount; ++t)
+        {
+            tileData[t].x = t * MAX_LIGHTS_PER_TILE;
+            tileData[t].y = 0u;
+        }
+        tileInfoSSBO.setData(0, sizeof(glm::uvec2) * tileCount, tileData.data());
+        // tileInfoSSBO.setData(0, sizeof(glm::uvec2) * tileDefault.size(), tileDefault.data());
 
         lightCompShader.use();
         lightCompShader.setMat4("view", camera.getViewMatrix());
@@ -79,6 +85,7 @@ public:
         lightCompShader.setIVec2("screenSize", screenWidth, screenHeight);
         lightCompShader.setIVec2("tileCount", numTilesX, numTilesY);
         lightCompShader.setInt("tileSize", tileSize);
+        lightCompShader.setInt("lightCount", lightCount);
 
         glDispatchCompute(numTilesX, numTilesY, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -89,5 +96,14 @@ public:
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightSSBO.SSBO);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, tileInfoSSBO.SSBO);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, lightIndexSSBO.SSBO);
+    }
+
+    void ConfigurePBRUniforms(Shader& pbrShader)
+    {
+        pbrShader.use();
+        // BindForShading();
+        pbrShader.setInt("tileSize", tileSize);
+        pbrShader.setIVec2("screenSize", screenWidth, screenHeight);
+        pbrShader.setIVec2("tileCount", numTilesX, numTilesY);
     }
 };

@@ -1,6 +1,6 @@
 #version 450 core
 
-#define MAX_LIGHTS 128
+#define MAX_LIGHTS 512
 #define MAX_LIGHTS_PER_TILE 64
 #define MAX_PROBES 4
 
@@ -71,7 +71,7 @@ void main() {
     int tileID = tile.y * tileCount.x + tile.x;
 
 	uint offset = tileInfo[tileID].x;
-    uint count  = tileInfo[tileID].y;
+	uint count  = tileInfo[tileID].y;
 
 	vec3 F0 = mix(vec3(0.04), albedo, metallic);
 	vec3 Lo = vec3(0.0); // outgoing radiance
@@ -90,10 +90,15 @@ void main() {
 		vec3 h = normalize(v + l);
 
 		// lighting helper, tentative
-		float radius2 = lightRadius * lightRadius;
 		float distance = length(lightPos - fragPos);
+		if (distance > lightRadius) continue;
+
+		float radius2 = lightRadius * lightRadius;
 		float dist2   = dot(lightPos - fragPos, lightPos - fragPos);
-		float attenuation = dist2 < radius2 ? 1.0 : clamp(radius2 / dist2, 0.0, 1.0);
+		// attenuation testing
+		// float attenuation = dist2 < radius2 ? 1.0 : clamp(radius2 / dist2, 0.0, 1.0);
+		// float attenuation = clamp(radius2 / (distance * distance), 0.0, 1.0);
+		float attenuation = 1.0 - (distance / lightRadius);
 
 		// Dot product setup
 		float nDotL = max(dot(n, l), 0.0);
