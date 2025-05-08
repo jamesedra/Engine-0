@@ -254,9 +254,9 @@ int main()
 	//sceneRegistry.Register(lightEntity);
 
 	// lights
-	for (int i = 0; i < 20; i++)
+	for (int i = 0; i < 40; i++)
 	{
-		for (int j = 0; j < 20; j++)
+		for (int j = 0; j < 40; j++)
 		{
 			Entity lightEntity = WorldObjectFactory::CreatePointLight(entityManager, lightManager, transformManager, idManager, "light " + std::to_string(i) + std::to_string(j), glm::vec3(i*5, 0.0f, j*5));
 			sceneRegistry.Register(lightEntity);
@@ -533,7 +533,7 @@ int main()
 			// Composite output
 			compositeBuffer.bind();
 			compositeShader.use();
-			glm::mat4 projection = camera.getProjectionMatrix(W_WIDTH, W_HEIGHT, 0.1f, 1000.0f);
+			glm::mat4 projection = camera.getProjectionMatrix(W_WIDTH, W_HEIGHT, 0.1f, 2500.0f);
 			glm::mat4 view = camera.getViewMatrix();
 			glm::mat4 viewNoTrans = glm::mat4(glm::mat3(view));
 			glm::mat4 invProjection = glm::inverse(projection);

@@ -4,7 +4,7 @@
 #include "shader.h"
 #include "shader_storage_buffer.h"
 
-static constexpr int MAX_LIGHTS = 512;
+static constexpr int MAX_LIGHTS = 1600;
 static constexpr int MAX_LIGHTS_PER_TILE = 64;
 
 // mirror struct from comp shader
@@ -49,8 +49,6 @@ public:
         Camera& camera)
     {
         std::vector<GPULight> lights;
-        std::vector<glm::uvec2> tileDefault(numTilesX * numTilesY, glm::uvec2(0, 0));
-        
         lights.reserve(MAX_LIGHTS);
 
         for (Entity entity : sceneRegistry.GetAll())
@@ -77,11 +75,13 @@ public:
             tileData[t].y = 0u;
         }
         tileInfoSSBO.setData(0, sizeof(glm::uvec2) * tileCount, tileData.data());
+
+        // std::vector<glm::uvec2> tileDefault(numTilesX * numTilesY, glm::uvec2(0, 0));
         // tileInfoSSBO.setData(0, sizeof(glm::uvec2) * tileDefault.size(), tileDefault.data());
 
         lightCompShader.use();
         lightCompShader.setMat4("view", camera.getViewMatrix());
-        lightCompShader.setMat4("projection", camera.getProjectionMatrix(screenWidth, screenHeight, 0.1f, 1000.0f));
+        lightCompShader.setMat4("projection", camera.getProjectionMatrix(screenWidth, screenHeight, 0.1f, 2500.0f));
         lightCompShader.setIVec2("screenSize", screenWidth, screenHeight);
         lightCompShader.setIVec2("tileCount", numTilesX, numTilesY);
         lightCompShader.setInt("tileSize", tileSize);

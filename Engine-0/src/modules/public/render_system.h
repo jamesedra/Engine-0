@@ -51,7 +51,7 @@ public:
 			shader->setMat4("view", camera.getViewMatrix());
 			int WIDTH = 1600;
 			int HEIGHT = 1200;
-			shader->setMat4("projection", camera.getProjectionMatrix(WIDTH, HEIGHT, 0.1f, 1000.0f));
+			shader->setMat4("projection", camera.getProjectionMatrix(WIDTH, HEIGHT, 0.1f, 2500.0f));
 
 			Asset& asset = AssetLibrary::GetAsset(assetComp->assetName);
 			auto& parts = asset.parts;

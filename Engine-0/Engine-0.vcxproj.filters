@@ -225,5 +225,6 @@
     <None Include="shaders\composite\composite.frag" />
     <None Include="shaders\PBR\pbr_ibl_v1.frag" />
     <None Include="shaders\PBR\pbr_ibl_v2.frag" />
+    <None Include="shaders\tiling_debug.frag" />
   </ItemGroup>
 </Project>
