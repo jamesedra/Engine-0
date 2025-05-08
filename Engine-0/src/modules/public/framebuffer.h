@@ -18,6 +18,7 @@ private:
 
 public:
 	unsigned int FBO;
+	Framebuffer() = default;
 
 	Framebuffer(int width, int height) : width(width), height(height) {
 		glGenFramebuffers(1, &FBO);

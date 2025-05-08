@@ -5,6 +5,7 @@
 #include "common.h"
 #include "modules/public/utils.h"
 #include "modules/public/camera.h"
+#include "modules/public/renderer.h"
 #include "modules/public/framebuffer.h"
 #include "modules/public/texture.h"
 #include "windows/window.h"
@@ -122,6 +123,8 @@ int main()
 	unsigned int debugbuffer_attachments[6] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 };
 	glDrawBuffers(6, debugbuffer_attachments);
 	debugGBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+
+	Renderer renderer;
 
 	// G-Buffer
 	Framebuffer gBuffer(W_WIDTH, W_HEIGHT);

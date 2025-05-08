@@ -2,14 +2,7 @@
 #include "component_manager.h"
 #include "camera.h"
 #include "asset_library.h"
-
-struct GBufferAttachments
-{
-	unsigned int gPosition;
-	unsigned int gNormal;
-	unsigned int gAlbedoRoughness;
-	unsigned int gMetallicAO;
-};
+#include "renderer.h"
 
 class RenderSystem
 {
