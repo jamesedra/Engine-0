@@ -1,6 +1,6 @@
 #version 450 core
 
-#define MAX_LIGHTS 512
+#define MAX_LIGHTS 1600
 #define MAX_LIGHTS_PER_TILE 64
 #define MAX_PROBES 4
 

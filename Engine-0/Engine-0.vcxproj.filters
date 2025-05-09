@@ -191,6 +191,9 @@
     <ClInclude Include="src\modules\public\light_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\modules\public\renderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\default.vert" />
@@ -225,5 +228,6 @@
     <None Include="shaders\composite\composite.frag" />
     <None Include="shaders\PBR\pbr_ibl_v1.frag" />
     <None Include="shaders\PBR\pbr_ibl_v2.frag" />
+    <None Include="shaders\tiling_debug.frag" />
   </ItemGroup>
 </Project>
