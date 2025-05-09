@@ -12,6 +12,34 @@ struct GBufferAttachments
 	unsigned int gMetallicAO;
 };
 
+struct LBufferAttachments
+{
+	unsigned int hdrScene;
+	unsigned int tonemappedScene;
+	unsigned int brightnessPass;
+	unsigned int blurPass;
+	unsigned int compositeScene;
+};
+
+struct BlurBufferAttachments
+{
+	Framebuffer& pingBuf;
+	Framebuffer& pongBuf;
+	Shader& blurShader;
+	unsigned int blurHorizontal;
+	unsigned int blurVertical;
+};
+
+struct DebugAttachments
+{
+	unsigned int position;
+	unsigned int normal;
+	unsigned int albedo;
+	unsigned int metallic;
+	unsigned int roughness;
+	unsigned int AO;
+};
+
 class Renderer
 {
 private:
@@ -23,6 +51,10 @@ private:
 	Texture hdrScene, brightnessPass, blurHorizontal, blurVertical, tonemappedScene, compositeScene, ppScene;
 	// Lighting shaders
 	Shader pbrBufferShader, brightPassShader, blurShader, bloomShader, tonemapShader, compositeShader, ppShader;
+	// Debug pass
+	Framebuffer debugBuffer;
+	Shader debugShader;
+	Texture debugPosition, debugNormal, debugAlbedo, debugMetallic, debugRoughness, debugAO;
 
 public:
 	void Initialize(int width, int height)
@@ -92,6 +124,38 @@ public:
 		postprocessBuffer.attachTexture2D(ppScene, GL_COLOR_ATTACHMENT0);
 		postprocessBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
+		// Debug buffer
+		debugBuffer = Framebuffer(width, height);
+		// position
+		debugPosition = Texture(width, height, GL_RGBA, GL_RGBA);
+		debugPosition.setTexFilter(GL_NEAREST);
+		debugBuffer.attachTexture2D(debugPosition, GL_COLOR_ATTACHMENT0);
+		// normal
+		debugNormal = Texture(width, height, GL_RGBA, GL_RGBA);
+		debugNormal.setTexFilter(GL_NEAREST);
+		debugBuffer.attachTexture2D(debugNormal, GL_COLOR_ATTACHMENT1);
+		// albedo
+		debugAlbedo = Texture(width, height, GL_RGBA, GL_RGBA);
+		debugAlbedo.setTexFilter(GL_NEAREST);
+		debugBuffer.attachTexture2D(debugAlbedo, GL_COLOR_ATTACHMENT2);
+		// metallic
+		debugMetallic = Texture(width, height, GL_RGBA, GL_RGBA);
+		debugMetallic.setTexFilter(GL_NEAREST);
+		debugBuffer.attachTexture2D(debugMetallic, GL_COLOR_ATTACHMENT3);
+		// roughnesss
+		debugRoughness = Texture(width, height, GL_RGBA, GL_RGBA);
+		debugRoughness.setTexFilter(GL_NEAREST);
+		debugBuffer.attachTexture2D(debugRoughness, GL_COLOR_ATTACHMENT4);
+		// ambient occlusion
+		debugAO = Texture(width, height, GL_RGBA, GL_RGBA);
+		debugAO.setTexFilter(GL_NEAREST);
+		debugBuffer.attachTexture2D(debugAO, GL_COLOR_ATTACHMENT5);
+		// texture and renderbuffer attachments
+		debugBuffer.bind();
+		unsigned int debugbuffer_attachments[6] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 };
+		glDrawBuffers(6, debugbuffer_attachments);
+		debugBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+
 		// Shaders
 		pbrBufferShader = Shader("shaders/PBR/pbr_def.vert", "shaders/PBR/pbr_ibl_v2.frag");
 		brightPassShader = Shader("shaders/frame_out.vert", "shaders/PBR/bright_pass.frag");
@@ -100,5 +164,171 @@ public:
 		tonemapShader = Shader("shaders/frame_out.vert", "shaders/tonemapping/rh_tonemapping.frag");
 		compositeShader = Shader("shaders/frame_out.vert", "shaders/composite/composite.frag");
 		ppShader = Shader("shaders/frame_out.vert", "shaders/postprocess/pp_celshading.frag");
+		debugShader = Shader("shaders/gbuffer/gbuffer_debug_out.vert", "shaders/gbuffer/gbuffer_debug_out.frag");
 	}
+
+	void BlitGToLBuffers(int width, int height)
+	{
+		glClearColor(0.0, 0.0, 0.0, 0.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer.FBO);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, hdrBuffer.FBO);
+		glBlitFramebuffer(
+			0, 0, width, height,
+			0, 0, width, height,
+			GL_DEPTH_BUFFER_BIT,
+			GL_NEAREST
+		);
+	}
+
+	GBufferAttachments getGAttachments()
+	{
+		return { 
+			gPosition.id, 
+			gNormal.id, 
+			gAlbedoRoughness.id, 
+			gMetallicAO.id 
+		};
+	}
+
+	BlurBufferAttachments getBlurParams()
+	{
+		return { 
+			bloomPingBuffer, 
+			bloomPongBuffer, 
+			blurShader, 
+			blurHorizontal.id, 
+			blurVertical.id 
+		};
+	}
+
+	LBufferAttachments getLAttachments()
+	{
+		return {
+			hdrScene.id,
+			tonemappedScene.id,
+			brightnessPass.id,
+			blurHorizontal.id,
+			compositeScene.id
+		};
+	}
+
+	DebugAttachments getDebugAttachments()
+	{
+		return {
+			debugPosition.id,
+			debugNormal.id,
+			debugAlbedo.id,
+			debugMetallic.id,
+			debugRoughness.id,
+			debugAO.id
+		};
+	}
+
+	Texture& getGDepth()
+	{
+		return gDepth;
+	}
+
+	Texture& getHDRSceneTex()
+	{
+		return hdrScene;
+	}
+
+	Texture& getBrightnessTex()
+	{
+		return brightnessPass;
+	}
+
+	Texture& getBlurHorizontalTex()
+	{
+		return blurHorizontal;
+	}
+
+	Texture& getTonemapSceneTex()
+	{
+		return tonemappedScene;
+	}
+
+	Texture& getCompositeSceneTex()
+	{
+		return compositeScene;
+	}
+
+	Texture& getPPSceneTex()
+	{
+		return ppScene;
+	}
+
+	Shader& getPBRShader() noexcept
+	{
+		return pbrBufferShader;
+	}
+
+	Shader& getBrightnessShader()
+	{
+		return brightPassShader;
+	}
+
+	Shader& getBloomShader()
+	{
+		return bloomShader;
+	}
+
+	Shader& getTonemapShader()
+	{
+		return tonemapShader;
+	}
+
+	Shader& getCompositeShader()
+	{
+		return compositeShader;
+	}
+
+	Shader& getPPShader()
+	{
+		return ppShader;
+	}
+
+	Shader& getDebugShader()
+	{
+		return debugShader;
+	}
+	
+	Framebuffer& getGBuffer() noexcept
+	{
+		return gBuffer;
+	};
+
+	Framebuffer& getHDRBuffer() noexcept
+	{
+		return hdrBuffer;
+	};
+
+	Framebuffer& getBrightnessBuffer() noexcept
+	{
+		return brightnessBuffer;
+	}
+
+	Framebuffer& getTonemapBuffer() noexcept
+	{
+		return tonemapperBuffer;
+	}
+
+	Framebuffer& getCompositeBuffer() noexcept
+	{
+		return compositeBuffer;
+	}
+
+	Framebuffer& getPPBuffer() noexcept
+	{
+		return postprocessBuffer;
+	}
+
+	Framebuffer& getDebugBuffer() noexcept
+	{
+		return debugBuffer;
+	}
+
 };

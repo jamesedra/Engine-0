@@ -16,9 +16,31 @@ private:
 	int width, height;
 	int samples = 4;
 
+	void steal(Framebuffer& rhs) noexcept
+	{
+		FBO = rhs.FBO;
+		texture = rhs.texture;
+		rbo = rhs.rbo;
+		width = rhs.width;
+		height = rhs.height;
+		samples = rhs.samples;
+
+		rhs.FBO = 0;
+		rhs.texture = 0;
+		rhs.rbo = 0;
+	}
+
+	void release() noexcept
+	{
+		if (FBO) glDeleteFramebuffers(1, &FBO);
+		if (texture) glDeleteTextures(1, &texture);
+		if (rbo) glDeleteRenderbuffers(1, &rbo);
+		FBO = texture = rbo = 0;
+	}
+
 public:
 	unsigned int FBO;
-	Framebuffer() = default;
+	Framebuffer() : FBO(0), texture(0), rbo(0), width(0), height(0), samples(0) {}
 
 	Framebuffer(int width, int height) : width(width), height(height) {
 		glGenFramebuffers(1, &FBO);
@@ -28,6 +50,23 @@ public:
 	Framebuffer(int width, int height, const Texture& tex, GLenum attachment) : width(width), height(height) {
 		glGenFramebuffers(1, &FBO);
 		attachTexture2D(tex, attachment);
+	}
+
+	Framebuffer(const Framebuffer&) = delete;
+	Framebuffer& operator = (const Framebuffer&) = delete;
+	Framebuffer(Framebuffer&& rhs) noexcept
+	{
+		steal(rhs);
+	}
+
+	Framebuffer& operator = (Framebuffer&& rhs) noexcept
+	{
+		if (this != &rhs)
+		{
+			release();
+			steal(rhs);
+			return* this;
+		}
 	}
 
 	void attachTexture2D(const Texture& tex, GLenum attachment) {

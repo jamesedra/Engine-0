@@ -26,7 +26,11 @@ private:
     int numTilesX,numTilesY;
 
 public:
-    void Initialize(int screenWidth = 1600, int screenHeight = 1200, int tileSize = 16)
+    LightSystem(
+        int screenWidth = 1600, 
+        int screenHeight = 1200, 
+        int tileSize = 16
+    )
     {
         this->screenWidth = screenWidth;
         this->screenHeight = screenHeight;

@@ -35,6 +35,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+unsigned int getBufferOut(Renderer& renderer, int type);
 
 static bool gViewportCaptured = false;
 
@@ -92,118 +93,9 @@ int main()
 	viewportFrame.attachTexture2D(viewportOutTexture, GL_COLOR_ATTACHMENT0);
 	viewportFrame.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
-	// Debug G-Buffer (for display)
-	Framebuffer debugGBuffer(W_WIDTH, W_HEIGHT);
-	// position
-	Texture debugPosition(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
-	debugPosition.setTexFilter(GL_NEAREST);
-	debugGBuffer.attachTexture2D(debugPosition, GL_COLOR_ATTACHMENT0);
-	// normal
-	Texture debugNormal(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
-	debugNormal.setTexFilter(GL_NEAREST);
-	debugGBuffer.attachTexture2D(debugNormal, GL_COLOR_ATTACHMENT1);
-	// albedo
-	Texture debugAlbedo(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
-	debugAlbedo.setTexFilter(GL_NEAREST);
-	debugGBuffer.attachTexture2D(debugAlbedo, GL_COLOR_ATTACHMENT2);
-	// metallic
-	Texture debugMetallic(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
-	debugMetallic.setTexFilter(GL_NEAREST);
-	debugGBuffer.attachTexture2D(debugMetallic, GL_COLOR_ATTACHMENT3);
-	// roughnesss
-	Texture debugRoughness(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
-	debugRoughness.setTexFilter(GL_NEAREST);
-	debugGBuffer.attachTexture2D(debugRoughness, GL_COLOR_ATTACHMENT4);
-	// ambient occlusion
-	Texture debugAO(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
-	debugAO.setTexFilter(GL_NEAREST);
-	debugGBuffer.attachTexture2D(debugAO, GL_COLOR_ATTACHMENT5);
-	// texture and renderbuffer attachments
-	debugGBuffer.bind();
-	unsigned int debugbuffer_attachments[6] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 };
-	glDrawBuffers(6, debugbuffer_attachments);
-	debugGBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
-
+	// Render pipeline
 	Renderer renderer;
-
-	// G-Buffer
-	Framebuffer gBuffer(W_WIDTH, W_HEIGHT);
-	// position color buffer
-	Texture gPosition(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA);
-	gPosition.setTexFilter(GL_NEAREST);
-	gBuffer.attachTexture2D(gPosition, GL_COLOR_ATTACHMENT0);
-	// normal color buffer
-	Texture gNormal(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA);
-	gNormal.setTexFilter(GL_NEAREST);
-	gBuffer.attachTexture2D(gNormal, GL_COLOR_ATTACHMENT1);
-	// albedo specular/roughness color buffer
-	Texture gAlbedoRoughness(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA);
-	gAlbedoRoughness.setTexFilter(GL_NEAREST);
-	gBuffer.attachTexture2D(gAlbedoRoughness, GL_COLOR_ATTACHMENT2);
-	// metallic and ao buffer
-	Texture gMetallicAO(W_WIDTH, W_HEIGHT, GL_RG8, GL_RG);
-	gMetallicAO.setTexFilter(GL_NEAREST);
-	gBuffer.attachTexture2D(gMetallicAO, GL_COLOR_ATTACHMENT3);
-	// z-buffer
-	Texture gDepth(W_WIDTH, W_HEIGHT, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT);
-	gDepth.setTexFilter(GL_NEAREST);
-	gBuffer.attachTexture2D(gDepth, GL_DEPTH_ATTACHMENT);
-	// texture and renderbuffer attachments
-	gBuffer.bind();
-	unsigned int gbuffer_attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
-	glDrawBuffers(4, gbuffer_attachments);
-	// since we have a z-buffer, don't use
-	// gBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
-
-	// HDR Frame buffer
-	Framebuffer hdrBuffer(W_WIDTH, W_HEIGHT);
-	// hdr output
-	Texture hdrScene(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA);
-	hdrScene.setTexFilter(GL_NEAREST);
-	hdrBuffer.attachTexture2D(hdrScene, GL_COLOR_ATTACHMENT0);
-	hdrBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
-
-	// Brightness buffer
-	Framebuffer	brightnessBuffer(W_WIDTH, W_HEIGHT);
-	Texture brightnessPass(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
-	brightnessBuffer.attachTexture2D(brightnessPass, GL_COLOR_ATTACHMENT0);
-
-	// Bloom buffers
-	Framebuffer bloomPingBuffer(W_WIDTH, W_HEIGHT);
-	Framebuffer bloomPongBuffer(W_WIDTH, W_HEIGHT);
-	Texture blurHorizontal(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
-	Texture blurVertical(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
-	bloomPingBuffer.attachTexture2D(blurHorizontal, GL_COLOR_ATTACHMENT0);
-	bloomPongBuffer.attachTexture2D(blurVertical, GL_COLOR_ATTACHMENT0);
-
-	// Tonemapper buffer
-	Framebuffer tonemapperBuffer(W_WIDTH, W_HEIGHT);
-	Texture tonemappedScene(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
-	tonemapperBuffer.attachTexture2D(tonemappedScene, GL_COLOR_ATTACHMENT0);
-	tonemapperBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
-
-	// Base Composite buffer
-	Framebuffer compositeBuffer(W_WIDTH, W_HEIGHT);
-	Texture compositeScene(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
-	compositeBuffer.attachTexture2D(compositeScene, GL_COLOR_ATTACHMENT0);
-
-	// Post process buffer
-	Framebuffer postprocessBuffer(W_WIDTH, W_HEIGHT);
-	Texture ppScene(W_WIDTH, W_HEIGHT, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
-	postprocessBuffer.attachTexture2D(ppScene, GL_COLOR_ATTACHMENT0);
-	postprocessBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
-
-	GBufferAttachments gAttachments
-	{
-		gPosition.id,
-		gNormal.id,
-		gAlbedoRoughness.id,
-		gMetallicAO.id 
-	};
-	
-	// Textures
-	unsigned int tex_diff = loadTexture("resources/textures/brickwall.jpg", true, TextureColorSpace::sRGB);
-	unsigned int tex_spec = createDefaultTexture();
+	renderer.Initialize(W_WIDTH, W_HEIGHT);
 
 	// Object tests
 	unsigned int cubeVAO = createCubeVAO();
@@ -213,16 +105,6 @@ int main()
 	// Deferred Shading
 	Shader outShader("shaders/frame_out.vert", "shaders/frame_out.frag");
 	Shader outputFrame("shaders/frame_out.vert", "shaders/frame_out.frag");
-	Shader debugBufferShader("shaders/gbuffer/gbuffer_debug_out.vert", "shaders/gbuffer/gbuffer_debug_out.frag");
-	Shader pbrBufferShader("shaders/PBR/pbr_def.vert", "shaders/PBR/pbr_ibl_v2.frag");
-	Shader brightPassShader("shaders/frame_out.vert", "shaders/PBR/bright_pass.frag");
-	Shader blurShader("shaders/frame_out.vert", "shaders/blur/gaussian.frag");
-	Shader bloomShader("shaders/frame_out.vert", "shaders/bloom/bloom.frag");
-	Shader tonemapShader("shaders/frame_out.vert", "shaders/tonemapping/rh_tonemapping.frag");
-	Shader compositeShader("shaders/frame_out.vert", "shaders/composite/composite.frag");
-	Shader ppShader("shaders/frame_out.vert", "shaders/postprocess/pp_celshading.frag");
-	// Skybox and IBL Shading
-	Shader skyboxShader("shaders/skybox/skybox_default.vert", "shaders/skybox/skybox_default.frag");
 
 	// -------------------
 	// Component Managers
@@ -253,10 +135,6 @@ int main()
 	sceneRegistry.Register(floorEntity);
 
 	// Light Objects
-	//Entity lightEntity = WorldObjectFactory::CreatePointLight(entityManager, lightManager, transformManager, idManager, "light");
-	//sceneRegistry.Register(lightEntity);
-
-	// lights
 	for (int i = 0; i < 40; i++)
 	{
 		for (int j = 0; j < 40; j++)
@@ -277,11 +155,9 @@ int main()
 	sceneRegistry.Register(probeEntity);
 
 	// Systems
-	LightSystem lightSystem;
-	RenderSystem renderSystem;
+	LightSystem lightSystem(W_WIDTH, W_HEIGHT);
+	RenderSystem renderSystem(renderer);
 	ProbeSystem probeSystem;
-
-	lightSystem.Initialize(W_WIDTH, W_HEIGHT);
 
 	// Setup imgui context
 	IMGUI_CHECKVERSION();
@@ -314,7 +190,6 @@ int main()
 	static bool outliner_active;
 	static ImVec4 color = ImVec4(114.0f / 255.0f, 144.0f / 255.0f, 154.0f / 255.0f, 200.0f / 255.0f);
 	static int tex_type = 6;
-	unsigned int tex_curr;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -323,33 +198,7 @@ int main()
 			ImGui_ImplGlfw_Sleep(10);
 			continue;
 		}
-		switch (tex_type)
-		{
-		case 0:
-			tex_curr = debugPosition.id;
-			break;
-		case 1:
-			tex_curr = debugNormal.id;
-			break;
-		case 2:
-			tex_curr = debugAlbedo.id;
-			break;
-		case 3:
-			tex_curr = debugMetallic.id;
-			break;
-		case 4:
-			tex_curr = debugRoughness.id;
-			break;
-		case 5:
-			tex_curr = debugAO.id;
-			break;
-		case 6:
-			tex_curr = compositeScene.id;
-			break;
-		default:
-			tex_curr = ppScene.id;
-			break;
-		}
+
 		processInput(window);
 		
 		ImGui_ImplOpenGL3_NewFrame();
@@ -393,7 +242,7 @@ int main()
 
 			ImGui::SetCursorScreenPos({ pos.x + offset_x, pos.y + offset_y });
 
-			ImGui::Image(tex_curr, { display_width, display_height }, { 0,1 }, { 1,0 }, ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
+			ImGui::Image(getBufferOut(renderer, tex_type), {display_width, display_height}, {0,1}, {1,0}, ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
 
 			bool imageHovered = ImGui::IsItemHovered();
 			if (imageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
@@ -434,11 +283,6 @@ int main()
 		}
 
 		// GBuffer pass
-		glEnable(GL_DEPTH_TEST);
-		glDepthMask(GL_TRUE);
-		gBuffer.bind();
-		glClearColor(0.0, 0.0, 0.0, 0.0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		renderSystem.RenderGeometry(
 			sceneRegistry, 
 			transformManager, 
@@ -446,178 +290,41 @@ int main()
 			assetManager, 
 			materialsGroupManager, 
 			camera);
-		gBuffer.unbind();
 
 		// deferred shading stage
 		glDisable(GL_DEPTH_TEST);
 
 		if (tex_type > 5)
 		{
-			glClearColor(0.0, 0.0, 0.0, 0.0);
-			glClear(GL_COLOR_BUFFER_BIT);
-
-			glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer.FBO);
-			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, hdrBuffer.FBO);
-			glBlitFramebuffer(
-				0, 0, W_WIDTH, W_HEIGHT,
-				0, 0, W_WIDTH, W_HEIGHT,
-				GL_DEPTH_BUFFER_BIT,
-				GL_NEAREST
-			);
+			renderer.BlitGToLBuffers(W_WIDTH, W_HEIGHT);
 
 			// PBR shading
-			hdrBuffer.bind();
+			renderer.getHDRBuffer().bind();
 			probeSystem.RebuildProbes(sceneRegistry, probeManager);
-
 			std::vector<Entity> activeProbes = probeSystem.GetActiveProbes(sceneRegistry, probeManager, camera);
 			std::vector<EnvironmentProbeComponent*> IBLProbes;
 			for (auto& p : activeProbes) IBLProbes.push_back(probeManager.GetComponent(p));
-
 			lightSystem.TileLighting(sceneRegistry, lightManager, transformManager, camera);
-			lightSystem.ConfigurePBRUniforms(pbrBufferShader);
-
-			renderSystem.RenderDeferredPBR(pbrBufferShader, gAttachments, IBLProbes, camera, frameVAO);
-			hdrBuffer.unbind();
+			lightSystem.ConfigurePBRUniforms(renderer.getPBRShader());
+			renderSystem.RenderDeferredPBR(IBLProbes, camera, frameVAO);
+			renderer.getHDRBuffer().unbind();
 
 			// Brightness pass
-			brightnessBuffer.bind();
-			brightPassShader.use();
-			brightPassShader.setInt("hdrScene", 0);
-			brightPassShader.setFloat("threshold", 0.5f);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, hdrScene.id);
-			glBindVertexArray(frameVAO);
-			glDrawArrays(GL_TRIANGLES, 0, 6);
-			brightnessBuffer.unbind();
-
+			renderSystem.RenderDeferredBrightness(frameVAO);
 			// Blur shading
-			bool horizontal = true;
-			const int blurAmount = 10;
-			blurShader.use();
-			for (size_t i = 0; i < blurAmount; i++)
-			{
-				(horizontal ? bloomPongBuffer : bloomPingBuffer).bind();
-				blurShader.setInt("image", 0);
-				blurShader.setBool("horizontal", horizontal);
-				glActiveTexture(GL_TEXTURE0);
-				if (i == 0) glBindTexture(GL_TEXTURE_2D, brightnessPass.id);
-				else glBindTexture(GL_TEXTURE_2D, horizontal ? blurHorizontal.id : blurVertical.id);
-				glBindVertexArray(frameVAO);
-				glDrawArrays(GL_TRIANGLES, 0, 6);
-				(horizontal ? bloomPongBuffer : bloomPingBuffer).unbind();
-				horizontal = !horizontal;
-			}
-
+			renderSystem.RenderBlur(frameVAO);
 			// Bloom shading
-			hdrBuffer.bind();
-			bloomShader.use();
-			bloomShader.setInt("hdrScene", 0);
-			bloomShader.setInt("blurBuffer", 1);
-			bloomShader.setFloat("exposure", 0.8f);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, hdrScene.id);
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, blurHorizontal.id);
-			glBindVertexArray(frameVAO);
-			glDrawArrays(GL_TRIANGLES, 0, 6);
-			hdrBuffer.unbind();
-
+			renderSystem.RenderBloom(frameVAO);
 			// Tone mapping
-			tonemapperBuffer.bind();
-			tonemapShader.use();
-			tonemapShader.setInt("hdrScene", 0);
-			tonemapShader.setFloat("exposure", 0.8f);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, hdrScene.id);
-			glBindVertexArray(frameVAO);
-			glDrawArrays(GL_TRIANGLES, 0, 6);
-			tonemapperBuffer.unbind();
-
+			renderSystem.RenderTonemap(frameVAO);
 			// Composite output
-			compositeBuffer.bind();
-			compositeShader.use();
-			glm::mat4 projection = camera.getProjectionMatrix(W_WIDTH, W_HEIGHT, 0.1f, 2500.0f);
-			glm::mat4 view = camera.getViewMatrix();
-			glm::mat4 viewNoTrans = glm::mat4(glm::mat3(view));
-			glm::mat4 invProjection = glm::inverse(projection);
-			glm::mat4 invView = glm::inverse(viewNoTrans);
-
-			compositeShader.setInt("tonemappedScene", 0);
-			compositeShader.setInt("sceneDepth", 1);
-			compositeShader.setInt("skybox", 2);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, tonemappedScene.id);
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, gDepth.id);
-			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, IBLProbes[IBLProbes.size() - 1]->maps.envMap);
-			compositeShader.setMat4("invProjection", invProjection);
-			compositeShader.setMat4("invView", invView);
-			glBindVertexArray(frameVAO);
-			glDrawArrays(GL_TRIANGLES, 0, 6);
-			compositeBuffer.unbind();
-
+			renderSystem.RenderComposite(IBLProbes, camera, frameVAO);
 			// Post processing
-			postprocessBuffer.bind();
-			glClearColor(0.0, 0.0, 0.0, 0.0);
-			glClear(GL_COLOR_BUFFER_BIT);
-			ppShader.use();
-			ppShader.setInt("gPosition", 0);
-			ppShader.setInt("gNormal", 1);
-			ppShader.setInt("gAlbedoRoughness", 2);
-			ppShader.setInt("gMetallicAO", 3);
-			ppShader.setInt("sceneDepth", 4);
-			ppShader.setInt("sceneHDR", 5);
-			ppShader.setInt("sceneColor", 6);
-			ppShader.setInt("brightPass", 7);
-			ppShader.setInt("bloomPass", 8);
-			ppShader.setInt("compositePass", 9);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, gPosition.id);
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, gNormal.id);
-			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_2D, gAlbedoRoughness.id);
-			glActiveTexture(GL_TEXTURE3);
-			glBindTexture(GL_TEXTURE_2D, gMetallicAO.id);
-			glActiveTexture(GL_TEXTURE4);
-			glBindTexture(GL_TEXTURE_2D, gDepth.id);
-			glActiveTexture(GL_TEXTURE5);
-			glBindTexture(GL_TEXTURE_2D, hdrScene.id);
-			glActiveTexture(GL_TEXTURE6);
-			glBindTexture(GL_TEXTURE_2D, tonemappedScene.id);
-			glActiveTexture(GL_TEXTURE7);
-			glBindTexture(GL_TEXTURE_2D, brightnessPass.id);
-			glActiveTexture(GL_TEXTURE8);
-			glBindTexture(GL_TEXTURE_2D, blurHorizontal.id);
-			glActiveTexture(GL_TEXTURE9);
-			glBindTexture(GL_TEXTURE_2D, compositeScene.id);
-			glBindVertexArray(frameVAO);
-			glDrawArrays(GL_TRIANGLES, 0, 6);
-			postprocessBuffer.unbind();
+			renderSystem.RenderPostProcess(frameVAO);
 		}
 		else if (tex_type <= 5)
 		{
-			// Debug GBuffer pass
-			debugGBuffer.bind();
-			glClearColor(0.0, 0.0, 0.0, 0.0);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			debugBufferShader.use();
-			debugBufferShader.setInt("gPosition", 0);
-			debugBufferShader.setInt("gNormal", 1);
-			debugBufferShader.setInt("gAlbedoRoughness", 2);
-			debugBufferShader.setInt("gMetallicAO", 3);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, gPosition.id);
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, gNormal.id);
-			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_2D, gAlbedoRoughness.id);
-			glActiveTexture(GL_TEXTURE3);
-			glBindTexture(GL_TEXTURE_2D, gMetallicAO.id);
-			glBindVertexArray(frameVAO);
-			glDrawArrays(GL_TRIANGLES, 0, 6);
-			debugGBuffer.unbind();
+			renderSystem.RenderBufferPass(frameVAO);
 		}
 		glEnable(GL_DEPTH_TEST);
 		
@@ -747,4 +454,30 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
+}
+
+unsigned int getBufferOut(Renderer& renderer, int type)
+{
+	DebugAttachments da = renderer.getDebugAttachments();
+
+	switch (type)
+	{
+	case 0:
+		return da.position;
+	case 1:
+		return da.normal;
+	case 2:
+		return da.albedo;
+		break;
+	case 3:
+		return da.metallic;
+	case 4:
+		return da.roughness;
+	case 5:
+		return da.AO;
+	case 6:
+		return renderer.getCompositeSceneTex().id;
+	default:
+		return renderer.getPPSceneTex().id;
+	}
 }
