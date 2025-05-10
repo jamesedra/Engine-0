@@ -75,6 +75,37 @@ public:
         return entity;
     }
 
+    static Entity CreateDirectionalLight(
+        EntityManager& entityManager,
+        LightManager& lightManager,
+        TransformManager& transformManager,
+        IDManager& idManager,
+        std::string name,
+        glm::vec3 direction = glm::vec3(0.f),
+        glm::vec3 color = glm::vec3(1.0f),
+        float intensity = 20.0f,
+        bool enabled = true
+    )
+    {
+        if (lightManager.directionalLightComponents.size() >= 1)
+        {
+            std::cout << "There is an existing directional light. Overriding.";
+            lightManager.RemoveDirectionalLights();
+        }
+
+        Entity entity = entityManager.CreateEntity();
+
+        LightComponent lightComp{ color, intensity, 0, enabled };
+        TransformComponent transformComp;
+        transformComp.position = direction;
+
+        idManager.components[entity].ID = name;
+        lightManager.directionalLightComponents[entity] = std::move(lightComp);
+        transformManager.components[entity] = std::move(transformComp);
+
+        return entity;
+    }
+
     static Entity CreatePointLight(
         EntityManager& entityManager,
         LightManager& lightManager,
@@ -95,7 +126,7 @@ public:
         transformComp.position = position;
 
         idManager.components[entity].ID = name;
-        lightManager.components[entity] = std::move(lightComp);
+        lightManager.pointLightComponents[entity] = std::move(lightComp);
         transformManager.components[entity] = std::move(transformComp);
 
         return entity;

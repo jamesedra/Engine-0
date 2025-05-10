@@ -26,6 +26,10 @@ struct Light {
 	vec4 color_intensity;
 };
 
+// Directional light
+uniform Light dirLight; // pos_radius only stores direction
+
+// Point Light Tile Buffers
 layout(std430, binding = 0) readonly buffer LightBuf {
 	Light lights[MAX_LIGHTS];
 };
@@ -38,9 +42,11 @@ layout(std430, binding = 2) readonly buffer LightIndexBuf {
 	uint lightIndices[];
 };
 
+// Tile Data
 uniform ivec2 screenSize;
 uniform ivec2 tileCount;
 uniform int tileSize;
+
 uniform vec3 viewPos;
 
 vec3 Fresnel(float cosTheta, vec3 F0);
@@ -76,6 +82,7 @@ void main() {
 	vec3 F0 = mix(vec3(0.04), albedo, metallic);
 	vec3 Lo = vec3(0.0); // outgoing radiance
 
+	// Point Lights
 	for (uint i = 0u; i < count; i++) {
 		uint lightID = lightIndices[offset + i];
 		Light light = lights[lightID];
@@ -125,6 +132,33 @@ void main() {
 			vec3 radiance = lightColor * attenuation * lightIntensity;
 			Lo += (DiffuseBRDF + SpecBRDF) * radiance * nDotL;
 		}
+	}
+
+	// directional light
+	vec3 Ld = normalize(-dirLight.pos_radius.xyz);
+	vec3 h = normalize(v + Ld);
+	float nDotL = max(dot(n, Ld), 0.0);
+	float vDotH = max(dot(v, h), 0.0);
+	float nDotH = max(dot(n, h), 0.0);
+	if (nDotL > 0.0) {
+		// Specular BRDF
+		vec3 F = Fresnel(vDotH, F0);
+		float D = NormalDistribution(nDotH, roughness);
+		float G = GeometryEq(nDotL, roughness) * GeometryEq(nDotV, roughness);
+
+		vec3 SpecBRDF_nom = D * G * F;
+		float SpecBRDF_denom = 4.0 * nDotV * nDotL;
+		vec3 SpecBRDF = SpecBRDF_nom / max(SpecBRDF_denom, 0.001);
+
+		// Diffuse BRDF
+		vec3 kS = F;
+		vec3 kD = vec3(1.0) - kS;
+		kD *= 1.0 - metallic;
+		vec3 fLambert = albedo;
+		vec3 DiffuseBRDF = kD * fLambert / PI;
+
+		vec3 radiance = dirLight.color_intensity.rgb * dirLight.color_intensity.a;
+		Lo += (DiffuseBRDF + SpecBRDF) * radiance * nDotL;
 	}
 
 	// IBL

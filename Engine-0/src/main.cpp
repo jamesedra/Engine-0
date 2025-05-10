@@ -134,15 +134,18 @@ int main()
 	transformManager.components[floorEntity].scale = glm::vec3(100.0f, 0.5f, 100.0f);
 	sceneRegistry.Register(floorEntity);
 
-	// Light Objects
-	for (int i = 0; i < 40; i++)
-	{
-		for (int j = 0; j < 40; j++)
-		{
-			Entity lightEntity = WorldObjectFactory::CreatePointLight(entityManager, lightManager, transformManager, idManager, "light " + std::to_string(i) + std::to_string(j), glm::vec3(i*5, 0.0f, j*5));
-			sceneRegistry.Register(lightEntity);
-		}
-	}
+	Entity dirLightEntity = WorldObjectFactory::CreateDirectionalLight(entityManager, lightManager, transformManager, idManager, "sun");
+	sceneRegistry.Register(dirLightEntity);
+
+	//// Point ight Objects
+	//for (int i = 0; i < 40; i++)
+	//{
+	//	for (int j = 0; j < 40; j++)
+	//	{
+	//		Entity lightEntity = WorldObjectFactory::CreatePointLight(entityManager, lightManager, transformManager, idManager, "light " + std::to_string(i) + std::to_string(j), glm::vec3(i*5, 0.0f, j*5));
+	//		sceneRegistry.Register(lightEntity);
+	//	}
+	//}
 
 	// IBL testing
 	// probe entity test
@@ -305,7 +308,7 @@ int main()
 			std::vector<EnvironmentProbeComponent*> IBLProbes;
 			for (auto& p : activeProbes) IBLProbes.push_back(probeManager.GetComponent(p));
 			lightSystem.TileLighting(sceneRegistry, lightManager, transformManager, camera);
-			lightSystem.ConfigurePBRUniforms(renderer.getPBRShader());
+			lightSystem.ConfigurePBRUniforms(renderer.getPBRShader(), sceneRegistry, lightManager, transformManager);
 			renderSystem.RenderDeferredPBR(IBLProbes, camera, frameVAO);
 			renderer.getHDRBuffer().unbind();
 
