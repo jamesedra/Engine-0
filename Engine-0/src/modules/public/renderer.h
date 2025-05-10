@@ -3,6 +3,7 @@
 #include "framebuffer.h"
 #include "texture.h"
 #include "utils.h"
+#include "loaders.h"
 
 struct GBufferAttachments
 {
@@ -40,12 +41,25 @@ struct DebugAttachments
 	unsigned int AO;
 };
 
+struct SSAOAttachments
+{
+	unsigned int gPosition;
+	unsigned int gNormal;
+	unsigned int ssaoNoiseTex;
+	unsigned int ssaoColor;
+};
+
 class Renderer
 {
 private:
 	// Gbuffer pass
 	Framebuffer gBuffer;
 	Texture gPosition, gNormal, gAlbedoRoughness, gMetallicAO, gDepth;
+	// SSAO pass
+	Framebuffer ssaoBuffer, ssaoBlurBuffer;
+	Shader ssaoShader, ssaoBlurShader;
+	Texture ssaoColor, ssaoBlurColor, ssaoNoiseTexture;
+	SSAOData ssaoData;
 	// Lighting pass
 	Framebuffer hdrBuffer, brightnessBuffer, bloomPingBuffer, bloomPongBuffer, tonemapperBuffer, compositeBuffer, postprocessBuffer;
 	Texture hdrScene, brightnessPass, blurHorizontal, blurVertical, tonemappedScene, compositeScene, ppScene;
@@ -86,9 +100,24 @@ public:
 		unsigned int gbuffer_attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
 		glDrawBuffers(4, gbuffer_attachments);
 
-		// HDR Frame buffer
+		// SSAO Framebuffer
+		ssaoBuffer = Framebuffer(width, height);
+		ssaoColor = Texture(width, height, GL_RED, GL_RED);
+		ssaoColor.setTexFilter(GL_NEAREST);
+		ssaoBuffer.attachTexture2D(ssaoColor, GL_COLOR_ATTACHMENT0);
+
+		// SSAO blur framebuffer
+		ssaoBlurBuffer = Framebuffer(width, height);
+		ssaoBlurColor = Texture(width, height, GL_RED, GL_RED);
+		ssaoBlurColor.setTexFilter(GL_NEAREST);
+		ssaoBlurBuffer.attachTexture2D(ssaoBlurColor, GL_COLOR_ATTACHMENT0);
+
+		// SSAO noise texture
+		ssaoData = NoiseLoader::CreateSSAONoiseKernel();
+		ssaoNoiseTexture = Texture(4, 4, GL_RGBA16F, GL_RGB, GL_NEAREST, GL_REPEAT, &ssaoData.noise[0]);
+
+		// HDR Framebuffer
 		hdrBuffer = Framebuffer(width, height);
-		// hdr output
 		hdrScene = Texture(width, height, GL_RGBA16F, GL_RGBA);
 		hdrScene.setTexFilter(GL_NEAREST);
 		hdrBuffer.attachTexture2D(hdrScene, GL_COLOR_ATTACHMENT0);
@@ -157,6 +186,8 @@ public:
 		debugBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
 		// Shaders
+		ssaoShader = Shader("shaders/frame_out.vert", "shaders/ssao/ssao.frag");
+		ssaoBlurShader = Shader("shaders/frame_out.vert", "shaders/ssao/ssao_blur.frag");
 		pbrBufferShader = Shader("shaders/PBR/pbr_def.vert", "shaders/PBR/pbr_ibl_v2.frag");
 		brightPassShader = Shader("shaders/frame_out.vert", "shaders/PBR/bright_pass.frag");
 		blurShader = Shader("shaders/frame_out.vert", "shaders/blur/gaussian.frag");
@@ -226,6 +257,21 @@ public:
 		};
 	}
 
+	SSAOAttachments getSSAOAttachments()
+	{
+		return {
+			gPosition.id,
+			gNormal.id,
+			ssaoNoiseTexture.id,
+			ssaoColor.id
+		};
+	}
+
+	SSAOData& getSSAOData()
+	{
+		return ssaoData;
+	}
+
 	Texture& getGDepth()
 	{
 		return gDepth;
@@ -261,6 +307,16 @@ public:
 		return ppScene;
 	}
 
+	Texture& getSSAONoiseTex()
+	{
+		return ssaoNoiseTexture;
+	}
+
+	Texture& getSSAOBlurTexture()
+	{
+		return ssaoBlurColor;
+	}
+
 	Shader& getPBRShader() noexcept
 	{
 		return pbrBufferShader;
@@ -294,6 +350,16 @@ public:
 	Shader& getDebugShader()
 	{
 		return debugShader;
+	}
+
+	Shader& getSSAOShader()
+	{
+		return ssaoShader;
+	}
+
+	Shader& getSSAOBlurShader()
+	{
+		return ssaoBlurShader;
 	}
 	
 	Framebuffer& getGBuffer() noexcept
@@ -331,4 +397,13 @@ public:
 		return debugBuffer;
 	}
 
+	Framebuffer& getSSAOBuffer() noexcept
+	{
+		return ssaoBuffer;
+	}
+
+	Framebuffer& getSSAOBlurBuffer() noexcept
+	{
+		return ssaoBlurBuffer;
+	}
 };

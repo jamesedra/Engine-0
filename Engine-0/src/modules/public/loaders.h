@@ -1,10 +1,17 @@
 #pragma once
 #include "mesh.h"
 #include "texture.h"
+#include <random>
 
 // NOTE: This is are functions for loaders or automated class creators. Mostly for default values and testing.
 
 const float PI = 3.1415926f;
+
+struct SSAOData
+{
+	std::vector<glm::vec3> kernel;
+	std::vector<glm::vec3> noise;
+};
 
 class MeshLoader
 {
@@ -435,5 +442,33 @@ public:
 		stbi_image_free(data);
 
 		return tex;
+	}
+};
+
+class NoiseLoader
+{
+public:
+	static SSAOData CreateSSAONoiseKernel()
+	{
+		static std::default_random_engine gen{ std::random_device{}() };
+		static std::uniform_real_distribution<float> rnd{ 0.0f, 1.0f };
+
+		SSAOData data;
+		data.kernel.reserve(64);
+		for (unsigned i = 0; i < 64; ++i)
+		{
+			glm::vec3 sample{ rnd(gen) * 2.0f - 1.0f, rnd(gen) * 2.0f - 1.0f, rnd(gen) };
+			sample = glm::normalize(sample) * rnd(gen);
+			float scale = float(i) / 64.0f;
+			scale = glm::mix(0.1f, 1.0f, scale * scale);
+			data.kernel.push_back(sample * scale);
+		}
+
+		data.noise.reserve(16);
+		for (unsigned i = 0; i < 16; ++i)
+		{
+			data.noise.push_back({ rnd(gen) * 2.0f - 1.0f, rnd(gen) * 2.0f - 1.0f, 0.0f });
+		}
+		return data;
 	}
 };

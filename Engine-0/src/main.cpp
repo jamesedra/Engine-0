@@ -294,6 +294,9 @@ int main()
 			materialsGroupManager, 
 			camera);
 
+		// SSAO pass
+		renderSystem.RenderSSAO(camera, frameVAO);
+
 		// deferred shading stage
 		glDisable(GL_DEPTH_TEST);
 
@@ -479,6 +482,7 @@ unsigned int getBufferOut(Renderer& renderer, int type)
 	case 5:
 		return da.AO;
 	case 6:
+		// return renderer.getSSAOBlurTexture().id;
 		return renderer.getCompositeSceneTex().id;
 	default:
 		return renderer.getPPSceneTex().id;

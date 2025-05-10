@@ -3,6 +3,7 @@
 #include "camera.h"
 #include "asset_library.h"
 #include "renderer.h"
+#include "../../common.h"
 
 class RenderSystem
 {
@@ -70,6 +71,50 @@ public:
 			}
 		}
 		renderer.getGBuffer().unbind();
+	}
+
+	void RenderSSAO(Camera& camera, unsigned int frameVAO)
+	{
+		renderer.getSSAOBuffer().bind();
+		SSAOData& data = renderer.getSSAOData();
+		Shader& ssaoShader = renderer.getSSAOShader();
+		SSAOAttachments ssaoTex = renderer.getSSAOAttachments();
+
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glDisable(GL_DEPTH_TEST);
+		ssaoShader.use();
+		int WIDTH = 1600;
+		int HEIGHT = 1200;
+		ssaoShader.setMat4("projection", camera.getProjectionMatrix(WIDTH, HEIGHT, 0.1f, 2500.0f));
+		ssaoShader.setInt("gPosition", 0);
+		ssaoShader.setInt("gNormal", 1);
+		ssaoShader.setInt("texNoise", 2);
+		// send kernel samples to shader
+		for (unsigned int i = 0; i < 64; i++) ssaoShader.setVec3("samples[" + std::to_string(i) + "]", data.kernel[i]);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, ssaoTex.gPosition);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, ssaoTex.gNormal);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, ssaoTex.ssaoNoiseTex);
+
+		glBindVertexArray(frameVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		renderer.getSSAOBuffer().unbind();
+
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		renderer.getSSAOBlurBuffer().bind();
+		Shader& ssaoBlurShader = renderer.getSSAOBlurShader();
+		ssaoBlurShader.use();
+		ssaoBlurShader.setInt("ssaoInput", 0);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, ssaoTex.ssaoColor);
+		glBindVertexArray(frameVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		renderer.getSSAOBlurBuffer().unbind();
 	}
 
 	void RenderDeferredPBR(
