@@ -231,6 +231,8 @@
     <None Include="shaders\postprocess\pp_celshading.frag" />
     <None Include="shaders\skybox\skybox_default.frag" />
     <None Include="shaders\skybox\skybox_default.vert" />
+    <None Include="shaders\ssao\ssao.frag" />
+    <None Include="shaders\ssao\ssao_blur.frag" />
     <None Include="shaders\tiling_debug.frag" />
     <None Include="shaders\tonemapping\rh_tonemapping.frag" />
   </ItemGroup>

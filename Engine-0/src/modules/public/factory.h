@@ -78,12 +78,11 @@ public:
     static Entity CreateDirectionalLight(
         EntityManager& entityManager,
         LightManager& lightManager,
-        TransformManager& transformManager,
         IDManager& idManager,
         std::string name,
-        glm::vec3 direction = glm::vec3(0.f),
+        glm::vec3 direction = glm::vec3(50.0f, -15.0f, 50.0f),
         glm::vec3 color = glm::vec3(1.0f),
-        float intensity = 20.0f,
+        float intensity = 5.0f,
         bool enabled = true
     )
     {
@@ -95,13 +94,10 @@ public:
 
         Entity entity = entityManager.CreateEntity();
 
-        LightComponent lightComp{ color, intensity, 0, enabled };
-        TransformComponent transformComp;
-        transformComp.position = direction;
+        DirectionalLightComponent lightComp{ direction, color, intensity, enabled };
 
         idManager.components[entity].ID = name;
         lightManager.directionalLightComponents[entity] = std::move(lightComp);
-        transformManager.components[entity] = std::move(transformComp);
 
         return entity;
     }
@@ -121,7 +117,7 @@ public:
     {
         Entity entity = entityManager.CreateEntity();
 
-        LightComponent lightComp{ color, intensity, radius, enabled };
+        PointLightComponent lightComp{ color, intensity, radius, enabled };
         TransformComponent transformComp;
         transformComp.position = position;
 

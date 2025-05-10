@@ -103,7 +103,7 @@ UniformValue UniformSampler2DToValue(std::string name)
 		{ "diffuse", UniformValue::Sampler2D("White Texture - Default") },
 		{ "normal", UniformValue::Sampler2D("Normal Texture - Default") },
 		{ "specular", UniformValue::Sampler2D("White Texture - Default") },
-		{ "ao", UniformValue::Sampler2D("White Texture - Default") },
+		{ "ao", UniformValue::Sampler2D("Black Texture - Default") },
 		{ "roughness", UniformValue::Sampler2D("White Texture - Default") },
 		{ "metallic", UniformValue::Sampler2D("Black Texture - Default") },
 	};

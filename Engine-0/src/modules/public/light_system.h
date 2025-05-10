@@ -57,7 +57,7 @@ public:
 
         for (Entity entity : sceneRegistry.GetAll())
         {
-            LightComponent* lightComp = lightManager.GetPointLightComponent(entity);
+            PointLightComponent* lightComp = lightManager.GetPointLightComponent(entity);
             TransformComponent* transformComp = transformManager.GetComponent(entity);
             if (!lightComp || !lightComp->enabled || !transformComp) continue;
 
@@ -99,7 +99,10 @@ public:
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, lightIndexSSBO.SSBO);
     }
 
-    void ConfigurePBRUniforms(Shader& pbrShader, SceneEntityRegistry& sceneRegistry, LightManager& lightManager, TransformManager& transformManager)
+    void ConfigurePBRUniforms(
+        Shader& pbrShader, 
+        SceneEntityRegistry& sceneRegistry, 
+        LightManager& lightManager)
     {
         pbrShader.use();
         // BindForShading();
@@ -115,10 +118,9 @@ public:
         // return if not part of the scene registry
         if (!sceneRegistry.Contains(e)) return;
 
-        LightComponent* dirLightComp = dirLightCompEntity->second;
-        TransformComponent* transformComp = transformManager.GetComponent(e);
+        DirectionalLightComponent* dirLightComp = dirLightCompEntity->second;
 
-        pbrShader.setVec4("dirLight.pos_radius", glm::vec4(transformComp->position, 0.0f));
+        pbrShader.setVec4("dirLight.pos_radius", glm::vec4(dirLightComp->direction, 0.0f));
         pbrShader.setVec4("dirLight.color_intensity", glm::vec4(dirLightComp->color, dirLightComp->intensity));
     }
 };

@@ -134,7 +134,7 @@ int main()
 	transformManager.components[floorEntity].scale = glm::vec3(100.0f, 0.5f, 100.0f);
 	sceneRegistry.Register(floorEntity);
 
-	Entity dirLightEntity = WorldObjectFactory::CreateDirectionalLight(entityManager, lightManager, transformManager, idManager, "sun");
+	Entity dirLightEntity = WorldObjectFactory::CreateDirectionalLight(entityManager, lightManager, idManager, "sun");
 	sceneRegistry.Register(dirLightEntity);
 
 	//// Point ight Objects
@@ -308,7 +308,7 @@ int main()
 			std::vector<EnvironmentProbeComponent*> IBLProbes;
 			for (auto& p : activeProbes) IBLProbes.push_back(probeManager.GetComponent(p));
 			lightSystem.TileLighting(sceneRegistry, lightManager, transformManager, camera);
-			lightSystem.ConfigurePBRUniforms(renderer.getPBRShader(), sceneRegistry, lightManager, transformManager);
+			lightSystem.ConfigurePBRUniforms(renderer.getPBRShader(), sceneRegistry, lightManager);
 			renderSystem.RenderDeferredPBR(IBLProbes, camera, frameVAO);
 			renderer.getHDRBuffer().unbind();
 

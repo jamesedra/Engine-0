@@ -73,22 +73,22 @@ public:
 class LightManager
 {
 public:
-	std::unordered_map<Entity, LightComponent> pointLightComponents;
-	std::unordered_map<Entity, LightComponent> directionalLightComponents;
+	std::unordered_map<Entity, PointLightComponent> pointLightComponents;
+	std::unordered_map<Entity, DirectionalLightComponent> directionalLightComponents;
 
-	LightComponent* GetPointLightComponent(Entity entity)
+	PointLightComponent* GetPointLightComponent(Entity entity)
 	{
 		auto it = pointLightComponents.find(entity);
 		return (it != pointLightComponents.end()) ? &it->second : nullptr;
 	}
 
-	LightComponent* GetDirectionalLightComponent(Entity entity)
+	DirectionalLightComponent* GetDirectionalLightComponent(Entity entity)
 	{
 		auto it = directionalLightComponents.find(entity);
 		return (it != directionalLightComponents.end()) ? &it->second : nullptr;
 	}
 
-	std::optional<std::pair<Entity, LightComponent*>> GetAnyDirectionalLight()
+	std::optional<std::pair<Entity, DirectionalLightComponent*>> GetAnyDirectionalLight()
 	{
 		if (directionalLightComponents.empty()) return std::nullopt;
 		auto it = directionalLightComponents.begin();

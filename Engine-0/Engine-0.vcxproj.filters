@@ -229,5 +229,7 @@
     <None Include="shaders\PBR\pbr_ibl_v1.frag" />
     <None Include="shaders\PBR\pbr_ibl_v2.frag" />
     <None Include="shaders\tiling_debug.frag" />
+    <None Include="shaders\ssao\ssao.frag" />
+    <None Include="shaders\ssao\ssao_blur.frag" />
   </ItemGroup>
 </Project>
