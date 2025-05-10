@@ -1,4 +1,4 @@
-#version 450 core
+﻿#version 450 core
 
 #define MAX_LIGHTS 1600
 #define MAX_LIGHTS_PER_TILE 64
@@ -13,6 +13,7 @@ uniform sampler2D gNormal;
 uniform sampler2D gAlbedoRoughness;
 uniform sampler2D gMetallicAO;
 
+uniform sampler2D ssaoLUT;
 // IBL
 uniform int probeCount;
 uniform samplerCube irradianceMap[MAX_PROBES];
@@ -67,7 +68,9 @@ void main() {
 	roughness = max(roughness, 0.0001);
 	vec2 ma = texture(gMetallicAO, TexCoords).rg;
 	float metallic = ma.r;
-	float ao = ma.g;
+	// float ao = ma.g;
+	float ao = texture(ssaoLUT, TexCoords).r;
+	ao = max(ao, 0.1);
 
 	vec3 v = normalize(viewPos - fragPos);
 	float nDotV = max(dot(n, v), 0.0);
@@ -188,7 +191,7 @@ void main() {
 		vec2 envBRDF = texture(brdfLUT[0], vec2(nDotV, roughness)).rg;
 		vec3 specularIBL = prefilteredColor * (F_ibl * envBRDF.x + envBRDF.y);
 
-		ambient = (kD * diffuseIBL + specularIBL) * ao;
+		ambient = kD * diffuseIBL * ao + specularIBL;
 	}
 	else if (probeCount >= 2) {
 		// get two nearest probes and blend
@@ -199,26 +202,35 @@ void main() {
 		float d0 = length(fragPos - probePosition[i0]);
 		float d1 = length(fragPos - probePosition[i1]);
 
-		float w0 = d1 / (d0 + d1);
-		float w1 = 1.0 - w0;
+		// float w0 = d1 / (d0 + d1);
+		// float w1 = 1.0 - w0;
+
+		float w0 = 1.0 / (d0 + 0.0001);
+		float w1 = 1.0 / (d1 + 0.0001);
+		float sum = w0 + w1;
+		w0 /= sum;
+		w1 /= sum;
 
 		vec3 irr0 = texture(irradianceMap[i0], n).rgb;
 		vec3 irr1 = texture(irradianceMap[i1], n).rgb;
-		irradiance = mix(irr0, irr1, w1);
+		// irradiance = mix(irr0, irr1, w1);
+		irradiance = irr0 * w0 + irr1 * w1;
 
 		vec3 pre0 = textureLod(prefilterMap[i0], R, roughness * MAX_REFLECTION_LOD).rgb;
 		vec3 pre1 = textureLod(prefilterMap[i1], R, roughness * MAX_REFLECTION_LOD).rgb;
-		prefilteredColor = mix(pre0, pre1, w1);
+		// prefilteredColor = mix(pre0, pre1, w1);
+		prefilteredColor = pre0 * w0 + pre1 * w1;
 
 		envBRDF = texture(brdfLUT[i0], vec2(nDotV, roughness)).rg;  
 
 		vec3 diffuseIBL = irradiance * albedo;
 		vec3 specularIBL = prefilteredColor * (F_ibl * envBRDF.x + envBRDF.y);
-		ambient = (kD * diffuseIBL + specularIBL) * ao;
+		ambient = kD * diffuseIBL * ao + specularIBL;
 	}
 
 	vec3 color = ambient + Lo;
 	FragColor = vec4(color, 1.0);
+
 }
 
 // uses Fresnel-Schlick approximation

@@ -3,8 +3,8 @@ out float FragColor;
 
 in vec2 TexCoords;
 
-uniform sampler2D gPosition;
-uniform sampler2D gNormal;
+uniform sampler2D gPositionVS;
+uniform sampler2D gNormalVS;
 uniform sampler2D texNoise;
 
 uniform vec3 samples[64];
@@ -13,8 +13,8 @@ uniform mat4 projection;
 // based on resolution/noise size from texNoise texture
 const vec2 noiseScale = vec2(1600.0/4.0, 1200.0/4.0); 
 void main() {
-	vec3 fragPos = texture(gPosition, TexCoords).rgb;
-	vec3 normal = texture(gNormal, TexCoords).rgb;
+	vec3 fragPos = texture(gPositionVS, TexCoords).rgb;
+	vec3 normal = texture(gNormalVS, TexCoords).rgb;
 	vec3 randomVec = texture(texNoise, TexCoords * noiseScale).rgb;
 
 	// orthogonal basis with slight tilt from randomVec
@@ -41,7 +41,7 @@ void main() {
 		// transform range to 0.0 - 1.0
 		offset.xyz = offset.xyz * 0.5 + 0.5;
 
-		float sampleDepth = texture(gPosition, offset.xy).z;
+		float sampleDepth = texture(gPositionVS, offset.xy).z;
 
 		float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPos.z - sampleDepth));
 		float bias = 0.025;

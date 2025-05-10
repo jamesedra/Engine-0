@@ -87,8 +87,8 @@ public:
 		int WIDTH = 1600;
 		int HEIGHT = 1200;
 		ssaoShader.setMat4("projection", camera.getProjectionMatrix(WIDTH, HEIGHT, 0.1f, 2500.0f));
-		ssaoShader.setInt("gPosition", 0);
-		ssaoShader.setInt("gNormal", 1);
+		ssaoShader.setInt("gPositionVS", 0);
+		ssaoShader.setInt("gNormalVS", 1);
 		ssaoShader.setInt("texNoise", 2);
 		// send kernel samples to shader
 		for (unsigned int i = 0; i < 64; i++) ssaoShader.setVec3("samples[" + std::to_string(i) + "]", data.kernel[i]);
@@ -147,6 +147,10 @@ public:
 		pbr.setInt("gMetallicAO", ++unit);
 		glActiveTexture(GL_TEXTURE0 + unit);
 		glBindTexture(GL_TEXTURE_2D, gba.gMetallicAO);
+
+		pbr.setInt("ssaoLUT", ++unit);
+		glActiveTexture(GL_TEXTURE0 + unit);
+		glBindTexture(GL_TEXTURE_2D, renderer.getSSAOBlurTexture().id);
 
 		size_t probeCount = IBLProbes.size();
 		pbr.setInt("probeCount", probeCount);

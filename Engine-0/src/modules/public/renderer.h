@@ -11,6 +11,8 @@ struct GBufferAttachments
 	unsigned int gNormal;
 	unsigned int gAlbedoRoughness;
 	unsigned int gMetallicAO;
+	unsigned int gPositionVS;
+	unsigned int gNormalVS;
 };
 
 struct LBufferAttachments
@@ -54,7 +56,7 @@ class Renderer
 private:
 	// Gbuffer pass
 	Framebuffer gBuffer;
-	Texture gPosition, gNormal, gAlbedoRoughness, gMetallicAO, gDepth;
+	Texture gPosition, gNormal, gAlbedoRoughness, gMetallicAO, gPositionVS, gNormalVS, gDepth;
 	// SSAO pass
 	Framebuffer ssaoBuffer, ssaoBlurBuffer;
 	Shader ssaoShader, ssaoBlurShader;
@@ -91,14 +93,29 @@ public:
 		gMetallicAO = Texture(width, height, GL_RG8, GL_RG);
 		gMetallicAO.setTexFilter(GL_NEAREST);
 		gBuffer.attachTexture2D(gMetallicAO, GL_COLOR_ATTACHMENT3);
+		// view space buffers
+		gPositionVS = Texture(width, height, GL_RGBA16F, GL_RGBA);
+		gPositionVS.setTexFilter(GL_NEAREST);
+		gBuffer.attachTexture2D(gPositionVS, GL_COLOR_ATTACHMENT4);
+		gNormalVS = Texture(width, height, GL_RGBA16F, GL_RGBA);
+		gNormalVS.setTexFilter(GL_NEAREST);
+		gBuffer.attachTexture2D(gNormalVS, GL_COLOR_ATTACHMENT5);
 		// z-buffer
 		gDepth = Texture(width, height, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT);
 		gDepth.setTexFilter(GL_NEAREST);
 		gBuffer.attachTexture2D(gDepth, GL_DEPTH_ATTACHMENT);
 		// texture and renderbuffer attachments
 		gBuffer.bind();
-		unsigned int gbuffer_attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
-		glDrawBuffers(4, gbuffer_attachments);
+
+		unsigned int gbuffer_attachments[6] = { 
+			GL_COLOR_ATTACHMENT0, 
+			GL_COLOR_ATTACHMENT1, 
+			GL_COLOR_ATTACHMENT2, 
+			GL_COLOR_ATTACHMENT3, 
+			GL_COLOR_ATTACHMENT4, 
+			GL_COLOR_ATTACHMENT5 
+		};
+		glDrawBuffers(6, gbuffer_attachments);
 
 		// SSAO Framebuffer
 		ssaoBuffer = Framebuffer(width, height);
@@ -219,7 +236,9 @@ public:
 			gPosition.id, 
 			gNormal.id, 
 			gAlbedoRoughness.id, 
-			gMetallicAO.id 
+			gMetallicAO.id,
+			gPositionVS.id,
+			gNormalVS.id
 		};
 	}
 
@@ -260,8 +279,8 @@ public:
 	SSAOAttachments getSSAOAttachments()
 	{
 		return {
-			gPosition.id,
-			gNormal.id,
+			gPositionVS.id,
+			gNormalVS.id,
 			ssaoNoiseTexture.id,
 			ssaoColor.id
 		};
