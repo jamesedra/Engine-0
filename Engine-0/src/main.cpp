@@ -137,15 +137,15 @@ int main()
 	Entity dirLightEntity = WorldObjectFactory::CreateDirectionalLight(entityManager, lightManager, idManager, "sun");
 	sceneRegistry.Register(dirLightEntity);
 
-	//// Point ight Objects
-	//for (int i = 0; i < 40; i++)
-	//{
-	//	for (int j = 0; j < 40; j++)
-	//	{
-	//		Entity lightEntity = WorldObjectFactory::CreatePointLight(entityManager, lightManager, transformManager, idManager, "light " + std::to_string(i) + std::to_string(j), glm::vec3(i*5, 0.0f, j*5));
-	//		sceneRegistry.Register(lightEntity);
-	//	}
-	//}
+	// Point light Objects
+	for (int i = 0; i < 40; i++)
+	{
+		for (int j = 0; j < 40; j++)
+		{
+			Entity lightEntity = WorldObjectFactory::CreatePointLight(entityManager, lightManager, transformManager, idManager, "light " + std::to_string(i) + std::to_string(j), glm::vec3(i*5, 0.0f, j*5));
+			sceneRegistry.Register(lightEntity);
+		}
+	}
 
 	// IBL testing
 	// probe entity test
@@ -486,7 +486,6 @@ unsigned int getBufferOut(Renderer& renderer, int type)
 	case 5:
 		return da.AO;
 	case 6:
-		// return renderer.getSSAOBlurTexture().id;
 		return renderer.getCompositeSceneTex().id;
 	default:
 		return renderer.getPPSceneTex().id;

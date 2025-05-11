@@ -64,14 +64,15 @@ void main() {
 	// deferred attachment unpacking
 	vec3 fragPos = texture(gPosition, TexCoords).rgb;
 	vec3 n = normalize(texture(gNormal, TexCoords).rgb);
+
 	vec4 ar = texture(gAlbedoRoughness, TexCoords);
 	vec3 albedo = ar.rgb;
 	float roughness = ar.a;
 	roughness = max(roughness, 0.0001);
+
 	vec2 ma = texture(gMetallicAO, TexCoords).rg;
 	float metallic = ma.r;
-	// float ao = ma.g;
-	float ao = texture(ssaoLUT, TexCoords).r;
+	float ao = texture(ssaoLUT, TexCoords).r * ma.g;
 	ao = max(ao, 0.1);
 
 	vec3 v = normalize(viewPos - fragPos);

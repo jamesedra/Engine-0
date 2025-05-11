@@ -496,11 +496,55 @@ public:
 							}
 						}
 						ImGui::EndCombo();
+					}
+				}
+				else if (probeManager->skyProbeComponent->first == expandedEntity)
+				{
+					EnvironmentProbeComponent* sky = probeManager->GetSkyProbe();
+					IBLSettings* settings = &sky->settings;
+					std::string environmentMap = settings->eqrMapPath;
 
+					std::vector<const char*> libIBLSettings = ProbeLibrary::GetLibraryKeys();
+					auto map_selected = std::find_if(libIBLSettings.begin(), libIBLSettings.end(), [&environmentMap](const char* s)
+						{
+							return environmentMap == s;
+						});
+
+					size_t map_index = (map_selected != libIBLSettings.end()) ? std::distance(libIBLSettings.begin(), map_selected) : 0;
+					std::string skyComboLabel = "Skybox##DropDownPropertiesWindow";
+
+					if (ImGui::BeginCombo(skyComboLabel.c_str(), environmentMap.c_str(), 0))
+					{
+						static ImGuiTextFilter filter;
+						if (ImGui::IsWindowAppearing())
+						{
+							ImGui::SetKeyboardFocusHere();
+							filter.Clear();
+						}
+						ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_F);
+						std::string filterLabel = "##Filter" + std::to_string(expandedEntity);
+						filter.Draw(filterLabel.c_str(), -FLT_MIN);
+
+						for (int n = 0; n < libIBLSettings.size(); n++)
+						{
+							const bool is_selected(map_index == n);
+							if (filter.PassFilter(libIBLSettings[n]))
+							{
+								if (ImGui::Selectable(libIBLSettings[n], is_selected))
+								{
+									if (sky->settings.eqrMapPath != libIBLSettings[n])
+									{
+										map_index = n;
+										sky->settings = ProbeLibrary::GetSettings(libIBLSettings[n]);
+										sky->buildProbe = true;
+									}
+								}
+							}
+						}
+						ImGui::EndCombo();
 					}
 				}
 			}
-			
 		}
 		ImGui::PopStyleVar(2);
 		return true;

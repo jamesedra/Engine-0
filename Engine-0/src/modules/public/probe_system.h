@@ -17,7 +17,9 @@ public:
 	{
 		for (Entity entity : sceneRegistry.GetAll())
 		{
-			auto* probeComp = probeManager.GetProbeComponent(entity);
+			auto* probeComp = probeManager.skyProbeComponent->first == entity ? 
+				probeManager.GetSkyProbe() : probeManager.GetProbeComponent(entity);
+
 			if (!probeComp || !probeComp->buildProbe) continue;
 
 			// destroy current maps
