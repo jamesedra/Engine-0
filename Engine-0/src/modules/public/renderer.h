@@ -15,6 +15,14 @@ struct GBufferAttachments
 	unsigned int gNormalVS;
 };
 
+struct ShadowBufferAttachments
+{
+	Framebuffer& shadowBuffer;
+	Shader& shadowShader;
+	unsigned int shadow_width;
+	unsigned int shadow_height;
+};
+
 struct LBufferAttachments
 {
 	unsigned int hdrScene;
@@ -62,6 +70,7 @@ private:
 	Framebuffer shadowBuffer;
 	Shader dirShadowDepthShader;
 	Texture momentsTex;
+	unsigned int shadow_width = 1024, shadow_height = 1024;
 
 	// SSAO pass
 	Framebuffer ssaoBuffer, ssaoBlurBuffer;
@@ -125,9 +134,8 @@ public:
 		glDrawBuffers(6, gbuffer_attachments);
 
 		// Shadow framebuffer
-		shadowBuffer = Framebuffer(width, height);
-		const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
-		momentsTex = Texture(SHADOW_WIDTH, SHADOW_HEIGHT, GL_RG32F, GL_RG);
+		shadowBuffer = Framebuffer(shadow_width, shadow_height);
+		momentsTex = Texture(shadow_width, shadow_height, GL_RG32F, GL_RG);
 		momentsTex.setTexFilter(GL_LINEAR);
 		shadowBuffer.attachTexture2D(momentsTex, GL_COLOR_ATTACHMENT0);
 		shadowBuffer.attachRenderbuffer(GL_DEPTH_COMPONENT24, GL_DEPTH_ATTACHMENT);
@@ -258,6 +266,16 @@ public:
 			gMetallicAO.id,
 			gPositionVS.id,
 			gNormalVS.id
+		};
+	}
+
+	ShadowBufferAttachments getShadowAttachments()
+	{
+		return {
+			shadowBuffer,
+			dirShadowDepthShader,
+			shadow_width,
+			shadow_height
 		};
 	}
 

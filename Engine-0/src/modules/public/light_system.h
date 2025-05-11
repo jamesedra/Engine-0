@@ -102,7 +102,8 @@ public:
     void ConfigurePBRUniforms(
         Shader& pbrShader, 
         SceneEntityRegistry& sceneRegistry, 
-        LightManager& lightManager)
+        LightManager& lightManager,
+        TransformManager& transformManager)
     {
         pbrShader.use();
         // BindForShading();
@@ -119,8 +120,9 @@ public:
         if (!sceneRegistry.Contains(e)) return;
 
         DirectionalLightComponent* dirLightComp = dirLightCompEntity->second;
+        TransformComponent* transformComp = transformManager.GetComponent(e);
 
-        pbrShader.setVec4("dirLight.pos_radius", glm::vec4(dirLightComp->direction, 0.0f));
+        pbrShader.setVec4("dirLight.pos_radius", glm::vec4(transformComp->rotation, 0.0f));
         pbrShader.setVec4("dirLight.color_intensity", glm::vec4(dirLightComp->color, dirLightComp->intensity));
     }
 };

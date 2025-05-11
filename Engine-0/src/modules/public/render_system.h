@@ -74,9 +74,68 @@ public:
 		renderer.getGBuffer().unbind();
 	}
 
-	void RenderShadowPass()
+	void RenderShadowPass(
+		LightManager& lightManager, 
+		TransformManager& transformManager,
+		SceneEntityRegistry& sceneRegistry,
+		AssetManager& assetManager
+		)
 	{
+		// tentative, assume there is only one directional light.
+		Entity dirLightEntity = lightManager.GetAnyDirectionalLight()->first;
+		TransformComponent* dirTransformComp = transformManager.GetComponent(dirLightEntity);
 
+		float orthoSize = 10.0f;
+
+		glm::mat4 lightProjection = glm::ortho(
+			-orthoSize, +orthoSize, 
+			-orthoSize, +orthoSize, 
+			0.1f, 2500.0f);
+		glm::vec3 lightDir = normalize(dirTransformComp->rotation);
+		glm::vec3 sceneCenter = glm::vec3(0.0f);
+		float distance = 30.0f;
+		glm::vec3 lightEye = sceneCenter - lightDir * distance;
+		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+		glm::mat4 lightView = glm::lookAt(lightEye, sceneCenter, up);
+		glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+
+		ShadowBufferAttachments sa = renderer.getShadowAttachments();
+
+		glViewport(0, 0, sa.shadow_width, sa.shadow_height);
+
+		glCullFace(GL_FRONT);
+		sa.shadowBuffer.bind();
+		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+		sa.shadowShader.use();
+		sa.shadowShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+
+		for (Entity entity : sceneRegistry.GetAll())
+		{
+			AssetComponent* assetComp = assetManager.GetComponent(entity);
+			TransformComponent* transformComp = transformManager.GetComponent(entity);
+
+			if (!assetComp || !transformComp) continue;
+
+			glm::mat4 model = glm::mat4(1.0f);
+			model = glm::translate(model, transformComp->position);
+			model = glm::rotate(model, transformComp->rotation.x, glm::vec3(1, 0, 0));
+			model = glm::rotate(model, transformComp->rotation.y, glm::vec3(0, 1, 0));
+			model = glm::rotate(model, transformComp->rotation.z, glm::vec3(0, 0, 1));
+			model = glm::scale(model, transformComp->scale);
+
+			sa.shadowShader.setMat4("model", model);
+
+			Asset& asset = AssetLibrary::GetAsset(assetComp->assetName);
+			auto& parts = asset.parts;
+
+			for (MeshData& md : parts) md.mesh.Draw(sa.shadowShader);
+		}
+		sa.shadowBuffer.unbind();
+		glCullFace(GL_BACK);
+
+		int WIDTH = 1600;
+		int HEIGHT = 1200;
+		glViewport(0, 0, WIDTH, HEIGHT);
 	}
 
 	void RenderSSAO(Camera& camera, unsigned int frameVAO)
