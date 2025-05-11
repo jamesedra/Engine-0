@@ -75,6 +75,33 @@ public:
         return entity;
     }
 
+    static Entity CreateDirectionalLight(
+        EntityManager& entityManager,
+        LightManager& lightManager,
+        IDManager& idManager,
+        std::string name,
+        glm::vec3 direction = glm::vec3(50.0f, -15.0f, 50.0f),
+        glm::vec3 color = glm::vec3(1.0f),
+        float intensity = 5.0f,
+        bool enabled = true
+    )
+    {
+        if (lightManager.directionalLightComponents.size() >= 1)
+        {
+            std::cout << "There is an existing directional light. Overriding.";
+            lightManager.RemoveDirectionalLights();
+        }
+
+        Entity entity = entityManager.CreateEntity();
+
+        DirectionalLightComponent lightComp{ direction, color, intensity, enabled };
+
+        idManager.components[entity].ID = name;
+        lightManager.directionalLightComponents[entity] = std::move(lightComp);
+
+        return entity;
+    }
+
     static Entity CreatePointLight(
         EntityManager& entityManager,
         LightManager& lightManager,
@@ -90,12 +117,12 @@ public:
     {
         Entity entity = entityManager.CreateEntity();
 
-        LightComponent lightComp{ color, intensity, radius, enabled };
+        PointLightComponent lightComp{ color, intensity, radius, enabled };
         TransformComponent transformComp;
         transformComp.position = position;
 
         idManager.components[entity].ID = name;
-        lightManager.components[entity] = std::move(lightComp);
+        lightManager.pointLightComponents[entity] = std::move(lightComp);
         transformManager.components[entity] = std::move(transformComp);
 
         return entity;
@@ -120,7 +147,31 @@ public:
         probeComp.radius = radius;
 
         idManager.components[entity].ID = name;
-        probeManager.components[entity] = std::move(probeComp);
+        probeManager.probeComponents[entity] = std::move(probeComp);
+
+        return entity;
+    }
+
+    static Entity CreateSkyProbe(
+        EntityManager& entityManager,
+        EnvironmentProbeManager& probeManager,
+        IDManager& idManager,
+        std::string name,
+        IBLSettings& settings,
+        glm::vec3 position = glm::vec3(0.0f)
+    )
+    {
+        Entity entity = entityManager.CreateEntity();
+
+        EnvironmentProbeComponent probeComp;
+        probeComp.settings = settings;
+        probeComp.maps = IBLGenerator::Build(probeComp.settings);
+        probeComp.buildProbe = false;
+        probeComp.position = position;
+        probeComp.radius = 0.0f;
+
+        idManager.components[entity].ID = name;
+        probeManager.AddSkyProbe(entity, probeComp);
 
         return entity;
     }

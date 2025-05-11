@@ -17,7 +17,9 @@ public:
 	{
 		for (Entity entity : sceneRegistry.GetAll())
 		{
-			auto* probeComp = probeManager.GetComponent(entity);
+			auto* probeComp = probeManager.skyProbeComponent->first == entity ? 
+				probeManager.GetSkyProbe() : probeManager.GetProbeComponent(entity);
+
 			if (!probeComp || !probeComp->buildProbe) continue;
 
 			// destroy current maps
@@ -53,20 +55,12 @@ public:
 			float distance2;
 		};
 
-		Entity skyboxEnt = INVALID_ENTITY;
 		std::vector<ProbeDist> probes;
 		
 		for (Entity entity : sceneRegistry.GetAll())
 		{
-			auto* probeComp = probeManager.GetComponent(entity);
+			auto* probeComp = probeManager.GetProbeComponent(entity);
 			if (!probeComp) continue;
-			
-			// check if it's the skybox entity
-			if (probeComp->radius == std::numeric_limits<float>::infinity() && skyboxEnt == INVALID_ENTITY)
-			{
-				skyboxEnt = entity;
-				continue;
-			}
 			
 			// get distance squared
 			glm::vec3 pos = probeComp->position;
@@ -86,10 +80,7 @@ public:
 		cachedActiveProbes.clear();
 		for (int i = 0; i < probes.size() && i < MAX_ACTIVE_PROBES-1; ++i)
 			cachedActiveProbes.push_back(probes[i].entity);
-
-		// insert skybox as last probe
-		if (skyboxEnt != INVALID_ENTITY) cachedActiveProbes.push_back(skyboxEnt);
-		
+	
 		return cachedActiveProbes;
 	}
 };

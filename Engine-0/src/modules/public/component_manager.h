@@ -1,6 +1,7 @@
 #pragma once
 #include "worldcomponents.h"
 #include "entity_manager.h"
+#include <optional>
 
 // NOTE: this is mostly for holding data sets (currently uses a map, with the entity as the key) of components for preparing the components that is needed for a certain system.
 class TransformManager
@@ -47,7 +48,6 @@ public:
 	}
 };
 
-
 class ShaderManager
 {
 public:
@@ -62,22 +62,60 @@ public:
 class EnvironmentProbeManager
 {
 public:
-	std::unordered_map<Entity, EnvironmentProbeComponent> components;
-	EnvironmentProbeComponent* GetComponent(Entity entity)
+	std::unordered_map<Entity, EnvironmentProbeComponent> probeComponents;
+	std::optional<std::pair<Entity, EnvironmentProbeComponent>> skyProbeComponent;
+
+	EnvironmentProbeComponent* GetProbeComponent(Entity entity)
 	{
-		auto it = components.find(entity);
-		return (it != components.end()) ? &it->second : nullptr;
+		auto it = probeComponents.find(entity);
+		return (it != probeComponents.end()) ? &it->second : nullptr;
+	}
+
+	void AddSkyProbe(Entity e, const EnvironmentProbeComponent& sky)
+	{
+		if (skyProbeComponent.has_value()) RemoveSkyProbe();
+		skyProbeComponent = { e, sky };
+	}
+
+	void RemoveSkyProbe()
+	{
+		skyProbeComponent.reset();
+	}
+
+	EnvironmentProbeComponent* GetSkyProbe()
+	{
+		return skyProbeComponent ? &skyProbeComponent->second : nullptr;
 	}
 };
 
 class LightManager
 {
 public:
-	std::unordered_map<Entity, LightComponent> components;
-	LightComponent* GetComponent(Entity entity)
+	std::unordered_map<Entity, PointLightComponent> pointLightComponents;
+	std::unordered_map<Entity, DirectionalLightComponent> directionalLightComponents;
+
+	PointLightComponent* GetPointLightComponent(Entity entity)
 	{
-		auto it = components.find(entity);
-		return (it != components.end()) ? &it->second : nullptr;
+		auto it = pointLightComponents.find(entity);
+		return (it != pointLightComponents.end()) ? &it->second : nullptr;
+	}
+
+	DirectionalLightComponent* GetDirectionalLightComponent(Entity entity)
+	{
+		auto it = directionalLightComponents.find(entity);
+		return (it != directionalLightComponents.end()) ? &it->second : nullptr;
+	}
+
+	std::optional<std::pair<Entity, DirectionalLightComponent*>> GetAnyDirectionalLight()
+	{
+		if (directionalLightComponents.empty()) return std::nullopt;
+		auto it = directionalLightComponents.begin();
+		return std::make_pair(it->first, &it->second);
+	}
+
+	void RemoveDirectionalLights()
+	{
+		directionalLightComponents.clear();
 	}
 };
 

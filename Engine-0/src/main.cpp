@@ -134,7 +134,10 @@ int main()
 	transformManager.components[floorEntity].scale = glm::vec3(100.0f, 0.5f, 100.0f);
 	sceneRegistry.Register(floorEntity);
 
-	// Light Objects
+	Entity dirLightEntity = WorldObjectFactory::CreateDirectionalLight(entityManager, lightManager, idManager, "sun");
+	sceneRegistry.Register(dirLightEntity);
+
+	// Point light Objects
 	for (int i = 0; i < 40; i++)
 	{
 		for (int j = 0; j < 40; j++)
@@ -147,7 +150,7 @@ int main()
 	// IBL testing
 	// probe entity test
 	IBLSettings skyboxIBLSettings = ProbeLibrary::GetSettings("resources/textures/eqr_maps/kloofendal_43d_clear_puresky_2k.hdr");
-	Entity skyboxEntity = WorldObjectFactory::CreateEnvironmentProbe(entityManager, probeManager, idManager, "skybox", skyboxIBLSettings, glm::vec3(0.f), std::numeric_limits<float>::infinity());
+	Entity skyboxEntity = WorldObjectFactory::CreateSkyProbe(entityManager, probeManager, idManager, "skybox", skyboxIBLSettings, glm::vec3(0.f));
 	sceneRegistry.Register(skyboxEntity);
 
 	IBLSettings probeIBLSettings = ProbeLibrary::GetSettings("resources/textures/eqr_maps/newport_loft.hdr");
@@ -291,6 +294,9 @@ int main()
 			materialsGroupManager, 
 			camera);
 
+		// SSAO pass
+		renderSystem.RenderSSAO(camera, frameVAO);
+
 		// deferred shading stage
 		glDisable(GL_DEPTH_TEST);
 
@@ -300,13 +306,17 @@ int main()
 
 			// PBR shading
 			renderer.getHDRBuffer().bind();
+			EnvironmentProbeComponent* skyProbe = probeManager.GetSkyProbe();
 			probeSystem.RebuildProbes(sceneRegistry, probeManager);
+
 			std::vector<Entity> activeProbes = probeSystem.GetActiveProbes(sceneRegistry, probeManager, camera);
 			std::vector<EnvironmentProbeComponent*> IBLProbes;
-			for (auto& p : activeProbes) IBLProbes.push_back(probeManager.GetComponent(p));
+
+			for (auto& p : activeProbes) IBLProbes.push_back(probeManager.GetProbeComponent(p));
+
 			lightSystem.TileLighting(sceneRegistry, lightManager, transformManager, camera);
-			lightSystem.ConfigurePBRUniforms(renderer.getPBRShader());
-			renderSystem.RenderDeferredPBR(IBLProbes, camera, frameVAO);
+			lightSystem.ConfigurePBRUniforms(renderer.getPBRShader(), sceneRegistry, lightManager);
+			renderSystem.RenderDeferredPBR(skyProbe, IBLProbes, camera, frameVAO);
 			renderer.getHDRBuffer().unbind();
 
 			// Brightness pass
@@ -318,7 +328,7 @@ int main()
 			// Tone mapping
 			renderSystem.RenderTonemap(frameVAO);
 			// Composite output
-			renderSystem.RenderComposite(IBLProbes, camera, frameVAO);
+			renderSystem.RenderComposite(skyProbe, camera, frameVAO);
 			// Post processing
 			renderSystem.RenderPostProcess(frameVAO);
 		}
