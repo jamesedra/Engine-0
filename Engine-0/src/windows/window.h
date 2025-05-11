@@ -444,7 +444,7 @@ public:
 			}
 			if (probeManager)
 			{
-				EnvironmentProbeComponent* probeComp = probeManager->GetComponent(expandedEntity);
+				EnvironmentProbeComponent* probeComp = probeManager->GetProbeComponent(expandedEntity);
 				if (probeComp)
 				{
 					float position[4] = { probeComp->position.x, probeComp->position.y, probeComp->position.z, 1.0f };

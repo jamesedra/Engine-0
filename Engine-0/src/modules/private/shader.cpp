@@ -301,7 +301,6 @@ void Shader::setSamplerArray(const std::string& name, const std::vector<GLuint> 
 	}
 }
 
-
 GLint Shader::getUniformLocation(const std::string& name) const
 {
 	if (uniformLocationCache.find(name) != uniformLocationCache.end()) return uniformLocationCache[name];

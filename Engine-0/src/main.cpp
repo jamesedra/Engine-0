@@ -150,7 +150,7 @@ int main()
 	// IBL testing
 	// probe entity test
 	IBLSettings skyboxIBLSettings = ProbeLibrary::GetSettings("resources/textures/eqr_maps/kloofendal_43d_clear_puresky_2k.hdr");
-	Entity skyboxEntity = WorldObjectFactory::CreateEnvironmentProbe(entityManager, probeManager, idManager, "skybox", skyboxIBLSettings, glm::vec3(0.f), std::numeric_limits<float>::infinity());
+	Entity skyboxEntity = WorldObjectFactory::CreateSkyProbe(entityManager, probeManager, idManager, "skybox", skyboxIBLSettings, glm::vec3(0.f));
 	sceneRegistry.Register(skyboxEntity);
 
 	IBLSettings probeIBLSettings = ProbeLibrary::GetSettings("resources/textures/eqr_maps/newport_loft.hdr");
@@ -306,13 +306,17 @@ int main()
 
 			// PBR shading
 			renderer.getHDRBuffer().bind();
+			EnvironmentProbeComponent* skyProbe = probeManager.GetSkyProbe();
 			probeSystem.RebuildProbes(sceneRegistry, probeManager);
+
 			std::vector<Entity> activeProbes = probeSystem.GetActiveProbes(sceneRegistry, probeManager, camera);
 			std::vector<EnvironmentProbeComponent*> IBLProbes;
-			for (auto& p : activeProbes) IBLProbes.push_back(probeManager.GetComponent(p));
+
+			for (auto& p : activeProbes) IBLProbes.push_back(probeManager.GetProbeComponent(p));
+
 			lightSystem.TileLighting(sceneRegistry, lightManager, transformManager, camera);
 			lightSystem.ConfigurePBRUniforms(renderer.getPBRShader(), sceneRegistry, lightManager);
-			renderSystem.RenderDeferredPBR(IBLProbes, camera, frameVAO);
+			renderSystem.RenderDeferredPBR(skyProbe, IBLProbes, camera, frameVAO);
 			renderer.getHDRBuffer().unbind();
 
 			// Brightness pass
@@ -324,7 +328,7 @@ int main()
 			// Tone mapping
 			renderSystem.RenderTonemap(frameVAO);
 			// Composite output
-			renderSystem.RenderComposite(IBLProbes, camera, frameVAO);
+			renderSystem.RenderComposite(skyProbe, camera, frameVAO);
 			// Post processing
 			renderSystem.RenderPostProcess(frameVAO);
 		}

@@ -147,7 +147,31 @@ public:
         probeComp.radius = radius;
 
         idManager.components[entity].ID = name;
-        probeManager.components[entity] = std::move(probeComp);
+        probeManager.probeComponents[entity] = std::move(probeComp);
+
+        return entity;
+    }
+
+    static Entity CreateSkyProbe(
+        EntityManager& entityManager,
+        EnvironmentProbeManager& probeManager,
+        IDManager& idManager,
+        std::string name,
+        IBLSettings& settings,
+        glm::vec3 position = glm::vec3(0.0f)
+    )
+    {
+        Entity entity = entityManager.CreateEntity();
+
+        EnvironmentProbeComponent probeComp;
+        probeComp.settings = settings;
+        probeComp.maps = IBLGenerator::Build(probeComp.settings);
+        probeComp.buildProbe = false;
+        probeComp.position = position;
+        probeComp.radius = 0.0f;
+
+        idManager.components[entity].ID = name;
+        probeManager.AddSkyProbe(entity, probeComp);
 
         return entity;
     }

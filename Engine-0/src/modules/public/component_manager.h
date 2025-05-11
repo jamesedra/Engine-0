@@ -62,11 +62,29 @@ public:
 class EnvironmentProbeManager
 {
 public:
-	std::unordered_map<Entity, EnvironmentProbeComponent> components;
-	EnvironmentProbeComponent* GetComponent(Entity entity)
+	std::unordered_map<Entity, EnvironmentProbeComponent> probeComponents;
+	std::optional<std::pair<Entity, EnvironmentProbeComponent>> skyProbeComponent;
+
+	EnvironmentProbeComponent* GetProbeComponent(Entity entity)
 	{
-		auto it = components.find(entity);
-		return (it != components.end()) ? &it->second : nullptr;
+		auto it = probeComponents.find(entity);
+		return (it != probeComponents.end()) ? &it->second : nullptr;
+	}
+
+	void AddSkyProbe(Entity e, const EnvironmentProbeComponent& sky)
+	{
+		if (skyProbeComponent.has_value()) RemoveSkyProbe();
+		skyProbeComponent = { e, sky };
+	}
+
+	void RemoveSkyProbe()
+	{
+		skyProbeComponent.reset();
+	}
+
+	EnvironmentProbeComponent* GetSkyProbe()
+	{
+		return skyProbeComponent ? &skyProbeComponent->second : nullptr;
 	}
 };
 

@@ -4,6 +4,7 @@
 #include "asset_library.h"
 #include "renderer.h"
 #include "../../common.h"
+#include <array>
 
 class RenderSystem
 {
@@ -118,6 +119,7 @@ public:
 	}
 
 	void RenderDeferredPBR(
+		EnvironmentProbeComponent* skyProbe,
 		std::vector<EnvironmentProbeComponent*> IBLProbes,
 		Camera& camera,
 		unsigned int frameVAO
@@ -152,55 +154,65 @@ public:
 		glActiveTexture(GL_TEXTURE0 + unit);
 		glBindTexture(GL_TEXTURE_2D, renderer.getSSAOBlurTexture().id);
 
-		size_t probeCount = IBLProbes.size();
-		pbr.setInt("probeCount", probeCount);
-
-		std::vector<GLuint> irradianceMaps;
-		std::vector<GLuint> prefilterMaps;
-		std::vector<GLuint> brdfLUTs;
+		
 
 		const GLuint MAX_PROBES = 4;
-		for (size_t i = 0; i < probeCount; i++)
+		static GLuint placeholderCubemap = createPlaceholderCubemap();
+		static GLuint placeholderTexture = TextureLibrary::GetTexture("White Texture - Default").id;
+
+		std::array<GLuint, MAX_PROBES> irradianceMaps { placeholderCubemap };
+		std::array<GLuint, MAX_PROBES> prefilterMaps { placeholderCubemap };
+		std::array<GLuint, MAX_PROBES> brdfLUTs{ placeholderTexture };
+
+		size_t probeCount = IBLProbes.size();
+
+		int nextSlot = 0;
+
+		// add sky probe first
+		if (skyProbe)
+		{
+			pbr.setVec4("probeData[0]", glm::vec4(skyProbe->position, skyProbe->radius));
+			irradianceMaps[0] = skyProbe->maps.irradianceMap;
+			prefilterMaps[0] = skyProbe->maps.prefilterMap;
+			brdfLUTs[0] = skyProbe->maps.brdfLUT;
+			probeCount++;
+		}
+		else pbr.setVec4("probeData[0]", glm::vec4(FLT_MAX));
+		
+		nextSlot = 1;
+
+		for (size_t i = 0; i < IBLProbes.size() && i < MAX_PROBES - 1; i++)
 		{
 			auto* p = IBLProbes[i];
 
-			irradianceMaps.push_back(p->maps.irradianceMap);
-			prefilterMaps.push_back(p->maps.prefilterMap);
-			brdfLUTs.push_back(p->maps.brdfLUT);
+			irradianceMaps[nextSlot] = p->maps.irradianceMap;
+			prefilterMaps[nextSlot] = p->maps.prefilterMap;
+			brdfLUTs[nextSlot] = p->maps.brdfLUT;
 
-			pbr.setVec3("probePosition[" + std::to_string(i) + "]", p->position);
+			pbr.setVec4("probeData[" + std::to_string(nextSlot) + "]", glm::vec4(p->position, p->radius));
+			nextSlot++;
 		}
 
-		for (size_t i = probeCount; i < MAX_PROBES; i++)
-		{
-			static unsigned int placeholderCubemap = createPlaceholderCubemap();
-			static unsigned int placeholderTexture = TextureLibrary::GetTexture("White Texture - Default").id;
-
-			irradianceMaps.push_back(placeholderCubemap);
-			prefilterMaps.push_back(placeholderCubemap);
-			brdfLUTs.push_back(placeholderTexture);
-
-			pbr.setVec3("probePosition[" + std::to_string(i) + "]", glm::vec3(FLT_MAX));
-		}
+		pbr.setInt("probeCount", nextSlot);
 		
 		GLuint firstUnit = ++unit;
 
 		pbr.setSamplerArray("irradianceMap[0]",
-			irradianceMaps,
+			std::vector<GLuint>(irradianceMaps.begin(), irradianceMaps.end()),
 			firstUnit,
 			GL_TEXTURE_CUBE_MAP);
 
 		firstUnit += MAX_PROBES;
 
 		pbr.setSamplerArray("prefilterMap[0]",
-			prefilterMaps,
+			std::vector<GLuint>(prefilterMaps.begin(), prefilterMaps.end()),
 			firstUnit,
 			GL_TEXTURE_CUBE_MAP);
 
 		firstUnit += MAX_PROBES;
 
 		pbr.setSamplerArray("brdfLUT[0]",
-			brdfLUTs,
+			std::vector<GLuint>(brdfLUTs.begin(), brdfLUTs.end()),
 			firstUnit,
 			GL_TEXTURE_2D);
 
@@ -279,7 +291,7 @@ public:
 	}
 
 	void RenderComposite(
-		std::vector<EnvironmentProbeComponent*> IBLProbes, 
+		EnvironmentProbeComponent* skyProbe,
 		Camera& camera, 
 		unsigned int frameVAO
 	)
@@ -303,7 +315,7 @@ public:
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, renderer.getGDepth().id);
 		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, IBLProbes[IBLProbes.size() - 1]->maps.envMap);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, skyProbe->maps.envMap);
 		compositeShader.setMat4("invProjection", invProjection);
 		compositeShader.setMat4("invView", invView);
 		glBindVertexArray(frameVAO);
