@@ -57,16 +57,23 @@ private:
 	// Gbuffer pass
 	Framebuffer gBuffer;
 	Texture gPosition, gNormal, gAlbedoRoughness, gMetallicAO, gPositionVS, gNormalVS, gDepth;
+
+	// Shadow pass
+	Framebuffer shadowBuffer;
+	Shader dirShadowDepthShader;
+	Texture momentsTex;
+
 	// SSAO pass
 	Framebuffer ssaoBuffer, ssaoBlurBuffer;
 	Shader ssaoShader, ssaoBlurShader;
 	Texture ssaoColor, ssaoBlurColor, ssaoNoiseTexture;
 	SSAOData ssaoData;
+
 	// Lighting pass
 	Framebuffer hdrBuffer, brightnessBuffer, bloomPingBuffer, bloomPongBuffer, tonemapperBuffer, compositeBuffer, postprocessBuffer;
-	Texture hdrScene, brightnessPass, blurHorizontal, blurVertical, tonemappedScene, compositeScene, ppScene;
-	// Lighting shaders
 	Shader pbrBufferShader, brightPassShader, blurShader, bloomShader, tonemapShader, compositeShader, ppShader;
+	Texture hdrScene, brightnessPass, blurHorizontal, blurVertical, tonemappedScene, compositeScene, ppScene;
+
 	// Debug pass
 	Framebuffer debugBuffer;
 	Shader debugShader;
@@ -117,7 +124,18 @@ public:
 		};
 		glDrawBuffers(6, gbuffer_attachments);
 
-		// SSAO Framebuffer
+		// Shadow framebuffer
+		shadowBuffer = Framebuffer(width, height);
+		const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+		momentsTex = Texture(SHADOW_WIDTH, SHADOW_HEIGHT, GL_RG32F, GL_RG);
+		momentsTex.setTexFilter(GL_LINEAR);
+		shadowBuffer.attachTexture2D(momentsTex, GL_COLOR_ATTACHMENT0);
+		shadowBuffer.attachRenderbuffer(GL_DEPTH_COMPONENT24, GL_DEPTH_ATTACHMENT);
+
+		unsigned int shadow_attachments[] = { GL_COLOR_ATTACHMENT0 }; // in case of adding more
+		glDrawBuffers(1, shadow_attachments);
+		 
+		// SSAO framebuffer
 		ssaoBuffer = Framebuffer(width, height);
 		ssaoColor = Texture(width, height, GL_RED, GL_RED);
 		ssaoColor.setTexFilter(GL_NEAREST);
@@ -203,6 +221,7 @@ public:
 		debugBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
 		// Shaders
+		dirShadowDepthShader = Shader("shaders/shadowmapping/dir_depth.vert", "shaders/shadowmapping/dir_depth.frag");
 		ssaoShader = Shader("shaders/frame_out.vert", "shaders/ssao/ssao.frag");
 		ssaoBlurShader = Shader("shaders/frame_out.vert", "shaders/ssao/ssao_blur.frag");
 		pbrBufferShader = Shader("shaders/PBR/pbr_def.vert", "shaders/PBR/pbr_ibl_v2.frag");

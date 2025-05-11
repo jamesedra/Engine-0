@@ -316,7 +316,7 @@ int main()
 
 			lightSystem.TileLighting(sceneRegistry, lightManager, transformManager, camera);
 			lightSystem.ConfigurePBRUniforms(renderer.getPBRShader(), sceneRegistry, lightManager);
-			renderSystem.RenderDeferredPBR(skyProbe, IBLProbes, camera, frameVAO);
+			renderSystem.RenderPBR(skyProbe, IBLProbes, camera, frameVAO);
 			renderer.getHDRBuffer().unbind();
 
 			// Brightness pass

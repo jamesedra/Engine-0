@@ -74,6 +74,11 @@ public:
 		renderer.getGBuffer().unbind();
 	}
 
+	void RenderShadowPass()
+	{
+
+	}
+
 	void RenderSSAO(Camera& camera, unsigned int frameVAO)
 	{
 		renderer.getSSAOBuffer().bind();
@@ -118,7 +123,7 @@ public:
 		renderer.getSSAOBlurBuffer().unbind();
 	}
 
-	void RenderDeferredPBR(
+	void RenderPBR(
 		EnvironmentProbeComponent* skyProbe,
 		std::vector<EnvironmentProbeComponent*> IBLProbes,
 		Camera& camera,
