@@ -27,8 +27,8 @@ private:
 
 public:
     LightSystem(
-        int screenWidth = 1600, 
-        int screenHeight = 1200, 
+        int screenWidth = 1600,
+        int screenHeight = 1200,
         int tileSize = 16
     )
     {
@@ -57,7 +57,7 @@ public:
 
         for (Entity entity : sceneRegistry.GetAll())
         {
-            LightComponent* lightComp = lightManager.GetComponent(entity);
+            PointLightComponent* lightComp = lightManager.GetPointLightComponent(entity);
             TransformComponent* transformComp = transformManager.GetComponent(entity);
             if (!lightComp || !lightComp->enabled || !transformComp) continue;
 
@@ -80,9 +80,6 @@ public:
         }
         tileInfoSSBO.setData(0, sizeof(glm::uvec2) * tileCount, tileData.data());
 
-        // std::vector<glm::uvec2> tileDefault(numTilesX * numTilesY, glm::uvec2(0, 0));
-        // tileInfoSSBO.setData(0, sizeof(glm::uvec2) * tileDefault.size(), tileDefault.data());
-
         lightCompShader.use();
         lightCompShader.setMat4("view", camera.getViewMatrix());
         lightCompShader.setMat4("projection", camera.getProjectionMatrix(screenWidth, screenHeight, 0.1f, 2500.0f));
@@ -102,12 +99,28 @@ public:
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, lightIndexSSBO.SSBO);
     }
 
-    void ConfigurePBRUniforms(Shader& pbrShader)
+    void ConfigurePBRUniforms(
+        Shader& pbrShader, 
+        SceneEntityRegistry& sceneRegistry, 
+        LightManager& lightManager)
     {
         pbrShader.use();
         // BindForShading();
         pbrShader.setInt("tileSize", tileSize);
         pbrShader.setIVec2("screenSize", screenWidth, screenHeight);
         pbrShader.setIVec2("tileCount", numTilesX, numTilesY);
+
+        auto dirLightCompEntity = lightManager.GetAnyDirectionalLight();
+        if (!dirLightCompEntity) return;
+
+        Entity e = dirLightCompEntity->first;
+
+        // return if not part of the scene registry
+        if (!sceneRegistry.Contains(e)) return;
+
+        DirectionalLightComponent* dirLightComp = dirLightCompEntity->second;
+
+        pbrShader.setVec4("dirLight.pos_radius", glm::vec4(dirLightComp->direction, 0.0f));
+        pbrShader.setVec4("dirLight.color_intensity", glm::vec4(dirLightComp->color, dirLightComp->intensity));
     }
 };

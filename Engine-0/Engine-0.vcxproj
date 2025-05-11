@@ -219,6 +219,7 @@
     <None Include="shaders\IBL\cubemap.vert" />
     <None Include="shaders\IBL\irradiance_convolution.frag" />
     <None Include="shaders\IBL\prefilter_cubemap.frag" />
+    <None Include="shaders\lighting\lighting_tiled.comp" />
     <None Include="shaders\NPR\blinn_shading.frag" />
     <None Include="shaders\NPR\npr_def.vert" />
     <None Include="shaders\PBR\bright_pass.frag" />
@@ -231,6 +232,8 @@
     <None Include="shaders\postprocess\pp_celshading.frag" />
     <None Include="shaders\skybox\skybox_default.frag" />
     <None Include="shaders\skybox\skybox_default.vert" />
+    <None Include="shaders\ssao\ssao.frag" />
+    <None Include="shaders\ssao\ssao_blur.frag" />
     <None Include="shaders\tiling_debug.frag" />
     <None Include="shaders\tonemapping\rh_tonemapping.frag" />
   </ItemGroup>

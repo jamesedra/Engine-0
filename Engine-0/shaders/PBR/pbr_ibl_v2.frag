@@ -1,4 +1,4 @@
-#version 450 core
+﻿#version 450 core
 
 #define MAX_LIGHTS 1600
 #define MAX_LIGHTS_PER_TILE 64
@@ -13,12 +13,15 @@ uniform sampler2D gNormal;
 uniform sampler2D gAlbedoRoughness;
 uniform sampler2D gMetallicAO;
 
+// SSAO pass
+uniform sampler2D ssaoLUT;
+
 // IBL
 uniform int probeCount;
 uniform samplerCube irradianceMap[MAX_PROBES];
 uniform samplerCube prefilterMap[MAX_PROBES];
 uniform sampler2D brdfLUT[MAX_PROBES];
-uniform vec3 probePosition[MAX_PROBES];
+uniform vec4 probeData[MAX_PROBES]; // position = xyz, radius = w
 
 // Lighting
 struct Light {
@@ -26,6 +29,10 @@ struct Light {
 	vec4 color_intensity;
 };
 
+// Directional light
+uniform Light dirLight; // pos_radius only stores direction
+
+// Point Light Tile Buffers
 layout(std430, binding = 0) readonly buffer LightBuf {
 	Light lights[MAX_LIGHTS];
 };
@@ -38,9 +45,11 @@ layout(std430, binding = 2) readonly buffer LightIndexBuf {
 	uint lightIndices[];
 };
 
+// Tile Data
 uniform ivec2 screenSize;
 uniform ivec2 tileCount;
 uniform int tileSize;
+
 uniform vec3 viewPos;
 
 vec3 Fresnel(float cosTheta, vec3 F0);
@@ -55,13 +64,16 @@ void main() {
 	// deferred attachment unpacking
 	vec3 fragPos = texture(gPosition, TexCoords).rgb;
 	vec3 n = normalize(texture(gNormal, TexCoords).rgb);
+
 	vec4 ar = texture(gAlbedoRoughness, TexCoords);
 	vec3 albedo = ar.rgb;
 	float roughness = ar.a;
 	roughness = max(roughness, 0.0001);
+
 	vec2 ma = texture(gMetallicAO, TexCoords).rg;
 	float metallic = ma.r;
-	float ao = ma.g;
+	float ao = texture(ssaoLUT, TexCoords).r * ma.g;
+	ao = max(ao, 0.1);
 
 	vec3 v = normalize(viewPos - fragPos);
 	float nDotV = max(dot(n, v), 0.0);
@@ -76,6 +88,7 @@ void main() {
 	vec3 F0 = mix(vec3(0.04), albedo, metallic);
 	vec3 Lo = vec3(0.0); // outgoing radiance
 
+	// Point Lights
 	for (uint i = 0u; i < count; i++) {
 		uint lightID = lightIndices[offset + i];
 		Light light = lights[lightID];
@@ -127,6 +140,33 @@ void main() {
 		}
 	}
 
+	// directional light
+	vec3 Ld = normalize(-dirLight.pos_radius.xyz);
+	vec3 h = normalize(v + Ld);
+	float nDotL = max(dot(n, Ld), 0.0);
+	float vDotH = max(dot(v, h), 0.0);
+	float nDotH = max(dot(n, h), 0.0);
+	if (nDotL > 0.0) {
+		// Specular BRDF
+		vec3 F = Fresnel(vDotH, F0);
+		float D = NormalDistribution(nDotH, roughness);
+		float G = GeometryEq(nDotL, roughness) * GeometryEq(nDotV, roughness);
+
+		vec3 SpecBRDF_nom = D * G * F;
+		float SpecBRDF_denom = 4.0 * nDotV * nDotL;
+		vec3 SpecBRDF = SpecBRDF_nom / max(SpecBRDF_denom, 0.001);
+
+		// Diffuse BRDF
+		vec3 kS = F;
+		vec3 kD = vec3(1.0) - kS;
+		kD *= 1.0 - metallic;
+		vec3 fLambert = albedo;
+		vec3 DiffuseBRDF = kD * fLambert / PI;
+
+		vec3 radiance = dirLight.color_intensity.rgb * dirLight.color_intensity.a;
+		Lo += (DiffuseBRDF + SpecBRDF) * radiance * nDotL;
+	}
+
 	// IBL
 	vec3 R = reflect(-v, n);
 	const float MAX_REFLECTION_LOD = 4.0;
@@ -147,14 +187,14 @@ void main() {
 		ambient = vec3(0.03) * albedo * ao;
 	} 
 	else if (probeCount == 1) {
-		// get maps from probes[0]
+		// get maps from probes[0], skybox
 		vec3 irradiance = texture(irradianceMap[0], n).rgb;
 		vec3 diffuseIBL = irradiance * albedo;
 		vec3 prefilteredColor = textureLod(prefilterMap[0], R, roughness * MAX_REFLECTION_LOD).rgb;
 		vec2 envBRDF = texture(brdfLUT[0], vec2(nDotV, roughness)).rg;
 		vec3 specularIBL = prefilteredColor * (F_ibl * envBRDF.x + envBRDF.y);
 
-		ambient = (kD * diffuseIBL + specularIBL) * ao;
+		ambient = kD * diffuseIBL * ao + specularIBL;
 	}
 	else if (probeCount >= 2) {
 		// get two nearest probes and blend
@@ -162,27 +202,42 @@ void main() {
 		int i0 = probeIdx.x;
 		int i1 = probeIdx.y;
 
-		float d0 = length(fragPos - probePosition[i0]);
-		float d1 = length(fragPos - probePosition[i1]);
+		vec3 p0 = probeData[i0].xyz;
+		vec3 p1 = probeData[i1].xyz;
+		float r0 = probeData[i0].w;
+		float r1 = probeData[i1].w;
 
-		float w0 = d1 / (d0 + d1);
-		float w1 = 1.0 - w0;
+		float d0 = length(fragPos - p0);
+		float d1 = length(fragPos - p1);
+
+		// cubic smoothsetp (1-d/r)^3
+		float w0 = clamp(1.0 - d0 / r0, 0.0, 1.0);
+		float w1 = clamp(1.0 - d1 / r1, 0.0, 1.0);
+		w0 *= w0 * w0;
+		w1 *= w1 * w1;
+
+		float wSky = max(1.0 - (w0 + w1), 0.0);
+
+		vec3 irrSky = texture(irradianceMap[0], n).rgb;
+		vec3 preSky = textureLod(prefilterMap[0], R, roughness * MAX_REFLECTION_LOD).rgb;
+		vec2 envSky = texture(brdfLUT[0], vec2(nDotV, roughness)).rg;
 
 		vec3 irr0 = texture(irradianceMap[i0], n).rgb;
 		vec3 irr1 = texture(irradianceMap[i1], n).rgb;
-		irradiance = mix(irr0, irr1, w1);
+		irradiance = irr0 * w0 + irr1 * w1 + irrSky * wSky;
 
 		vec3 pre0 = textureLod(prefilterMap[i0], R, roughness * MAX_REFLECTION_LOD).rgb;
 		vec3 pre1 = textureLod(prefilterMap[i1], R, roughness * MAX_REFLECTION_LOD).rgb;
-		prefilteredColor = mix(pre0, pre1, w1);
+		prefilteredColor = pre0 * w0 + pre1 * w1 + preSky * wSky;
 
-		envBRDF = texture(brdfLUT[i0], vec2(nDotV, roughness)).rg;  
+		vec2 env0 = texture(brdfLUT[i0], vec2(nDotV, roughness)).rg;
+		vec2 env1 = texture(brdfLUT[i1], vec2(nDotV, roughness)).rg;
+		envBRDF = env0 * w0 + env1 * w1 + envSky * wSky;
 
 		vec3 diffuseIBL = irradiance * albedo;
 		vec3 specularIBL = prefilteredColor * (F_ibl * envBRDF.x + envBRDF.y);
-		ambient = (kD * diffuseIBL + specularIBL) * ao;
+		ambient = (kD * diffuseIBL * ao) + specularIBL;
 	}
-
 	vec3 color = ambient + Lo;
 	FragColor = vec4(color, 1.0);
 }
@@ -214,8 +269,9 @@ ivec2 FindClosestProbes(vec3 fragPos) {
 	int idx0 = -1, idx1 = -1;
 	float d0 = 1e20, d1 = 1e20;
 
-	for (int i = 0; i < probeCount && i < MAX_PROBES; i++) {
-		float di = length(fragPos - probePosition[i]);
+	// ignore index 0
+	for (int i = 1; i < probeCount && i < MAX_PROBES; i++) {
+		float di = length(fragPos - probeData[i].rgb);
 
 		if (di < d0) {
 			d1 = d0;  
