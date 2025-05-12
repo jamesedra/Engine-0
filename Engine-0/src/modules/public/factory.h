@@ -81,7 +81,7 @@ public:
         TransformManager& transformManager,
         IDManager& idManager,
         std::string name,
-        glm::vec3 direction = glm::vec3(50.0f, -15.0f, 50.0f),
+        glm::vec3 direction = glm::vec3(3.5f, -30.0f, 50.0f),
         glm::vec3 color = glm::vec3(1.0f),
         float intensity = 5.0f,
         bool enabled = true

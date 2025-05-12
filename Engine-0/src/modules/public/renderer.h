@@ -138,9 +138,10 @@ public:
 		momentsTex = Texture(shadow_width, shadow_height, GL_RG32F, GL_RG);
 		momentsTex.setTexFilter(GL_LINEAR);
 		shadowBuffer.attachTexture2D(momentsTex, GL_COLOR_ATTACHMENT0);
+		
+		shadowBuffer.bind();
 		shadowBuffer.attachRenderbuffer(GL_DEPTH_COMPONENT24, GL_DEPTH_ATTACHMENT);
-
-		unsigned int shadow_attachments[] = { GL_COLOR_ATTACHMENT0 }; // in case of adding more
+		unsigned int shadow_attachments[1] = { GL_COLOR_ATTACHMENT0 }; // in case of adding more
 		glDrawBuffers(1, shadow_attachments);
 		 
 		// SSAO framebuffer
@@ -331,6 +332,11 @@ public:
 	Texture& getGDepth()
 	{
 		return gDepth;
+	}
+
+	Texture& getShadowMoments()
+	{
+		return momentsTex;
 	}
 
 	Texture& getHDRSceneTex()

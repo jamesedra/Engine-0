@@ -294,6 +294,9 @@ int main()
 			materialsGroupManager, 
 			camera);
 
+		// Shadow pass
+		renderSystem.RenderShadowPass(lightManager, transformManager, sceneRegistry, assetManager);
+
 		// SSAO pass
 		renderSystem.RenderSSAO(camera, frameVAO);
 
@@ -486,6 +489,7 @@ unsigned int getBufferOut(Renderer& renderer, int type)
 	case 5:
 		return da.AO;
 	case 6:
+		// return renderer.getShadowMoments().id;
 		return renderer.getCompositeSceneTex().id;
 	default:
 		return renderer.getPPSceneTex().id;

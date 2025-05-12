@@ -13,6 +13,9 @@ uniform sampler2D gNormal;
 uniform sampler2D gAlbedoRoughness;
 uniform sampler2D gMetallicAO;
 
+// Variance shadow pass
+uniform sampler2D dirVSM;
+
 // SSAO pass
 uniform sampler2D ssaoLUT;
 
@@ -263,6 +266,10 @@ float NormalDistribution(float nDotH, float roughness) {
 float GeometryEq(float dotProd, float roughness) {
 	float k = (roughness + 1.0) * (roughness + 1.0) / 8.0;
 	return dotProd / (dotProd * (1.0 - k) + k);
+}
+
+float CalculateDirShadow() {
+	return 0.0;
 }
 
 ivec2 FindClosestProbes(vec3 fragPos) {

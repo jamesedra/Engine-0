@@ -85,12 +85,12 @@ public:
 		Entity dirLightEntity = lightManager.GetAnyDirectionalLight()->first;
 		TransformComponent* dirTransformComp = transformManager.GetComponent(dirLightEntity);
 
-		float orthoSize = 10.0f;
-
+		float orthoSize = 50.0f;
+		float near_plane = 0.1f, far_plane = 60.0f;
 		glm::mat4 lightProjection = glm::ortho(
 			-orthoSize, +orthoSize, 
 			-orthoSize, +orthoSize, 
-			0.1f, 2500.0f);
+			near_plane, far_plane);
 		glm::vec3 lightDir = normalize(dirTransformComp->rotation);
 		glm::vec3 sceneCenter = glm::vec3(0.0f);
 		float distance = 30.0f;
