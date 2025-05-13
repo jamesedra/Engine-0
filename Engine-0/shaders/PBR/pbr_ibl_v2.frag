@@ -248,18 +248,15 @@ void main() {
 	}
 
 	// Shadow mapping
-//	vec4 fragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0);
-//	vec3 ndc = fragPosLightSpace.xyz / fragPosLightSpace.w;
-//	vec3 lightTexCoord = ndc * 0.5 + 0.5;
-//
-//	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-//	projCoords = projCoords * 0.5 + 0.5;
-//
-//	vec2 moments = texture(dirVSM, projCoords.xy).rg;
-//	FragColor = vec4(vec3(projCoords), 1.0);
+	vec4 fragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0);
+	vec3 ndc = fragPosLightSpace.xyz / fragPosLightSpace.w;
+	vec3 lightTexCoord = ndc * 0.5 + 0.5;
+
+	vec2 moments = texture(dirVSM, lightTexCoord.xy).rg;
+	FragColor = vec4(vec3(moments.x), 1.0);
 
 	vec3 color = ambient + Lo;
-	FragColor = vec4(color, 1.0);
+	// FragColor = vec4(color, 1.0);
 	
 }
 

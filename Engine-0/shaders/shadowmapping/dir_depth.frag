@@ -6,10 +6,10 @@ void main() {
 
 	vec2 m;
 	m.x = d;
-	// float dx = dFdx(d);
-	// float dy = dFdy(d);
+	float dx = dFdx(d);
+	float dy = dFdy(d);
 
-	m.y = d * d ; //+ 0.25 * (dx * dx + dy * dy);
+	m.y = d * d + 0.25 * (dx * dx + dy * dy);
 
 	moments = m;
 }

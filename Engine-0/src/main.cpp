@@ -490,7 +490,7 @@ unsigned int getBufferOut(Renderer& renderer, int type)
 		return da.AO;
 	case 6:
 		// return renderer.getShadowMoments().id;
-		// return renderer.getCompositeSceneTex().id;
+		return renderer.getCompositeSceneTex().id;
 		return renderer.getHDRSceneTex().id;
 	default:
 		return renderer.getPPSceneTex().id;

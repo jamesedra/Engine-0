@@ -217,15 +217,9 @@ public:
 		glActiveTexture(GL_TEXTURE0 + unit);
 		glBindTexture(GL_TEXTURE_2D, gba.gMetallicAO);
 
-		pbr.setInt("gPositionVS", unit);
-		glActiveTexture(GL_TEXTURE0 + unit);
-		glBindTexture(GL_TEXTURE_2D, gba.gPositionVS);
-
 		pbr.setInt("ssaoLUT", ++unit);
 		glActiveTexture(GL_TEXTURE0 + unit);
 		glBindTexture(GL_TEXTURE_2D, renderer.getSSAOBlurTexture().id);
-
-		
 
 		const GLuint MAX_PROBES = 4;
 		static GLuint placeholderCubemap = createPlaceholderCubemap();
