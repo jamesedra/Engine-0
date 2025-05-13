@@ -136,7 +136,8 @@ public:
 		// Shadow framebuffer
 		shadowBuffer = Framebuffer(shadow_width, shadow_height);
 		momentsTex = Texture(shadow_width, shadow_height, GL_RG32F, GL_RG);
-		momentsTex.setTexFilter(GL_LINEAR);
+		momentsTex.setTexFilter(GL_NEAREST);
+		momentsTex.setTexWrap(GL_CLAMP_TO_EDGE);
 		shadowBuffer.attachTexture2D(momentsTex, GL_COLOR_ATTACHMENT0);
 		
 		shadowBuffer.bind();

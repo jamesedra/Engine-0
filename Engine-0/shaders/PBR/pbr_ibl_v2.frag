@@ -12,9 +12,11 @@ uniform sampler2D gPosition;
 uniform sampler2D gNormal;
 uniform sampler2D gAlbedoRoughness;
 uniform sampler2D gMetallicAO;
+uniform sampler2D gPositionVS;
 
-// Variance shadow pass
+// Variance shadow mapping
 uniform sampler2D dirVSM;
+uniform mat4 lightSpaceMatrix;
 
 // SSAO pass
 uniform sampler2D ssaoLUT;
@@ -60,8 +62,10 @@ vec3 FresnelRoughness(float cosTheta, vec3 F0, float roughness);
 float NormalDistribution(float nDotH, float roughness);
 float GeometryEq(float dotProd, float roughness);
 ivec2 FindClosestProbes(vec3 fragPos);
+float DirShadowContribution(vec2 LightTexCoord, float DistToLight);
 
 const float PI = 3.14159265359;
+const float g_MinVariance = 1e-4;
 
 void main() {
 	// deferred attachment unpacking
@@ -167,6 +171,7 @@ void main() {
 		vec3 DiffuseBRDF = kD * fLambert / PI;
 
 		vec3 radiance = dirLight.color_intensity.rgb * dirLight.color_intensity.a;
+
 		Lo += (DiffuseBRDF + SpecBRDF) * radiance * nDotL;
 	}
 
@@ -241,8 +246,21 @@ void main() {
 		vec3 specularIBL = prefilteredColor * (F_ibl * envBRDF.x + envBRDF.y);
 		ambient = (kD * diffuseIBL * ao) + specularIBL;
 	}
+
+	// Shadow mapping
+//	vec4 fragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0);
+//	vec3 ndc = fragPosLightSpace.xyz / fragPosLightSpace.w;
+//	vec3 lightTexCoord = ndc * 0.5 + 0.5;
+//
+//	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+//	projCoords = projCoords * 0.5 + 0.5;
+//
+//	vec2 moments = texture(dirVSM, projCoords.xy).rg;
+//	FragColor = vec4(vec3(projCoords), 1.0);
+
 	vec3 color = ambient + Lo;
 	FragColor = vec4(color, 1.0);
+	
 }
 
 // uses Fresnel-Schlick approximation
@@ -268,8 +286,18 @@ float GeometryEq(float dotProd, float roughness) {
 	return dotProd / (dotProd * (1.0 - k) + k);
 }
 
-float CalculateDirShadow() {
-	return 0.0;
+float ChebyshevUpperBound(vec2 moments, float t) {
+	float  p = (t <= moments.x) ? 1.0 : 0.0;
+	float variance = moments.y - (moments.x * moments.x);
+	variance = max(variance, g_MinVariance);
+	float d = t - moments.x;
+	float p_max = variance / (variance + d * d);
+	return max(p, p_max);
+}
+
+float DirShadowContribution(vec2 LightTexCoord, float DistToLight) {
+	vec2 moments = texture(dirVSM, LightTexCoord).xy;
+	return ChebyshevUpperBound(moments, DistToLight);
 }
 
 ivec2 FindClosestProbes(vec3 fragPos) {

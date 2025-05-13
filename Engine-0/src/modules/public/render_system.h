@@ -10,6 +10,7 @@ class RenderSystem
 {
 private:
 	Renderer& renderer;
+	glm::mat4 lightSpaceMatrix = glm::mat4(1.0f);
 
 public:
 	RenderSystem(Renderer& renderer) : renderer(renderer) {}
@@ -78,12 +79,14 @@ public:
 		LightManager& lightManager, 
 		TransformManager& transformManager,
 		SceneEntityRegistry& sceneRegistry,
-		AssetManager& assetManager
+		AssetManager& assetManager,
+		Camera& camera
 		)
 	{
 		// tentative, assume there is only one directional light.
 		Entity dirLightEntity = lightManager.GetAnyDirectionalLight()->first;
 		TransformComponent* dirTransformComp = transformManager.GetComponent(dirLightEntity);
+		ShadowBufferAttachments sa = renderer.getShadowAttachments();
 
 		float orthoSize = 50.0f;
 		float near_plane = 0.1f, far_plane = 60.0f;
@@ -95,11 +98,10 @@ public:
 		glm::vec3 sceneCenter = glm::vec3(0.0f);
 		float distance = 30.0f;
 		glm::vec3 lightEye = sceneCenter - lightDir * distance;
+
 		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 		glm::mat4 lightView = glm::lookAt(lightEye, sceneCenter, up);
-		glm::mat4 lightSpaceMatrix = lightProjection * lightView;
-
-		ShadowBufferAttachments sa = renderer.getShadowAttachments();
+		lightSpaceMatrix = lightProjection * lightView;
 
 		glViewport(0, 0, sa.shadow_width, sa.shadow_height);
 
@@ -193,6 +195,7 @@ public:
 
 		pbr.use();
 		pbr.setVec3("viewPos", camera.getCameraPos());
+		pbr.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 
 		// texture passes
 		GBufferAttachments gba = renderer.getGAttachments();
@@ -213,6 +216,10 @@ public:
 		pbr.setInt("gMetallicAO", ++unit);
 		glActiveTexture(GL_TEXTURE0 + unit);
 		glBindTexture(GL_TEXTURE_2D, gba.gMetallicAO);
+
+		pbr.setInt("gPositionVS", unit);
+		glActiveTexture(GL_TEXTURE0 + unit);
+		glBindTexture(GL_TEXTURE_2D, gba.gPositionVS);
 
 		pbr.setInt("ssaoLUT", ++unit);
 		glActiveTexture(GL_TEXTURE0 + unit);

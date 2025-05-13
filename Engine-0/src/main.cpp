@@ -137,15 +137,15 @@ int main()
 	Entity dirLightEntity = WorldObjectFactory::CreateDirectionalLight(entityManager, lightManager, transformManager, idManager, "sun");
 	sceneRegistry.Register(dirLightEntity);
 
-	//// Point light Objects
-	//for (int i = 0; i < 40; i++)
-	//{
-	//	for (int j = 0; j < 40; j++)
-	//	{
-	//		Entity lightEntity = WorldObjectFactory::CreatePointLight(entityManager, lightManager, transformManager, idManager, "light " + std::to_string(i) + std::to_string(j), glm::vec3(i*5, 0.0f, j*5));
-	//		sceneRegistry.Register(lightEntity);
-	//	}
-	//}
+	// Point light Objects
+	for (int i = 0; i < 40; i++)
+	{
+		for (int j = 0; j < 40; j++)
+		{
+			Entity lightEntity = WorldObjectFactory::CreatePointLight(entityManager, lightManager, transformManager, idManager, "light " + std::to_string(i) + std::to_string(j), glm::vec3(i*5, 0.0f, j*5));
+			sceneRegistry.Register(lightEntity);
+		}
+	}
 
 	// IBL testing
 	// probe entity test
@@ -295,7 +295,7 @@ int main()
 			camera);
 
 		// Shadow pass
-		renderSystem.RenderShadowPass(lightManager, transformManager, sceneRegistry, assetManager);
+		renderSystem.RenderShadowPass(lightManager, transformManager, sceneRegistry, assetManager, camera);
 
 		// SSAO pass
 		renderSystem.RenderSSAO(camera, frameVAO);
@@ -490,7 +490,8 @@ unsigned int getBufferOut(Renderer& renderer, int type)
 		return da.AO;
 	case 6:
 		// return renderer.getShadowMoments().id;
-		return renderer.getCompositeSceneTex().id;
+		// return renderer.getCompositeSceneTex().id;
+		return renderer.getHDRSceneTex().id;
 	default:
 		return renderer.getPPSceneTex().id;
 	}
