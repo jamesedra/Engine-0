@@ -125,27 +125,28 @@ int main()
 	OutlinerContext outlinerContext(&sceneRegistry, &idManager);
 	
 	// World Objects
-	Entity backpackEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/backpack/backpack.obj");
-	idManager.components[backpackEntity].ID = "backpack";
-	sceneRegistry.Register(backpackEntity);
 	Entity floorEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "");
 	idManager.components[floorEntity].ID = "floor";
 	transformManager.components[floorEntity].position = glm::vec3(0.0f, -2.0f, 0.0f);
 	transformManager.components[floorEntity].scale = glm::vec3(100.0f, 0.5f, 100.0f);
 	sceneRegistry.Register(floorEntity);
 
+	Entity backpackEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/backpack/backpack.obj");
+	idManager.components[backpackEntity].ID = "backpack";
+	sceneRegistry.Register(backpackEntity);
+
 	Entity dirLightEntity = WorldObjectFactory::CreateDirectionalLight(entityManager, lightManager, transformManager, idManager, "sun");
 	sceneRegistry.Register(dirLightEntity);
 
 	// Point light Objects
-	for (int i = 0; i < 40; i++)
-	{
-		for (int j = 0; j < 40; j++)
-		{
-			Entity lightEntity = WorldObjectFactory::CreatePointLight(entityManager, lightManager, transformManager, idManager, "light " + std::to_string(i) + std::to_string(j), glm::vec3(i*5, 0.0f, j*5));
-			sceneRegistry.Register(lightEntity);
-		}
-	}
+	//for (int i = 0; i < 40; i++)
+	//{
+	//	for (int j = 0; j < 40; j++)
+	//	{
+	//		Entity lightEntity = WorldObjectFactory::CreatePointLight(entityManager, lightManager, transformManager, idManager, "light " + std::to_string(i) + std::to_string(j), glm::vec3(i*5, 0.0f, j*5));
+	//		sceneRegistry.Register(lightEntity);
+	//	}
+	//}
 
 	// IBL testing
 	// probe entity test
@@ -153,9 +154,9 @@ int main()
 	Entity skyboxEntity = WorldObjectFactory::CreateSkyProbe(entityManager, probeManager, idManager, "skybox", skyboxIBLSettings, glm::vec3(0.f));
 	sceneRegistry.Register(skyboxEntity);
 
-	IBLSettings probeIBLSettings = ProbeLibrary::GetSettings("resources/textures/eqr_maps/newport_loft.hdr");
-	Entity probeEntity = WorldObjectFactory::CreateEnvironmentProbe(entityManager, probeManager, idManager, "probe", probeIBLSettings, glm::vec3(0.f), 50.0f);
-	sceneRegistry.Register(probeEntity);
+	//IBLSettings probeIBLSettings = ProbeLibrary::GetSettings("resources/textures/eqr_maps/newport_loft.hdr");
+	//Entity probeEntity = WorldObjectFactory::CreateEnvironmentProbe(entityManager, probeManager, idManager, "probe", probeIBLSettings, glm::vec3(0.f), 50.0f);
+	//sceneRegistry.Register(probeEntity);
 
 	// Systems
 	LightSystem lightSystem(W_WIDTH, W_HEIGHT);
@@ -295,7 +296,7 @@ int main()
 			camera);
 
 		// Shadow pass
-		renderSystem.RenderShadowPass(lightManager, transformManager, sceneRegistry, assetManager, camera);
+		renderSystem.RenderShadowPass(lightManager, transformManager, sceneRegistry, assetManager);
 
 		// SSAO pass
 		renderSystem.RenderSSAO(camera, frameVAO);
@@ -491,8 +492,9 @@ unsigned int getBufferOut(Renderer& renderer, int type)
 	case 6:
 		// return renderer.getShadowMoments().id;
 		return renderer.getCompositeSceneTex().id;
-		return renderer.getHDRSceneTex().id;
+		//return renderer.getHDRSceneTex().id;
 	default:
+		//return renderer.getShadowMoments().id;
 		return renderer.getPPSceneTex().id;
 	}
 }

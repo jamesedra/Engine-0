@@ -247,16 +247,16 @@ void main() {
 		ambient = (kD * diffuseIBL * ao) + specularIBL;
 	}
 
-	// Shadow mapping
+	// Directional shadow mapping
 	vec4 fragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0);
 	vec3 ndc = fragPosLightSpace.xyz / fragPosLightSpace.w;
-	vec3 lightTexCoord = ndc * 0.5 + 0.5;
-
-	vec2 moments = texture(dirVSM, lightTexCoord.xy).rg;
-	FragColor = vec4(vec3(moments.x), 1.0);
+	vec2 lightTexCoord = ndc.xy * 0.5 + 0.5;
+	float depth = ndc.z * 0.5 + 0.5;
+	// tentative
+	float shadow = DirShadowContribution(lightTexCoord, depth) > 0.5 ? 0.8 : 0.2;
 
 	vec3 color = ambient + Lo;
-	// FragColor = vec4(color, 1.0);
+	FragColor = vec4(color * shadow, 1.0);
 	
 }
 

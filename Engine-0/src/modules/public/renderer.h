@@ -70,7 +70,7 @@ private:
 	Framebuffer shadowBuffer;
 	Shader dirShadowDepthShader;
 	Texture momentsTex;
-	unsigned int shadow_width = 1024, shadow_height = 1024;
+	unsigned int shadow_width = 4096, shadow_height = 4096;
 
 	// SSAO pass
 	Framebuffer ssaoBuffer, ssaoBlurBuffer;

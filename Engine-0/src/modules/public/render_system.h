@@ -79,8 +79,7 @@ public:
 		LightManager& lightManager, 
 		TransformManager& transformManager,
 		SceneEntityRegistry& sceneRegistry,
-		AssetManager& assetManager,
-		Camera& camera
+		AssetManager& assetManager
 		)
 	{
 		// tentative, assume there is only one directional light.
@@ -88,15 +87,15 @@ public:
 		TransformComponent* dirTransformComp = transformManager.GetComponent(dirLightEntity);
 		ShadowBufferAttachments sa = renderer.getShadowAttachments();
 
-		float orthoSize = 50.0f;
-		float near_plane = 0.1f, far_plane = 60.0f;
+		float orthoSize = 25.0f;
+		float near_plane = 1.0f, far_plane = 80.0f;
 		glm::mat4 lightProjection = glm::ortho(
 			-orthoSize, +orthoSize, 
 			-orthoSize, +orthoSize, 
 			near_plane, far_plane);
-		glm::vec3 lightDir = normalize(dirTransformComp->rotation);
+		glm::vec3 lightDir = glm::normalize(dirTransformComp->rotation);
 		glm::vec3 sceneCenter = glm::vec3(0.0f);
-		float distance = 30.0f;
+		float distance = 40.0f;
 		glm::vec3 lightEye = sceneCenter - lightDir * distance;
 
 		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -106,6 +105,7 @@ public:
 		glViewport(0, 0, sa.shadow_width, sa.shadow_height);
 
 		glCullFace(GL_FRONT);
+		glEnable(GL_DEPTH_TEST);
 		sa.shadowBuffer.bind();
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 		sa.shadowShader.use();
@@ -133,6 +133,7 @@ public:
 			for (MeshData& md : parts) md.mesh.Draw(sa.shadowShader);
 		}
 		sa.shadowBuffer.unbind();
+		glDisable(GL_DEPTH_TEST);
 		glCullFace(GL_BACK);
 
 		int WIDTH = 1600;
@@ -142,6 +143,7 @@ public:
 
 	void RenderSSAO(Camera& camera, unsigned int frameVAO)
 	{
+		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 		renderer.getSSAOBuffer().bind();
 		SSAOData& data = renderer.getSSAOData();
 		Shader& ssaoShader = renderer.getSSAOShader();
@@ -216,6 +218,10 @@ public:
 		pbr.setInt("gMetallicAO", ++unit);
 		glActiveTexture(GL_TEXTURE0 + unit);
 		glBindTexture(GL_TEXTURE_2D, gba.gMetallicAO);
+
+		pbr.setInt("dirVSM", ++unit);
+		glActiveTexture(GL_TEXTURE0 + unit);
+		glBindTexture(GL_TEXTURE_2D, renderer.getShadowMoments().id);
 
 		pbr.setInt("ssaoLUT", ++unit);
 		glActiveTexture(GL_TEXTURE0 + unit);
