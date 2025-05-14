@@ -11,6 +11,7 @@ class RenderSystem
 private:
 	Renderer& renderer;
 	glm::mat4 lightSpaceMatrix = glm::mat4(1.0f);
+	float orthoSize = 25.0f;
 
 public:
 	RenderSystem(Renderer& renderer) : renderer(renderer) {}
@@ -87,7 +88,6 @@ public:
 		TransformComponent* dirTransformComp = transformManager.GetComponent(dirLightEntity);
 		ShadowBufferAttachments sa = renderer.getShadowAttachments();
 
-		float orthoSize = 25.0f;
 		float near_plane = 1.0f, far_plane = 80.0f;
 		glm::mat4 lightProjection = glm::ortho(
 			-orthoSize, +orthoSize, 
@@ -133,6 +133,8 @@ public:
 			for (MeshData& md : parts) md.mesh.Draw(sa.shadowShader);
 		}
 		sa.shadowBuffer.unbind();
+		renderer.getShadowMoments().genMipMap(); // rebuild mipchain
+
 		glDisable(GL_DEPTH_TEST);
 		glCullFace(GL_BACK);
 
@@ -198,6 +200,11 @@ public:
 		pbr.use();
 		pbr.setVec3("viewPos", camera.getCameraPos());
 		pbr.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+		pbr.setFloat("vsmSize", (float)renderer.getShadowAttachments().shadow_width);
+		float sceneDiameter = orthoSize * 2.0f;
+		float lightWorldDiameter = 0.5f;
+		float lightSizeUV = lightWorldDiameter / sceneDiameter;
+		pbr.setFloat("dirLightSizeUV", lightSizeUV);
 
 		// texture passes
 		GBufferAttachments gba = renderer.getGAttachments();

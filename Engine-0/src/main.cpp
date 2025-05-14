@@ -494,7 +494,7 @@ unsigned int getBufferOut(Renderer& renderer, int type)
 		return renderer.getCompositeSceneTex().id;
 		//return renderer.getHDRSceneTex().id;
 	default:
-		//return renderer.getShadowMoments().id;
+		// return renderer.getShadowMoments().id;
 		return renderer.getPPSceneTex().id;
 	}
 }

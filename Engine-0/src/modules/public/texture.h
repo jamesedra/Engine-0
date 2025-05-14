@@ -49,13 +49,24 @@ public:
 	Texture(){}
 
 	void setTexFilter(GLint filter) {
+		bind();
 		glBindTexture(GL_TEXTURE_2D, id);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
 		unbind();
 	}
 
+	void setTexFilter(GLint minFilter, GLint magFilter)
+	{
+		bind();
+		glBindTexture(GL_TEXTURE_2D, id);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
+		unbind();
+	}
+
 	void setTexWrap(GLint wrap) {
+		bind();
 		glBindTexture(GL_TEXTURE_2D, id);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
@@ -73,6 +84,7 @@ public:
 	void genMipMap() {
 		bind();
 		glGenerateMipmap(GL_TEXTURE_2D);
+		unbind();
 	}
 
 private:

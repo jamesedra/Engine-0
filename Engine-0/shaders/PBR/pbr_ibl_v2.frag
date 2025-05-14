@@ -12,11 +12,12 @@ uniform sampler2D gPosition;
 uniform sampler2D gNormal;
 uniform sampler2D gAlbedoRoughness;
 uniform sampler2D gMetallicAO;
-uniform sampler2D gPositionVS;
 
 // Variance shadow mapping
 uniform sampler2D dirVSM;
 uniform mat4 lightSpaceMatrix;
+uniform float vsmSize;
+uniform float dirLightSizeUV;
 
 // SSAO pass
 uniform sampler2D ssaoLUT;
@@ -172,8 +173,20 @@ void main() {
 
 		vec3 radiance = dirLight.color_intensity.rgb * dirLight.color_intensity.a;
 
+
+
 		Lo += (DiffuseBRDF + SpecBRDF) * radiance * nDotL;
 	}
+
+	// Directional shadow mapping
+	vec4 fragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0);
+	vec3 ndc = fragPosLightSpace.xyz / fragPosLightSpace.w;
+	vec2 lightTexCoord = ndc.xy * 0.5 + 0.5;
+	float depth = ndc.z * 0.5 + 0.5;
+	// tentative
+	float shadow = DirShadowContribution(lightTexCoord, depth);
+
+	Lo *= shadow;
 
 	// IBL
 	vec3 R = reflect(-v, n);
@@ -247,16 +260,9 @@ void main() {
 		ambient = (kD * diffuseIBL * ao) + specularIBL;
 	}
 
-	// Directional shadow mapping
-	vec4 fragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0);
-	vec3 ndc = fragPosLightSpace.xyz / fragPosLightSpace.w;
-	vec2 lightTexCoord = ndc.xy * 0.5 + 0.5;
-	float depth = ndc.z * 0.5 + 0.5;
-	// tentative
-	float shadow = DirShadowContribution(lightTexCoord, depth) > 0.5 ? 0.8 : 0.2;
-
 	vec3 color = ambient + Lo;
-	FragColor = vec4(color * shadow, 1.0);
+
+	FragColor = vec4(color, 1.0);
 	
 }
 
@@ -283,17 +289,31 @@ float GeometryEq(float dotProd, float roughness) {
 	return dotProd / (dotProd * (1.0 - k) + k);
 }
 
+float linstep(float min, float max, float v) {
+	return clamp((v - min) / (max - min), 0, 1);
+}
+
 float ChebyshevUpperBound(vec2 moments, float t) {
-	float  p = (t <= moments.x) ? 1.0 : 0.0;
 	float variance = moments.y - (moments.x * moments.x);
 	variance = max(variance, g_MinVariance);
 	float d = t - moments.x;
 	float p_max = variance / (variance + d * d);
-	return max(p, p_max);
+
+	float p = (t <= moments.x) ? 1.0 : p_max;
+
+	float bleedStart = 0.2;
+	float bleedEnd = 0.8;
+
+	return linstep(bleedStart, bleedEnd, p);
 }
 
 float DirShadowContribution(vec2 LightTexCoord, float DistToLight) {
-	vec2 moments = texture(dirVSM, LightTexCoord).xy;
+	float penumbraUV = dirLightSizeUV * DistToLight;
+	float texel = penumbraUV * vsmSize;
+	float maxLod = floor(log2(vsmSize));
+	float lod = clamp(log2(max(texel, 1.0)), 0.0, maxLod);
+	vec2 moments = textureLod(dirVSM, LightTexCoord, lod).xy;
+
 	return ChebyshevUpperBound(moments, DistToLight);
 }
 
