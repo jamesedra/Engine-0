@@ -230,6 +230,8 @@
     <None Include="shaders\PBR\pbr_ibl_v2.frag" />
     <None Include="shaders\postprocess\pp_base.frag" />
     <None Include="shaders\postprocess\pp_celshading.frag" />
+    <None Include="shaders\shadowmapping\dir_depth.frag" />
+    <None Include="shaders\shadowmapping\dir_depth.vert" />
     <None Include="shaders\skybox\skybox_default.frag" />
     <None Include="shaders\skybox\skybox_default.vert" />
     <None Include="shaders\ssao\ssao.frag" />

@@ -15,6 +15,14 @@ struct GBufferAttachments
 	unsigned int gNormalVS;
 };
 
+struct ShadowBufferAttachments
+{
+	Framebuffer& shadowBuffer;
+	Shader& shadowShader;
+	unsigned int shadow_width;
+	unsigned int shadow_height;
+};
+
 struct LBufferAttachments
 {
 	unsigned int hdrScene;
@@ -57,16 +65,24 @@ private:
 	// Gbuffer pass
 	Framebuffer gBuffer;
 	Texture gPosition, gNormal, gAlbedoRoughness, gMetallicAO, gPositionVS, gNormalVS, gDepth;
+
+	// Shadow pass
+	Framebuffer shadowBuffer;
+	Shader dirShadowDepthShader;
+	Texture momentsTex;
+	unsigned int shadow_width = 2048, shadow_height = 2048;
+
 	// SSAO pass
 	Framebuffer ssaoBuffer, ssaoBlurBuffer;
 	Shader ssaoShader, ssaoBlurShader;
 	Texture ssaoColor, ssaoBlurColor, ssaoNoiseTexture;
 	SSAOData ssaoData;
+
 	// Lighting pass
 	Framebuffer hdrBuffer, brightnessBuffer, bloomPingBuffer, bloomPongBuffer, tonemapperBuffer, compositeBuffer, postprocessBuffer;
-	Texture hdrScene, brightnessPass, blurHorizontal, blurVertical, tonemappedScene, compositeScene, ppScene;
-	// Lighting shaders
 	Shader pbrBufferShader, brightPassShader, blurShader, bloomShader, tonemapShader, compositeShader, ppShader;
+	Texture hdrScene, brightnessPass, blurHorizontal, blurVertical, tonemappedScene, compositeScene, ppScene;
+
 	// Debug pass
 	Framebuffer debugBuffer;
 	Shader debugShader;
@@ -117,7 +133,20 @@ public:
 		};
 		glDrawBuffers(6, gbuffer_attachments);
 
-		// SSAO Framebuffer
+		// Shadow framebuffer
+		shadowBuffer = Framebuffer(shadow_width, shadow_height);
+		momentsTex = Texture(shadow_width, shadow_height, GL_RG32F, GL_RG);
+		momentsTex.genMipMap();
+		momentsTex.setTexFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
+		momentsTex.setTexWrap(GL_CLAMP_TO_EDGE);
+		shadowBuffer.attachTexture2D(momentsTex, GL_COLOR_ATTACHMENT0);
+		
+		shadowBuffer.bind();
+		shadowBuffer.attachRenderbuffer(GL_DEPTH_COMPONENT24, GL_DEPTH_ATTACHMENT);
+		unsigned int shadow_attachments[1] = { GL_COLOR_ATTACHMENT0 }; // in case of adding more
+		glDrawBuffers(1, shadow_attachments);
+		 
+		// SSAO framebuffer
 		ssaoBuffer = Framebuffer(width, height);
 		ssaoColor = Texture(width, height, GL_RED, GL_RED);
 		ssaoColor.setTexFilter(GL_NEAREST);
@@ -203,6 +232,7 @@ public:
 		debugBuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
 		// Shaders
+		dirShadowDepthShader = Shader("shaders/shadowmapping/dir_depth.vert", "shaders/shadowmapping/dir_depth.frag");
 		ssaoShader = Shader("shaders/frame_out.vert", "shaders/ssao/ssao.frag");
 		ssaoBlurShader = Shader("shaders/frame_out.vert", "shaders/ssao/ssao_blur.frag");
 		pbrBufferShader = Shader("shaders/PBR/pbr_def.vert", "shaders/PBR/pbr_ibl_v2.frag");
@@ -239,6 +269,16 @@ public:
 			gMetallicAO.id,
 			gPositionVS.id,
 			gNormalVS.id
+		};
+	}
+
+	ShadowBufferAttachments getShadowAttachments()
+	{
+		return {
+			shadowBuffer,
+			dirShadowDepthShader,
+			shadow_width,
+			shadow_height
 		};
 	}
 
@@ -294,6 +334,11 @@ public:
 	Texture& getGDepth()
 	{
 		return gDepth;
+	}
+
+	Texture& getShadowMoments()
+	{
+		return momentsTex;
 	}
 
 	Texture& getHDRSceneTex()

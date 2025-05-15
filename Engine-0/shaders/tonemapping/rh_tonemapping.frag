@@ -10,9 +10,9 @@ void main() {
 	vec3 hdrColor = texture(hdrScene, TexCoords).rgb;
 
 	// reinhard tonemapping
-	vec3 mapped = hdrColor / (hdrColor + vec3(1.0));
+	// vec3 mapped = hdrColor / (hdrColor + vec3(1.0));
 	// filmic tonemapping
-	// mapped = vec3(1.0) - exp(-hdrColor * exposure);
+	vec3 mapped = vec3(1.0) - exp(-hdrColor * exposure);
 	mapped = pow(mapped, vec3(1.0 / gamma));
 	FragColor = vec4(mapped, 1.0);
 }

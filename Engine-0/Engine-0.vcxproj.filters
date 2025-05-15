@@ -232,5 +232,7 @@
     <None Include="shaders\ssao\ssao.frag" />
     <None Include="shaders\ssao\ssao_blur.frag" />
     <None Include="shaders\lighting\lighting_tiled.comp" />
+    <None Include="shaders\shadowmapping\dir_depth.vert" />
+    <None Include="shaders\shadowmapping\dir_depth.frag" />
   </ItemGroup>
 </Project>
