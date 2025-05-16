@@ -15,4 +15,7 @@ void main() {
 	m.x = db;
 	m.y = db * db + var;
 	moments = m;
+
+//	float d = gl_FragCoord.z;
+//	moments = vec2(d, d*d);
 }

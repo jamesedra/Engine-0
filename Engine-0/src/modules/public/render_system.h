@@ -104,6 +104,9 @@ public:
 
 		glViewport(0, 0, sa.shadow_width, sa.shadow_height);
 
+		glEnable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(2.0f, 4.0f);
+
 		glCullFace(GL_FRONT);
 		glEnable(GL_DEPTH_TEST);
 		sa.shadowBuffer.bind();
@@ -137,7 +140,7 @@ public:
 
 		glDisable(GL_DEPTH_TEST);
 		glCullFace(GL_BACK);
-
+		glDisable(GL_POLYGON_OFFSET_FILL);
 		int WIDTH = 1600;
 		int HEIGHT = 1200;
 		glViewport(0, 0, WIDTH, HEIGHT);
