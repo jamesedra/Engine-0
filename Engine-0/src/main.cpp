@@ -102,7 +102,9 @@ int main()
 	BruteForceTerrain terrain;
 	// terrain.LoadHeightMap("resources/textures/heightmaps/terrain_sample1.png");
 	// terrain.SetHeightScale(100.0f);
-	terrain.GenerateFaultHeightData(250, 0.5f);
+	// terrain.GenerateFaultHeightData(250, 0.5f, 500, 1000);
+	terrain.GenerateMidpointDispHeightData(0.8f, 1025, 1025);
+	terrain.SetHeightScale(20.0f);
 	terrain.Initialize();
 	Shader terrainShader("shaders/terrain/bf_terrain.vert", "shaders/terrain/bf_terrain.frag");
 

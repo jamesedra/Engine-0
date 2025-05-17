@@ -17,6 +17,7 @@ struct HeightData
 
 class Terrain
 {
+
 protected:
 	HeightData heightData;
 	float heightScale = 255.0f;
@@ -32,16 +33,14 @@ public:
 
 	// Height data generation
 	bool LoadHeightMap(const char* filename);
-	bool GenerateFaultHeightData(int iterations, float filter, int width = -1, int height = -1);
+	bool GenerateFaultHeightData(int iterations, float filter, int width = -1, int depth = -1);
+	bool GenerateMidpointDispHeightData(float roughness, int width = -1, int depth = -1);
 
 	// TODO:
 	bool SaveHeightMap(const char* filename);
 	bool UnloadHeightData();
 
-	void ApplyIIRFilter(float filter); // infinite impulse response
-	void NormalizeHeightData();
-
-	inline void SetHeightDataDimensions(unsigned int w = 1000, unsigned int d = 1000)
+	inline void SetHeightDataDimensions(unsigned int w = 1024, unsigned int d = 1024)
 	{
 		heightData.width = w;
 		heightData.depth = d;
@@ -69,6 +68,12 @@ public:
 	{
 		return heightData.data[(z * heightData.width) + x] * heightScale;
 	}
+
+private:
+	void ApplyIIRFilter(float filter); // infinite impulse response
+	void NormalizeHeightData();
+	void DiamondStep(int stepW, int stepD, float disp);
+	void SquareStep(int stepW, int stepD, float disp);
 };
 
 class BruteForceTerrain : public Terrain
