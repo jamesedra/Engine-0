@@ -63,6 +63,9 @@
     <ClCompile Include="lib\stb\stb_image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\modules\private\terrain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="vendor\imgui\imconfig.h">
@@ -194,6 +197,9 @@
     <ClInclude Include="src\modules\public\renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\modules\public\terrain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\default.vert" />
@@ -234,5 +240,7 @@
     <None Include="shaders\lighting\lighting_tiled.comp" />
     <None Include="shaders\shadowmapping\dir_depth.vert" />
     <None Include="shaders\shadowmapping\dir_depth.frag" />
+    <None Include="shaders\terrain\bf_terrain.vert" />
+    <None Include="shaders\terrain\bf_terrain.frag" />
   </ItemGroup>
 </Project>

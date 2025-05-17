@@ -15,6 +15,7 @@
 #include "modules/public/factory.h"
 #include "modules/public/contexts.h"
 #include "modules/public/ibl_generator.h"
+#include "modules/public/terrain.h"
 
 constexpr int W_WIDTH = 1600;
 constexpr int W_HEIGHT = 1200;
@@ -92,6 +93,17 @@ int main()
 	Texture viewportOutTexture(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
 	viewportFrame.attachTexture2D(viewportOutTexture, GL_COLOR_ATTACHMENT0);
 	viewportFrame.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+
+	// TEST: terrain framebuffer
+	Framebuffer terrainFrame(W_WIDTH, W_HEIGHT);
+	Texture terrainTex(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
+	terrainFrame.attachTexture2D(terrainTex, GL_COLOR_ATTACHMENT0);
+	terrainFrame.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+	BruteForceTerrain terrain;
+	terrain.LoadHeightMap("resources/textures/heightmaps/terrain_sample1.png");
+	terrain.SetHeightScale(0.2f);
+	terrain.Initialize();
+	Shader terrainShader("shaders/terrain/bf_terrain.vert", "shaders/terrain/bf_terrain.frag");
 
 	// Render pipeline
 	Renderer renderer;
@@ -246,7 +258,10 @@ int main()
 
 			ImGui::SetCursorScreenPos({ pos.x + offset_x, pos.y + offset_y });
 
-			ImGui::Image(getBufferOut(renderer, tex_type), {display_width, display_height}, {0,1}, {1,0}, ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
+			// ImGui::Image(getBufferOut(renderer, tex_type), {display_width, display_height}, {0,1}, {1,0}, ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
+
+			// TEST
+			ImGui::Image(terrainTex.id, { display_width, display_height }, { 0,1 }, { 1,0 }, ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
 
 			bool imageHovered = ImGui::IsItemHovered();
 			if (imageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
@@ -286,6 +301,24 @@ int main()
 			propertiesWindow.EndRender();
 		}
 
+		// TEST
+		terrainFrame.bind();
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glViewport(0, 0, W_WIDTH, W_HEIGHT);
+		terrainShader.use();
+		glm::mat4 proj = camera.getProjectionMatrix(W_WIDTH, W_HEIGHT, 0.1f, 2500.0f);
+		glm::mat4 view = camera.getViewMatrix();
+		glm::mat4 model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(0.0f, -100.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.5f));
+		terrainShader.setMat4("projection", proj);
+		terrainShader.setMat4("view", view);
+		terrainShader.setMat4("model", model);
+		terrain.Render(terrainShader);
+		terrainFrame.unbind();
+
+		/*
+		* Commented out for now
 		// GBuffer pass
 		renderSystem.RenderGeometry(
 			sceneRegistry, 
@@ -341,6 +374,7 @@ int main()
 			renderSystem.RenderBufferPass(frameVAO);
 		}
 		glEnable(GL_DEPTH_TEST);
+		*/
 		
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -389,7 +423,7 @@ void processInput(GLFWwindow* window)
 	deltaTime = currentFrame - lastFrame;
 	lastFrame = currentFrame;
 
-	const float cameraSpeed = 12.5f * deltaTime; // Adjust as needed.
+	const float cameraSpeed = 52.5f * deltaTime; // Adjust as needed.
 
 	// Update camera position based on key input:
 	if (gViewportCaptured)
