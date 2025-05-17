@@ -24,7 +24,7 @@ bool Terrain::LoadHeightMap(const char* filename)
 	return true;
 }
 
-bool Terrain::GenerateFaultHeightData(int iterations, int width, int depth)
+bool Terrain::GenerateFaultHeightData(int iterations, float filter, int width, int depth)
 {
 	if (!heightData.data.empty()) UnloadHeightData();
 
@@ -76,6 +76,7 @@ bool Terrain::GenerateFaultHeightData(int iterations, int width, int depth)
 			}
 		}
 	}
+	ApplyFIRFilter(filter);
 	NormalizeHeightData();
 
 	return true;
@@ -91,6 +92,71 @@ bool Terrain::UnloadHeightData()
 {
 	if (!heightData.data.empty()) heightData.unload();
 	return true;
+}
+
+void Terrain::ApplyIIRFilter(float filter)
+{
+	if (heightData.data.empty())
+	{
+		std::cerr << "Terrain::ApplyFIRFilter called when data is empty." << std::endl;
+		return;
+	}
+
+	// left to right
+	for (int z = 0; z < heightData.depth; z++)
+	{
+		float prevVal = GetTrueHeightAtPoint(0, z);
+		for (int x = 1; x < heightData.width; x++)
+		{
+			float currVal = GetTrueHeightAtPoint(x, z);
+			float newVal = filter * prevVal + (1.0f - filter) * currVal;
+			SetHeightAtPoint(newVal, x, z);
+
+			prevVal = newVal;
+		}
+	}
+
+	// right to left
+	for (int z = 0; z < heightData.depth; z++)
+	{
+		float prevVal = GetTrueHeightAtPoint(0, heightData.depth - 1);
+		for (int x = heightData.width - 2; x >= 0; x--)
+		{
+			float currVal = GetTrueHeightAtPoint(x, z);
+			float newVal = filter * prevVal + (1.0f - filter) * currVal;
+			SetHeightAtPoint(newVal, x, z);
+
+			prevVal = newVal;
+		}
+	}
+
+	// bottom to top
+	for (int x = 0; x < heightData.width; x++)
+	{
+		float prevVal = GetTrueHeightAtPoint(x, 0);
+		for (int z = 1; z < heightData.depth; z++)
+		{
+			float currVal = GetTrueHeightAtPoint(x, z);
+			float newVal = filter * prevVal + (1.0f - filter) * currVal;
+			SetHeightAtPoint(newVal, x, z);
+
+			prevVal = newVal;
+		}
+	}
+
+	// top to bottom
+	for (int x = 0; x < heightData.width; x++)
+	{
+		float prevVal = GetTrueHeightAtPoint(heightData.width - 1, 0);
+		for (int z = heightData.depth - 2; z >= 0; z--)
+		{
+			float currVal = GetTrueHeightAtPoint(x, z);
+			float newVal = filter * prevVal + (1.0f - filter) * currVal;
+			SetHeightAtPoint(newVal, x, z);
+
+			prevVal = newVal;
+		}
+	}
 }
 
 void Terrain::NormalizeHeightData()

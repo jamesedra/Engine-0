@@ -32,13 +32,13 @@ public:
 
 	// Height data generation
 	bool LoadHeightMap(const char* filename);
-	bool GenerateFaultHeightData(int iterations, int width = -1, int height = -1);
+	bool GenerateFaultHeightData(int iterations, float filter, int width = -1, int height = -1);
 
 	// TODO:
 	bool SaveHeightMap(const char* filename);
 	bool UnloadHeightData();
 
-	// Normalizes to range 0 - 1
+	void ApplyIIRFilter(float filter); // infinite impulse response
 	void NormalizeHeightData();
 
 	inline void SetHeightDataDimensions(unsigned int w = 1000, unsigned int d = 1000)
