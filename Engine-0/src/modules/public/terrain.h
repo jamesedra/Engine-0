@@ -4,7 +4,7 @@
 
 struct HeightData
 {
-	std::vector<unsigned char> data; // height data
+	std::vector<float> data; // height data, ranging from 0 to 1
 	int width = 0;
 	int depth = 0;
 
@@ -19,20 +19,33 @@ class Terrain
 {
 protected:
 	HeightData heightData;
-	float heightScale = 1.0f;
+	float heightScale = 255.0f;
 
 public:
 	Terrain(){}
 	~Terrain()
 	{
-		if (!heightData.data.empty()) UnloadHeightMap();
+		if (!heightData.data.empty()) UnloadHeightData();
 	}
 
 	virtual void Render(Shader& shader) = 0;
 
+	// Height data generation
 	bool LoadHeightMap(const char* filename);
+	bool GenerateFaultHeightData(int iterations, int width = -1, int height = -1);
+
+	// TODO:
 	bool SaveHeightMap(const char* filename);
-	bool UnloadHeightMap();
+	bool UnloadHeightData();
+
+	// Normalizes to range 0 - 1
+	void NormalizeHeightData();
+
+	inline void SetHeightDataDimensions(unsigned int w = 1000, unsigned int d = 1000)
+	{
+		heightData.width = w;
+		heightData.depth = d;
+	}
 
 	inline void SetHeightScale(float scale)
 	{
@@ -40,13 +53,13 @@ public:
 	}
 
 	// Sets the true height value at the given point
-	inline void SetHeightAtPoint(unsigned char height, int x, int z)
+	inline void SetHeightAtPoint(float height, int x, int z)
 	{
 		heightData.data[(z * heightData.width) + x] = height;
 	}
 
-	// Gets the true height (range 0 - 255) at a point
-	inline unsigned char GetTrueHeightAtPoint(int x, int z)
+	// Gets the true height at a point
+	inline float GetTrueHeightAtPoint(int x, int z)
 	{
 		return heightData.data[(z * heightData.width) + x];
 	}
@@ -73,7 +86,7 @@ private:
 public:
 	void Initialize()
 	{
-		if (heightData.width == 0 || heightData.depth == 0)
+		if (heightData.data.empty() || heightData.width == 0 || heightData.depth == 0)
 		{
 			std::cerr << "Terrain::Initialize called before height data was loaded\n";
 			return;
@@ -93,15 +106,15 @@ public:
 		{
 			for (int x = 0; x < w; x++)
 			{
-				unsigned char raw0 = GetTrueHeightAtPoint(x, z);
+				float raw0 = GetTrueHeightAtPoint(x, z);
 				float y0 = GetScaledHeightAtPoint(x, z);
-				float c0 = raw0 / 255.0f;
+				float c0 = raw0;
 
 				verts.push_back({ {float(x), y0,float(z)},{c0,c0,c0} });
 
-				unsigned char raw1 = GetTrueHeightAtPoint(x, z + 1);
+				float raw1 = GetTrueHeightAtPoint(x, z + 1);
 				float y1 = GetScaledHeightAtPoint(x, z + 1);
-				float c1 = raw1 / 255.0f;
+				float c1 = raw1;
 
 				verts.push_back({ {float(x), y1, float(z + 1)},  {c1,c1,c1} });
 			}

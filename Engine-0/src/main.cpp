@@ -100,8 +100,9 @@ int main()
 	terrainFrame.attachTexture2D(terrainTex, GL_COLOR_ATTACHMENT0);
 	terrainFrame.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 	BruteForceTerrain terrain;
-	terrain.LoadHeightMap("resources/textures/heightmaps/terrain_sample1.png");
-	terrain.SetHeightScale(0.2f);
+	// terrain.LoadHeightMap("resources/textures/heightmaps/terrain_sample1.png");
+	// terrain.SetHeightScale(100.0f);
+	terrain.GenerateFaultHeightData(50, 0, 255);
 	terrain.Initialize();
 	Shader terrainShader("shaders/terrain/bf_terrain.vert", "shaders/terrain/bf_terrain.frag");
 
