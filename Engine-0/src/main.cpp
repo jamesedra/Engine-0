@@ -102,11 +102,12 @@ int main()
 	BruteForceTerrain terrain;
 	// terrain.LoadHeightMap("resources/textures/heightmaps/terrain_sample1.png");
 	// terrain.SetHeightScale(100.0f);
-	terrain.GenerateFaultHeightData(250, 0.5f, 500, 1000);
-	// terrain.GenerateMidpointDispHeightData(1.2f, 512);
-	terrain.SetHeightScale(256.0f);
+	// terrain.GenerateFaultHeightData(250, 0.5f, 500, 1000);
+	terrain.GenerateMidpointDispHeightData(1.2f, 128);
+	terrain.SetHeightScale(64.0f);
 	terrain.Initialize();
-	Shader terrainShader("shaders/terrain/bf_terrain.vert", "shaders/terrain/bf_terrain.frag");
+	Shader terrainShader("shaders/terrain/base_terrain.vert", "shaders/terrain/base_terrain.frag");
+	Texture terrainTexture = TextureLoader::CreateTextureFromImport("resources/textures/pbr/grass/albedo.png");
 
 	// Render pipeline
 	Renderer renderer;
@@ -317,6 +318,9 @@ int main()
 		terrainShader.setMat4("projection", proj);
 		terrainShader.setMat4("view", view);
 		terrainShader.setMat4("model", model);
+		terrainShader.setInt("terrainTex", 0);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, terrainTexture.id);
 		terrain.Render(terrainShader);
 		terrainFrame.unbind();
 
@@ -426,7 +430,7 @@ void processInput(GLFWwindow* window)
 	deltaTime = currentFrame - lastFrame;
 	lastFrame = currentFrame;
 
-	const float cameraSpeed = 52.5f * deltaTime; // Adjust as needed.
+	const float cameraSpeed = 25.0f * deltaTime; // Adjust as needed.
 
 	// Update camera position based on key input:
 	if (gViewportCaptured)

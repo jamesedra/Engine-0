@@ -238,6 +238,8 @@
     <None Include="shaders\skybox\skybox_default.vert" />
     <None Include="shaders\ssao\ssao.frag" />
     <None Include="shaders\ssao\ssao_blur.frag" />
+    <None Include="shaders\terrain\base_terrain.frag" />
+    <None Include="shaders\terrain\base_terrain.vert" />
     <None Include="shaders\terrain\bf_terrain.frag" />
     <None Include="shaders\terrain\bf_terrain.vert" />
     <None Include="shaders\tiling_debug.frag" />

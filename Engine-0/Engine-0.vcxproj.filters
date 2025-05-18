@@ -242,5 +242,7 @@
     <None Include="shaders\shadowmapping\dir_depth.frag" />
     <None Include="shaders\terrain\bf_terrain.vert" />
     <None Include="shaders\terrain\bf_terrain.frag" />
+    <None Include="shaders\terrain\base_terrain.vert" />
+    <None Include="shaders\terrain\base_terrain.frag" />
   </ItemGroup>
 </Project>
