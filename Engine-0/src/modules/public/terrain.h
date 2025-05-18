@@ -34,7 +34,7 @@ public:
 	// Height data generation
 	bool LoadHeightMap(const char* filename);
 	bool GenerateFaultHeightData(int iterations, float filter, int width = -1, int depth = -1);
-	bool GenerateMidpointDispHeightData(float roughness, int width = -1, int depth = -1);
+	bool GenerateMidpointDispHeightData(float roughness, int size = -1);
 
 	// TODO:
 	bool SaveHeightMap(const char* filename);
@@ -72,8 +72,8 @@ public:
 private:
 	void ApplyIIRFilter(float filter); // infinite impulse response
 	void NormalizeHeightData();
-	void DiamondStep(int stepW, int stepD, float disp);
-	void SquareStep(int stepW, int stepD, float disp);
+	void DiamondStep(int step, float disp);
+	void SquareStep(int step, float disp);
 };
 
 class BruteForceTerrain : public Terrain

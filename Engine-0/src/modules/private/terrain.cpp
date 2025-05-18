@@ -1,4 +1,5 @@
 #include "../public/terrain.h"
+#include <random>
 
 bool Terrain::LoadHeightMap(const char* filename)
 {
@@ -81,34 +82,38 @@ bool Terrain::GenerateFaultHeightData(int iterations, float filter, int width, i
 	return true;
 }
 
-bool Terrain::GenerateMidpointDispHeightData(float roughness, int width, int depth)
+// short helper, might migrate later on the utility script
+static float randomFloatRange(float min, float max)
+{
+	static thread_local std::mt19937 gen{ std::random_device{}() };
+	static thread_local std::uniform_real_distribution<float> dist01(0.0f, 1.0f);
+
+	float u = dist01(gen);
+
+	return std::fma(u, max - min, min);
+}
+
+bool Terrain::GenerateMidpointDispHeightData(float roughness, int size)
 {
 	if (!heightData.data.empty()) UnloadHeightData();
-	if (width > 0 && depth > 0) SetHeightDataDimensions(width, depth);
+	if (size > 0) SetHeightDataDimensions(size, size);
 	else SetHeightDataDimensions();
 
 	// populate placeholder values on data
 	heightData.data.assign(heightData.width * heightData.depth, 0.0f);
 
-	SetHeightAtPoint(static_cast<float>(rand() / static_cast<float>(RAND_MAX)), 0, 0);
-	SetHeightAtPoint(static_cast<float>(rand() / static_cast<float>(RAND_MAX)), width - 1, 0);
-	SetHeightAtPoint(static_cast<float>(rand() / static_cast<float>(RAND_MAX)), 0, depth - 1);
-	SetHeightAtPoint(static_cast<float>(rand() / static_cast<float>(RAND_MAX)), width - 1, depth - 1);
-
-	int stepW = width - 1;
-	int stepD = depth - 1;
+	int step = size;
 
 	// set initial displacement
-	float disp = 0.5f;
+	float disp = (float)size / 2.0f;
 	float heightReduction = pow(2.0f, -roughness);
 
-	while (stepW > 1 || stepD > 1)
+	while (step > 0)
 	{
-		if (stepW > 1 && stepD > 1) DiamondStep(stepW, stepD, disp);
-		SquareStep(stepW, stepD, disp);
+		DiamondStep(step, disp);
+		SquareStep(step, disp);
 
-		if (stepW > 1) stepW /= 2;
-		if (stepD > 1) stepD /= 2;
+		step /= 2;
 		disp *= heightReduction;
 	}
 
@@ -116,76 +121,62 @@ bool Terrain::GenerateMidpointDispHeightData(float roughness, int width, int dep
 	return true;
 }
 
-void Terrain::DiamondStep(int stepW, int stepD, float disp)
+void Terrain::DiamondStep(int step, float disp)
 {
-	int halfWidthSize = stepW / 2;
-	int halfDepthSize = stepD / 2;
-	int w = heightData.width;
-	int d = heightData.depth;
+	int halfStep = step / 2;
 
-	for (int z = 0; z < d - stepD; z+=stepD)
+	for (int z = 0; z < heightData.depth; z+=step)
 	{
-		for (int x = 0; x < w - stepW; x+=stepW)
+		for (int x = 0; x < heightData.width; x+=step)
 		{
-			int nextX = x + stepW;
-			int nextZ = z + stepD;
+			int nextX = (x + step) % heightData.width;
+			int nextZ = (z + step) % heightData.depth;
 			
 			float tl = GetTrueHeightAtPoint(x, z);
 			float tr = GetTrueHeightAtPoint(nextX, z);
 			float bl = GetTrueHeightAtPoint(x, nextZ);
 			float br = GetTrueHeightAtPoint(nextX, nextZ);
 
-			int midX = x + halfWidthSize;
-			int midZ = z + halfDepthSize;
+			int midX = x + halfStep;
+			int midZ = z + halfStep;
 
 			float avg = (tl + tr + bl + br) * 0.25f;
-			float rnd = (static_cast<float>(rand() / static_cast<float>(RAND_MAX)) * 2.0f - 1.0f) * disp;
+			float rnd = randomFloatRange(-disp, disp);
 			SetHeightAtPoint(avg + rnd, midX, midZ);
 		}
 	}
 }
 
-void Terrain::SquareStep(int stepW, int stepD, float disp)
+void Terrain::SquareStep(int step, float disp)
 {
-	int halfWidthSize = std::max(1, stepW / 2);
-	int halfDepthSize = std::max(1, stepD / 2);
-	int w = heightData.width;
-	int d = heightData.depth;
+	int halfStep = step / 2;
 
-	for (int z = 0; z < d; z += halfDepthSize)
+	for (int z = 0; z < heightData.depth; z += step)
 	{
-		int startX = ((z / halfDepthSize) & 1) ? halfWidthSize : 0;
-		for (int x = startX; x < w; x += stepW)
+		for (int x = 0; x < heightData.width; x += step)
 		{
-			float sum = 0.0f;
-			int count = 0;
+			int nextX = (x + step) % heightData.width;
+			int nextZ = (z + step) % heightData.depth;
 
-			if (z - halfDepthSize >= 0)
-			{
-				sum += GetTrueHeightAtPoint(x, z - halfDepthSize);
-				count++;
-			}
-			if (z + halfDepthSize < d)
-			{
-				sum += GetTrueHeightAtPoint(x, z + halfDepthSize);
-				count++;
-			}
-			if (x - halfWidthSize >= 0)
-			{
-				sum += GetTrueHeightAtPoint(x - halfWidthSize, z);
-				count++;
-			}
-			if (x + halfWidthSize < w)
-			{
-				sum += GetTrueHeightAtPoint(x + halfWidthSize, z);
-				count++;
-			}
+			int midX = (x + halfStep) % heightData.width;
+			int midZ = (z + halfStep) % heightData.depth;
 
-			if (count == 0) continue;
+			int prevMidX = (x - halfStep + heightData.width) % heightData.width;
+			int prevMidZ = (z - halfStep + heightData.depth) % heightData.depth;
 
-			float avg = sum / (float)count;
-			float rnd = (static_cast<float>(rand() / static_cast<float>(RAND_MAX)) * 2.0f - 1.0f) * disp;
-			SetHeightAtPoint(avg + rnd, x, z);
+			float currTL = GetTrueHeightAtPoint(x, z);
+			float currTR = GetTrueHeightAtPoint(nextX, z);
+			float currBL = GetTrueHeightAtPoint(x, nextZ);
+
+			float currC = GetTrueHeightAtPoint(midX, midZ);
+			float prevZC = GetTrueHeightAtPoint(midX, prevMidZ);
+			float prevXC = GetTrueHeightAtPoint(prevMidX, midZ);
+
+			float currLMid = (currTL + currC + currBL + prevXC) * 0.25f + randomFloatRange(-disp, disp);
+			float currTMid = (currTL + currC + currTR + prevZC) * 0.25f + randomFloatRange(-disp, disp);
+			
+			SetHeightAtPoint(currTMid, midX, z);
+			SetHeightAtPoint(currLMid, x, midZ);
 		}
 	}
 }
