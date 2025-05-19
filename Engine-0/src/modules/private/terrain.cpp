@@ -70,7 +70,7 @@ bool Terrain::GenerateFaultHeightData(int iterations, float filter, int width, i
 				// increment height if in the positive side
 				if (cross > 0)
 				{
-					float currHeight = GetTrueHeightAtPoint(x, z);
+					float currHeight = GetHeightAtPoint(x, z);
 					SetHeightAtPoint(currHeight + height, x, z);
 				}
 			}
@@ -132,10 +132,10 @@ void Terrain::DiamondStep(int step, float disp)
 			int nextX = (x + step) % heightData.width;
 			int nextZ = (z + step) % heightData.depth;
 			
-			float tl = GetTrueHeightAtPoint(x, z);
-			float tr = GetTrueHeightAtPoint(nextX, z);
-			float bl = GetTrueHeightAtPoint(x, nextZ);
-			float br = GetTrueHeightAtPoint(nextX, nextZ);
+			float tl = GetHeightAtPoint(x, z);
+			float tr = GetHeightAtPoint(nextX, z);
+			float bl = GetHeightAtPoint(x, nextZ);
+			float br = GetHeightAtPoint(nextX, nextZ);
 
 			int midX = x + halfStep;
 			int midZ = z + halfStep;
@@ -164,13 +164,13 @@ void Terrain::SquareStep(int step, float disp)
 			int prevMidX = (x - halfStep + heightData.width) % heightData.width;
 			int prevMidZ = (z - halfStep + heightData.depth) % heightData.depth;
 
-			float currTL = GetTrueHeightAtPoint(x, z);
-			float currTR = GetTrueHeightAtPoint(nextX, z);
-			float currBL = GetTrueHeightAtPoint(x, nextZ);
+			float currTL = GetHeightAtPoint(x, z);
+			float currTR = GetHeightAtPoint(nextX, z);
+			float currBL = GetHeightAtPoint(x, nextZ);
 
-			float currC = GetTrueHeightAtPoint(midX, midZ);
-			float prevZC = GetTrueHeightAtPoint(midX, prevMidZ);
-			float prevXC = GetTrueHeightAtPoint(prevMidX, midZ);
+			float currC = GetHeightAtPoint(midX, midZ);
+			float prevZC = GetHeightAtPoint(midX, prevMidZ);
+			float prevXC = GetHeightAtPoint(prevMidX, midZ);
 
 			float currLMid = (currTL + currC + currBL + prevXC) * 0.25f + randomFloatRange(-disp, disp);
 			float currTMid = (currTL + currC + currTR + prevZC) * 0.25f + randomFloatRange(-disp, disp);
@@ -204,10 +204,10 @@ void Terrain::ApplyIIRFilter(float filter)
 	// left to right
 	for (int z = 0; z < heightData.depth; z++)
 	{
-		float prevVal = GetTrueHeightAtPoint(0, z);
+		float prevVal = GetHeightAtPoint(0, z);
 		for (int x = 1; x < heightData.width; x++)
 		{
-			float currVal = GetTrueHeightAtPoint(x, z);
+			float currVal = GetHeightAtPoint(x, z);
 			float newVal = filter * prevVal + (1.0f - filter) * currVal;
 			SetHeightAtPoint(newVal, x, z);
 
@@ -218,10 +218,10 @@ void Terrain::ApplyIIRFilter(float filter)
 	// right to left
 	for (int z = 0; z < heightData.depth; z++)
 	{
-		float prevVal = GetTrueHeightAtPoint(0, heightData.depth - 1);
+		float prevVal = GetHeightAtPoint(0, heightData.depth - 1);
 		for (int x = heightData.width - 2; x >= 0; x--)
 		{
-			float currVal = GetTrueHeightAtPoint(x, z);
+			float currVal = GetHeightAtPoint(x, z);
 			float newVal = filter * prevVal + (1.0f - filter) * currVal;
 			SetHeightAtPoint(newVal, x, z);
 
@@ -232,10 +232,10 @@ void Terrain::ApplyIIRFilter(float filter)
 	// bottom to top
 	for (int x = 0; x < heightData.width; x++)
 	{
-		float prevVal = GetTrueHeightAtPoint(x, 0);
+		float prevVal = GetHeightAtPoint(x, 0);
 		for (int z = 1; z < heightData.depth; z++)
 		{
-			float currVal = GetTrueHeightAtPoint(x, z);
+			float currVal = GetHeightAtPoint(x, z);
 			float newVal = filter * prevVal + (1.0f - filter) * currVal;
 			SetHeightAtPoint(newVal, x, z);
 
@@ -246,10 +246,10 @@ void Terrain::ApplyIIRFilter(float filter)
 	// top to bottom
 	for (int x = 0; x < heightData.width; x++)
 	{
-		float prevVal = GetTrueHeightAtPoint(heightData.width - 1, 0);
+		float prevVal = GetHeightAtPoint(heightData.width - 1, 0);
 		for (int z = heightData.depth - 2; z >= 0; z--)
 		{
-			float currVal = GetTrueHeightAtPoint(x, z);
+			float currVal = GetHeightAtPoint(x, z);
 			float newVal = filter * prevVal + (1.0f - filter) * currVal;
 			SetHeightAtPoint(newVal, x, z);
 

@@ -16,6 +16,7 @@
 #include "modules/public/contexts.h"
 #include "modules/public/ibl_generator.h"
 #include "modules/public/terrain.h"
+#include "modules/public/terrain_brute.h"
 
 constexpr int W_WIDTH = 1600;
 constexpr int W_HEIGHT = 1200;
@@ -96,8 +97,8 @@ int main()
 
 	// TEST: terrain framebuffer
 	Framebuffer terrainFrame(W_WIDTH, W_HEIGHT);
-	Texture terrainTex(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
-	terrainFrame.attachTexture2D(terrainTex, GL_COLOR_ATTACHMENT0);
+	Texture terrainAttachment(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
+	terrainFrame.attachTexture2D(terrainAttachment, GL_COLOR_ATTACHMENT0);
 	terrainFrame.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 	BruteForceTerrain terrain;
 	// terrain.LoadHeightMap("resources/textures/heightmaps/terrain_sample1.png");
@@ -108,6 +109,8 @@ int main()
 	terrain.Initialize();
 	Shader terrainShader("shaders/terrain/base_terrain.vert", "shaders/terrain/base_terrain.frag");
 	Texture terrainTexture = TextureLoader::CreateTextureFromImport("resources/textures/pbr/grass/albedo.png");
+	terrainTexture.setTexFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
+	terrainTexture.setTexWrap(GL_REPEAT);
 
 	// Render pipeline
 	Renderer renderer;
@@ -265,7 +268,7 @@ int main()
 			// ImGui::Image(getBufferOut(renderer, tex_type), {display_width, display_height}, {0,1}, {1,0}, ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
 
 			// TEST
-			ImGui::Image(terrainTex.id, { display_width, display_height }, { 0,1 }, { 1,0 }, ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
+			ImGui::Image(terrainAttachment.id, { display_width, display_height }, { 0,1 }, { 1,0 }, ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
 
 			bool imageHovered = ImGui::IsItemHovered();
 			if (imageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
@@ -322,6 +325,7 @@ int main()
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, terrainTexture.id);
 		terrain.Render(terrainShader);
+		terrainTexture.genMipMap();
 		terrainFrame.unbind();
 
 		/*
