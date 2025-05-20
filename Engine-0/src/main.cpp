@@ -83,7 +83,7 @@ int main()
 
 	// Camera settings
 	Camera camera(
-		glm::vec3(8.0f, 8.0f, 8.0f),
+		glm::vec3(8.0f, 40.0f, 8.0f),
 		glm::vec3(-1.0f, -1.0f, -1.0f),
 		glm::vec3(0.0f, 1.0f, 0.0f),
 		45.0f
@@ -104,15 +104,18 @@ int main()
 	GeomipTerrain terrain;
 	terrain.LoadHeightMap("resources/textures/heightmaps/terrain_sample1.png");
 	// terrain.SetHeightScale(100.0f);
-	// terrain.GenerateFaultHeightData(250, 0.5f, 500, 1000);
+	// terrain.GenerateFaultHeightData(250, 0.5f, 2049, 2049);
 	// terrain.GenerateMidpointDispHeightData(1.2f, 128);
-	terrain.SetHeightScale(32.0f);
+	terrain.SetHeightScale(30.0f);
 	// terrain.Initialize(); // brute force method
-	terrain.GenerateGeomip(33, 1.0f);
+	terrain.GenerateGeomip(65, 1.0f);
 	Shader terrainShader("shaders/terrain/base_terrain.vert", "shaders/terrain/base_terrain.frag");
-	Texture terrainTexture = TextureLoader::CreateTextureFromImport("resources/textures/pbr/grass/albedo.png");
-	terrainTexture.setTexFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
-	terrainTexture.setTexWrap(GL_REPEAT);
+	Texture terrainGrass = TextureLoader::CreateTextureFromImport("resources/textures/pbr/grass/albedo.png");
+	terrainGrass.setTexFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
+	terrainGrass.setTexWrap(GL_REPEAT);
+	Texture terrainRock = TextureLoader::CreateTextureFromImport("resources/textures/pbr/wall/albedo.png");
+	terrainRock.setTexFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
+	terrainRock.setTexWrap(GL_REPEAT);
 
 	// Render pipeline
 	Renderer renderer;
@@ -318,16 +321,19 @@ int main()
 		glm::mat4 proj = camera.getProjectionMatrix(W_WIDTH, W_HEIGHT, 0.1f, 2500.0f);
 		glm::mat4 view = camera.getViewMatrix();
 		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(0.0f, -100.0f, 0.0f));
-		model = glm::scale(model, glm::vec3(0.5f));
+		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(1.0f));
 		terrainShader.setMat4("projection", proj);
 		terrainShader.setMat4("view", view);
 		terrainShader.setMat4("model", model);
-		terrainShader.setInt("terrainTex", 0);
+		terrainShader.setInt("grassTex", 0);
+		terrainShader.setInt("rockTex", 1);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, terrainTexture.id);
+		glBindTexture(GL_TEXTURE_2D, terrainGrass.id);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, terrainRock.id);
 		terrain.Render(terrainShader, camera);
-		terrainTexture.genMipMap();
+		terrainGrass.genMipMap();
 		terrainFrame.unbind();
 
 		/*
@@ -436,7 +442,7 @@ void processInput(GLFWwindow* window)
 	deltaTime = currentFrame - lastFrame;
 	lastFrame = currentFrame;
 
-	const float cameraSpeed = 25.0f * deltaTime; // Adjust as needed.
+	const float cameraSpeed = 100.0f * deltaTime; // Adjust as needed.
 
 	// Update camera position based on key input:
 	if (gViewportCaptured)

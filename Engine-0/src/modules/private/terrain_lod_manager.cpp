@@ -44,6 +44,8 @@ void LODManager::UpdateLODMapPass1(const glm::vec3& camPos)
 			 glm::vec3 patchCenter = glm::vec3(cx * worldScale, 0.0f, cz * worldScale);
 			 float distToCam = glm::distance(camPos, patchCenter);
 
+			 //if (lodMapX == 0 && lodMapZ == 0) std::cout << patchCenter.x << std::endl;
+
 			// debug checking
 			 // if (lodMapX == numPatchesX - 1 && lodMapZ == numPatchesZ - 1) std::cout << "patch[" << lodMapZ << "][" << lodMapX << "] distance = " << distToCam << std::endl;
 			int coreLOD = DistanceToLOD(distToCam);
@@ -56,30 +58,56 @@ void LODManager::UpdateLODMapPass1(const glm::vec3& camPos)
 // fix ring LOD for each patch
 void LODManager::UpdateLODMapPass2()
 {
-	const auto neighborCoreLOD = [&](int x, int z)
-		{
-			return map[z][x].core;
-		};
-
-	for (int lodMapZ = 0; lodMapZ < numPatchesZ; lodMapZ++)
+	for (int z = 0; z < numPatchesZ; z++)
 	{
-		for (int lodMapX = 0; lodMapX < numPatchesX; lodMapX++)
+		for (int x = 0; x < numPatchesX; x++)
 		{
-			PatchLOD& currPatch = map[lodMapZ][lodMapX];
+			int currCore = map[z][x].core;
 
-			// set defaults
-			currPatch.left = currPatch.right = currPatch.top = currPatch.bottom = 0;
+			auto clampNeighbour = [&](int nx, int nz)
+				{
+					if (nx < 0 || nx >= numPatchesX ||
+						nz < 0 || nz >= numPatchesZ) return;
 
-			// Set left ring
-			if (lodMapX > 0 && neighborCoreLOD(lodMapX - 1, lodMapZ) > currPatch.core) currPatch.left = 1;
-			// Set right ring
-			if (lodMapX < numPatchesX - 1 && neighborCoreLOD(lodMapX + 1, lodMapZ) > currPatch.core) currPatch.right = 1;
-			// Set top ring
-			if (lodMapZ < numPatchesZ - 1 && neighborCoreLOD(lodMapX, lodMapZ + 1) > currPatch.core) currPatch.top = 1;
-			// Set bottom ring
-			if (lodMapZ > 0 && neighborCoreLOD(lodMapX, lodMapZ - 1) > currPatch.core) currPatch.bottom = 1;
+					int& nCore = map[nz][nx].core;
+					if (nCore > currCore + 1) nCore = currCore + 1;
+				};
+
+			clampNeighbour(x - 1, z);
+			clampNeighbour(x + 1, z);
+			clampNeighbour(x, z - 1);
+			clampNeighbour(x, z + 1);
 		}
 	}
+		
+	for (int z = 0; z < numPatchesZ; z++)
+	{
+		for (int x = 0; x < numPatchesX; x++)
+		{
+			PatchLOD& curr = map[z][x];
+			curr.left = curr.right = curr.top = curr.bottom = 0;
+			if (x > 0)
+			{
+				if (map[z][x - 1].core > curr.core) map[z][x].left = 1;
+				else map[z][x].left = 0;
+			}
+			if (x < numPatchesX - 1)
+			{
+				if (map[z][x + 1].core > curr.core) map[z][x].right = 1;
+				else map[z][x].right = 0;
+			}
+			if (z > 0)
+			{
+				if (map[z - 1][x].core > curr.core) map[z][x].bottom = 1;
+				else map[z][x].bottom = 0;
+			}
+			if (z < numPatchesZ - 1)
+			{
+				if (map[z + 1][x].core > curr.core) map[z][x].top = 1;
+				else map[z][x].top = 0;
+			}
+		}
+	}		
 }
 
 int LODManager::DistanceToLOD(float dist)
@@ -108,10 +136,8 @@ const LODManager::PatchLOD& LODManager::GetPatchLOD(int patchX, int patchZ) cons
  */
 void LODManager::CalcLODRegions()
 {
-	regions.clear();
-	regions.resize(maxLOD + 1);
 	// TODO: change later to more dynamic far value
-	#define Z_FAR 500.0f
+	#define Z_FAR 2500.0f
 
 	int sum = 0;
 	for (int i = 0; i <= maxLOD; i++) sum += i + 1;

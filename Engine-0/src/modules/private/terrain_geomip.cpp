@@ -53,8 +53,8 @@ void GeomipTerrain::GenerateGeomip(int patchSize, int worldScale)
 
 void GeomipTerrain::Initialize()
 {
+	// vertices
 	InitHeightVertexData();
-
 	// indices
 	indices.clear();
 	indices.reserve(CalcNumIndices());
@@ -88,7 +88,6 @@ void GeomipTerrain::InitIndicesData()
 	int index = 0;
 	for (int lod = 0; lod <= maxLOD; lod++) index = InitIndicesLOD(index, lod);
 }
-
 
 int GeomipTerrain::InitIndicesLOD(int index, int lod)
 {
@@ -225,7 +224,8 @@ void GeomipTerrain::Render(Shader& shader, Camera& camera)
 
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	// for wireframe mode
+	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	// traverse all patches
 	for (int patchZ = 0; patchZ < numPatchesZ; patchZ++)
@@ -253,7 +253,7 @@ void GeomipTerrain::Render(Shader& shader, Camera& camera)
 		}
 	}
 	glBindVertexArray(0);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	// glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDisable(GL_CULL_FACE);
 }
 
