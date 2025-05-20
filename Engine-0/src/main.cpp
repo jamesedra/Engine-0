@@ -17,6 +17,7 @@
 #include "modules/public/ibl_generator.h"
 #include "modules/public/terrain.h"
 #include "modules/public/terrain_brute.h"
+#include "modules/public/terrain_geomip.h"
 
 constexpr int W_WIDTH = 1600;
 constexpr int W_HEIGHT = 1200;
@@ -100,13 +101,14 @@ int main()
 	Texture terrainAttachment(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
 	terrainFrame.attachTexture2D(terrainAttachment, GL_COLOR_ATTACHMENT0);
 	terrainFrame.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
-	BruteForceTerrain terrain;
-	// terrain.LoadHeightMap("resources/textures/heightmaps/terrain_sample1.png");
+	GeomipTerrain terrain;
+	terrain.LoadHeightMap("resources/textures/heightmaps/terrain_sample1.png");
 	// terrain.SetHeightScale(100.0f);
 	// terrain.GenerateFaultHeightData(250, 0.5f, 500, 1000);
-	terrain.GenerateMidpointDispHeightData(1.2f, 128);
-	terrain.SetHeightScale(64.0f);
-	terrain.Initialize();
+	// terrain.GenerateMidpointDispHeightData(1.2f, 128);
+	terrain.SetHeightScale(32.0f);
+	// terrain.Initialize(); // brute force method
+	terrain.GenerateGeomip(33, 1.0f);
 	Shader terrainShader("shaders/terrain/base_terrain.vert", "shaders/terrain/base_terrain.frag");
 	Texture terrainTexture = TextureLoader::CreateTextureFromImport("resources/textures/pbr/grass/albedo.png");
 	terrainTexture.setTexFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
@@ -324,7 +326,7 @@ int main()
 		terrainShader.setInt("terrainTex", 0);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, terrainTexture.id);
-		terrain.Render(terrainShader);
+		terrain.Render(terrainShader, camera);
 		terrainTexture.genMipMap();
 		terrainFrame.unbind();
 

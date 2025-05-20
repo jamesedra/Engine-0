@@ -148,6 +148,7 @@
     <ClCompile Include="src\modules\private\texture.cpp" />
     <ClCompile Include="src\modules\private\utils.cpp" />
     <ClCompile Include="src\modules\private\terrain_geomip.cpp" />
+    <ClCompile Include="src\modules\private\terrain_lod_manager.cpp" />
     <ClCompile Include="vendor\imgui\imgui.cpp" />
     <ClCompile Include="vendor\imgui\imgui_demo.cpp" />
     <ClCompile Include="vendor\imgui\imgui_draw.cpp" />
@@ -185,6 +186,7 @@
     <ClInclude Include="src\modules\public\terrain.h" />
     <ClInclude Include="src\modules\public\terrain_brute.h" />
     <ClInclude Include="src\modules\public\terrain_geomip.h" />
+    <ClInclude Include="src\modules\public\terrain_lod_manager.h" />
     <ClInclude Include="src\modules\public\texture.h" />
     <ClInclude Include="src\modules\public\texture_library.h" />
     <ClInclude Include="src\modules\public\texture_metadata.h" />

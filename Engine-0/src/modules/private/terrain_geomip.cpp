@@ -1,6 +1,6 @@
 #include "../public/terrain_geomip.h"
 
-void GeomipTerrain::GenerateGeomip(int patchSize)
+void GeomipTerrain::GenerateGeomip(int patchSize, int worldScale)
 {
 	int width = heightData.width;
 	int depth = heightData.depth;
@@ -44,8 +44,8 @@ void GeomipTerrain::GenerateGeomip(int patchSize)
 	this->numPatchesX = (width - 1) / (patchSize - 1);
 	this->numPatchesZ = (depth - 1) / (patchSize - 1);
 
-	// assign maxLOD properly later after an lod manager is built
-	this->maxLOD = 3;
+	SetWorldScale(worldScale);
+	this->maxLOD = lodManager.InitLODManager(patchSize, numPatchesX, numPatchesZ, worldScale);
 	lodInfo.resize(maxLOD + 1);
 
 	Initialize();
@@ -53,46 +53,207 @@ void GeomipTerrain::GenerateGeomip(int patchSize)
 
 void GeomipTerrain::Initialize()
 {
-	int w = heightData.width;
-	int d = heightData.depth;
+	InitHeightVertexData();
 
-	// normal helper
-	auto sampleNormal = [&](int x, int z)
-		{
-			int xm = std::max(x - 1, 0), xp = std::min(x + 1, w - 1);
-			int zm = std::max(z - 1, 0), zp = std::min(z + 1, d - 1);
+	// indices
+	indices.clear();
+	indices.reserve(CalcNumIndices());
+	InitIndicesData();
+	PopulateBufferData();
+}
 
-			float hL = GetScaledHeightAtPoint(xm, z), hR = GetScaledHeightAtPoint(xp, z);
-			float hD = GetScaledHeightAtPoint(x, zm), hU = GetScaledHeightAtPoint(x, zp);
+// NOTE: Does not output the exact indices count for the buffer. This provides an estimate of the worst-case upper bound space.
+int GeomipTerrain::CalcNumIndices()
+{
+	int numQuads = (patchSize - 1) * (patchSize - 1);
+	int numIndices = 0;
+	int maxPermutationsPerLevel = 16;	// true/false for each side
+	const int indicesPerQuad = 6;		// two triangles
 
-			glm::vec3 dx = glm::vec3(1.0f, hR - hL, 0.0f);
-			glm::vec3 dz = glm::vec3(0.0f, hU - hD, 1.0f);
-			glm::vec3 n = glm::normalize(glm::cross(dz, dx));
-			return n;
-		};
-
-	// verts
-	verts.clear();
-	verts.reserve(w * d);
-
-	float repeat = float(w - 1) * 0.25f; // for texture repetition
-	for (int z = 0; z < d; z++)
+	for (int lod = 0; lod <= maxLOD; lod++)
 	{
-		for (int x = 0; x < w; x++)
+		std::cout << "LOD " << lod << 
+			": num quads " << numQuads << std::endl;
+		numIndices += numQuads * indicesPerQuad * maxPermutationsPerLevel;
+		numQuads /= 4;
+	}
+	std::cout << "Initial number of indices: " << numIndices << std::endl;
+
+	return numIndices;
+}
+
+// Initializes index data for each LOD
+void GeomipTerrain::InitIndicesData()
+{
+	int index = 0;
+	for (int lod = 0; lod <= maxLOD; lod++) index = InitIndicesLOD(index, lod);
+}
+
+
+int GeomipTerrain::InitIndicesLOD(int index, int lod)
+{
+	int totalIndicesForLOD = 0;
+
+	// traverse all 16 permutations
+	for (int l = 0; l < LEFT; l++)
+	{
+		for (int r = 0; r < RIGHT; r++)
 		{
-			HeightVertexData hvd{};
+			for (int t = 0; t < TOP; t++)
+			{
+				for (int b = 0; b < BOTTOM; b++)
+				{
+					lodInfo[lod].info[l][r][t][b].start = index;
+					index = InitIndicesSingleLOD(index, lod, lod + l, lod + r, lod + t, lod + b);
 
-			hvd.pos = glm::vec3(float(x), GetScaledHeightAtPoint(x, z), float(z));
-			hvd.normal = sampleNormal(x, z);
-			hvd.uv = glm::vec2(float(x) / (w - 1) * repeat, float(z) / (d - 1) * repeat);
-			hvd.tangent = glm::normalize(
-				glm::vec3(1, GetScaledHeightAtPoint(x + 1 < w ? x + 1 : x, z) - GetScaledHeightAtPoint(x, z), 0));
-
-			verts.push_back(hvd);
+					lodInfo[lod].info[l][r][t][b].count = index - lodInfo[lod].info[l][r][t][b].start;
+					totalIndicesForLOD += lodInfo[lod].info[l][r][t][b].count;
+				}
+			}
 		}
 	}
+	std::cout << "Total indices for LOD " << lod << ": " << totalIndicesForLOD << std::endl;
+	return index;
 }
 
-void GeomipTerrain::Render(Shader& shader)
+// Iterates all centers of the patch
+int GeomipTerrain::InitIndicesSingleLOD(int index, int lod, int l, int r, int t, int b)
 {
+	// how many vertices before getting to the next triangle fan
+	int fanStep = static_cast<int>(pow(2, lod + 1)); // LOD = 0 -> 2, 1 -> 4, 2 -> 8
+	int endPos = patchSize - 1 - fanStep; // patch size 5, fanstep 2 -> endPos = 2, patch size 9, fan step 2 -> endPos 6
+
+	for (int z = 0; z <= endPos; z+=fanStep)
+	{
+		for (int x = 0; x <= endPos; x+=fanStep)
+		{
+			// checks if the position is the end of the fan. Copies the side lod if so.
+			int left = x == 0 ? l : lod;
+			int right = x == endPos ? r : lod;
+			int top = z == endPos ? t : lod;
+			int bottom = z == 0 ? b : lod;
+
+			index = CreateTriangleFan(index, lod, left, right, top, bottom, x, z);
+		}
+	}
+	return index;
 }
+
+// Adds proper triangle fans (up to 8 triangles) into the indices buffer data
+uint32_t GeomipTerrain::CreateTriangleFan(int index, int lod, int l, int r, int t, int b, int x, int z)
+{
+	int stepL = static_cast<int>(pow(2, l));
+	int stepR = static_cast<int>(pow(2, r));
+	int stepT = static_cast<int>(pow(2, t));
+	int stepB = static_cast<int>(pow(2, b));
+	int stepC = static_cast<int>(pow(2, lod));
+
+	int w = heightData.width;
+
+	uint32_t indexC = (z + stepC) * w + x + stepC;
+
+	// first up
+	uint32_t indexTemp1 = z * w + x;
+	uint32_t indexTemp2 = (z + stepL) * w + x;
+	index = AddTriangle(index, indexC, indexTemp1, indexTemp2);
+
+	// second up
+	if (l == lod)
+	{
+		indexTemp1 = indexTemp2;
+		indexTemp2 += stepL * w;
+		index = AddTriangle(index, indexC, indexTemp1, indexTemp2);
+	}
+
+	// first right
+	indexTemp1 = indexTemp2;
+	indexTemp2 += stepT;
+	index = AddTriangle(index, indexC, indexTemp1, indexTemp2);
+
+	// second right
+	if (t == lod) // create another triangle if top lod == core lod, skipped when t > lod
+	{
+		indexTemp1 = indexTemp2;
+		indexTemp2 += stepT;
+		index = AddTriangle(index, indexC, indexTemp1, indexTemp2);
+	}
+
+	// first down
+	indexTemp1 = indexTemp2;
+	indexTemp2 -= stepR * w;
+	index = AddTriangle(index, indexC, indexTemp1, indexTemp2);
+
+	// second down
+	if (r == lod)
+	{
+		indexTemp1 = indexTemp2;
+		indexTemp2 -= stepR * w;
+		index = AddTriangle(index, indexC, indexTemp1, indexTemp2);
+	}
+
+	// first left
+	indexTemp1 = indexTemp2;
+	indexTemp2 -= stepB;
+	index = AddTriangle(index, indexC, indexTemp1, indexTemp2);
+
+	// second left
+	if (b == lod)
+	{
+		indexTemp1 = indexTemp2;
+		indexTemp2 -= stepB;
+		index = AddTriangle(index, indexC, indexTemp1, indexTemp2);
+	}
+
+	return index;
+}
+
+// helper to populate the indices vector
+int GeomipTerrain::AddTriangle(int index, int indexC, int index1, int index2)
+{
+	indices.push_back(indexC);
+	indices.push_back(index1);
+	indices.push_back(index2);
+
+	return index + 3;
+}
+
+void GeomipTerrain::Render(Shader& shader, Camera& camera)
+{
+	shader.use();
+	lodManager.UpdateLOD(camera.getCameraPos());
+	glBindVertexArray(terrainVAO);
+
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+	// traverse all patches
+	for (int patchZ = 0; patchZ < numPatchesZ; patchZ++)
+	{
+		for (int patchX = 0; patchX < numPatchesX; patchX++)
+		{
+			const LODManager::PatchLOD& patchLOD = lodManager.GetPatchLOD(patchX, patchZ);
+			// core LOD level
+			int c = patchLOD.core;
+			// ring LOD levels (0-1, 0 = core, 1 = core + 1)
+			int l = patchLOD.left;
+			int r = patchLOD.right;
+			int t = patchLOD.top;
+			int b = patchLOD.bottom;
+
+			// which set of indices to use
+			auto& slice = lodInfo[c].info[l][r][t][b];
+			size_t baseIndex = sizeof(unsigned int) * slice.start;
+
+			int z = patchZ * (patchSize - 1);
+			int x = patchX * (patchSize - 1);
+			int baseVertex = z * heightData.width + x;
+
+			glDrawElementsBaseVertex(GL_TRIANGLES, slice.count, GL_UNSIGNED_INT, (void*)baseIndex, baseVertex);
+		}
+	}
+	glBindVertexArray(0);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glDisable(GL_CULL_FACE);
+}
+

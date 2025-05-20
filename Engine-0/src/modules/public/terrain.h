@@ -1,6 +1,7 @@
 #pragma once
 #include "../../common.h"
 #include "shader.h"
+#include "camera.h"
 
 struct HeightData
 {
@@ -17,22 +18,6 @@ struct HeightData
 
 class Terrain
 {
-protected:
-	// for buffers
-	struct HeightVertexData
-	{
-		glm::vec3 pos;
-		glm::vec3 normal;
-		glm::vec2 uv;
-		glm::vec3 tangent;
-	};
-	GLuint terrainVAO = 0, terrainVBO = 0, terrainEBO = 0;
-	std::vector<HeightVertexData> verts;
-	std::vector<unsigned int> indices;
-
-	HeightData heightData;
-	float heightScale = 255.0f;
-
 public:
 	Terrain(){}
 	~Terrain()
@@ -40,7 +25,7 @@ public:
 		if (!heightData.data.empty()) UnloadHeightData();
 	}
 
-	virtual void Render(Shader& shader) = 0;
+	virtual void Render(Shader& shader, Camera& camera) = 0;
 	
 	// Height data generation
 	bool LoadHeightMap(const char* filename);
@@ -57,10 +42,9 @@ public:
 		heightData.depth = d;
 	}
 
-	inline void SetHeightScale(float scale)
-	{
-		heightScale = scale;
-	}
+	inline void SetHeightScale(float scale) { heightScale = scale; }
+
+	inline void SetWorldScale(float scale) { worldScale = scale; }
 
 	// Sets the true height value at the given point
 	inline void SetHeightAtPoint(float height, int x, int z)
@@ -79,6 +63,29 @@ public:
 	{
 		return heightData.data[(z * heightData.width) + x] * heightScale;
 	}
+
+	inline float GetHeightScale() { return heightScale; }
+
+	inline float GetWorldScale() { return worldScale; }
+
+protected:
+	HeightData heightData;
+	float heightScale = 255.0f;
+	float worldScale = 1.0f;
+	// for buffers
+	struct HeightVertexData
+	{
+		glm::vec3 pos;
+		glm::vec3 normal;
+		glm::vec2 uv;
+		glm::vec3 tangent;
+	};
+	GLuint terrainVAO = 0, terrainVBO = 0, terrainEBO = 0;
+	std::vector<HeightVertexData> verts;
+	std::vector<unsigned int> indices;
+
+	void InitHeightVertexData();
+	void PopulateBufferData();
 
 private:
 	void ApplyIIRFilter(float filter); // infinite impulse response

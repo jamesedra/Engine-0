@@ -69,6 +69,9 @@
     <ClCompile Include="src\modules\private\terrain_geomip.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\modules\private\terrain_lod_manager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="vendor\imgui\imconfig.h">
@@ -207,6 +210,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\modules\public\terrain_brute.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\public\terrain_lod_manager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
