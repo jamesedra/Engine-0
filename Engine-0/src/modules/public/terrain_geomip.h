@@ -1,6 +1,7 @@
 #pragma once
 #include "terrain.h"
 #include "terrain_lod_manager.h"
+#include "frustum.h"
 
 class GeomipTerrain : public Terrain
 {

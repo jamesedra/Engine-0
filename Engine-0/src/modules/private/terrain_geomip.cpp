@@ -225,13 +225,36 @@ void GeomipTerrain::Render(Shader& shader, Camera& camera)
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	// for wireframe mode
-	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+	// setup view projection matrix
+	float pw = 1600.0f;
+	float ph = 1200.0f;
+	glm::mat4 viewProj = camera.getProjectionMatrix(pw, ph, 0.1f, 2500.0f) * camera.getViewMatrix();
+
+	Frustum frustum(viewProj);
 
 	// traverse all patches
 	for (int patchZ = 0; patchZ < numPatchesZ; patchZ++)
 	{
 		for (int patchX = 0; patchX < numPatchesX; patchX++)
 		{
+			float wx = patchX * (patchSize - 1) * worldScale;
+			float wz = patchZ * (patchSize - 1) * worldScale;
+			float wPatchSize = (patchSize - 1) * worldScale;
+			float patchRad = wPatchSize * glm::sqrt(2.0f) * 0.5f;
+
+			// since height is just based on range 0-1 * heightScale, max height is heightScale
+			glm::vec3 patchCenter = glm::vec3(wx + wPatchSize * 0.5f, heightScale * 0.5f, wz + wPatchSize * 0.5f);
+
+			// cull if sphere is outside the frustum
+			if (!frustum.IsPatchSphereInFrustum(patchCenter, patchRad))
+			{
+				printf("0");
+				continue;
+			}
+			else printf("1");
+
 			const LODManager::PatchLOD& patchLOD = lodManager.GetPatchLOD(patchX, patchZ);
 			// core LOD level
 			int c = patchLOD.core;
@@ -251,9 +274,11 @@ void GeomipTerrain::Render(Shader& shader, Camera& camera)
 
 			glDrawElementsBaseVertex(GL_TRIANGLES, slice.count, GL_UNSIGNED_INT, (void*)baseIndex, baseVertex);
 		}
+		printf("\n");
 	}
+	printf("\n");
 	glBindVertexArray(0);
-	// glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDisable(GL_CULL_FACE);
 }
 
