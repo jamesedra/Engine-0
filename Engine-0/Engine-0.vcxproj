@@ -248,6 +248,8 @@
     <None Include="shaders\terrain\base_terrain.vert" />
     <None Include="shaders\terrain\bf_terrain.frag" />
     <None Include="shaders\terrain\bf_terrain.vert" />
+    <None Include="shaders\terrain\tes_terrain.tesc" />
+    <None Include="shaders\terrain\tes_terrain.vert" />
     <None Include="shaders\tiling_debug.frag" />
     <None Include="shaders\tonemapping\rh_tonemapping.frag" />
   </ItemGroup>
