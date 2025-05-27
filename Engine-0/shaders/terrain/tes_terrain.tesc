@@ -2,20 +2,17 @@
 
 layout (vertices = 4) out;
 
-in vec2 inTexCoords[];
-out vec2 TexCoords[];
+in VS_OUT {vec2 GridPos, TexCoord;} tcs_in[];
+out TCS_OUT {vec2 GridPos, TexCoord;} tcs_out[];
+
+uniform float tessFactor = 8.0;
 
 void main() {
-	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
-	TexCoords[gl_InvocationID] = inTexCoords[gl_InvocationID];
+    tcs_out[gl_InvocationID].GridPos = tcs_in[gl_InvocationID].GridPos;
+    tcs_out[gl_InvocationID].TexCoord = tcs_in[gl_InvocationID].TexCoord;
 
-	if (gl_InvocationID == 0) {
-		gl_TessLevelOuter[0] = 16;
-		gl_TessLevelOuter[1] = 16;
-		gl_TessLevelOuter[2] = 16;
-		gl_TessLevelOuter[3] = 16;
-
-		gl_TessLevelInner[0] = 16;
-		gl_TessLevelInner[1] = 16;
-	}
+    if (gl_InvocationID == 0) {
+        for (int i = 0; i < 4; ++i) gl_TessLevelOuter[i] = tessFactor;
+        gl_TessLevelInner[0] = tessFactor;
+    }
 }
