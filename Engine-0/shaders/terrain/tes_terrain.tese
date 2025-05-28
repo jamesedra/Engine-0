@@ -1,52 +1,41 @@
 #version 460 core
+layout (quads, fractional_even_spacing, ccw) in;
 
-layout (quads, fractional_odd_spacing, ccw) in;
+in TCS_OUT {vec2 GridPos, TexCoord;} tes_in[];
+out TES_OUT {vec3 worldPos; vec3 normal; vec2 uv;} tes_out;
 
-uniform sampler2D heightMap;  
+uniform sampler2D heightMap;
+uniform float heightScale;
+uniform vec2 terrainScale;
+
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection; 
 
-in vec2 TextureCoords[];
-
-out float Height;
-
-void main()
+vec2 bilerp(vec2 a, vec2 b, vec2 c, vec2 d)
 {
-    // get patch coordinate
-    float u = gl_TessCoord.x;
-    float v = gl_TessCoord.y;
+    vec2 ab = mix(a,b, gl_TessCoord.x);
+    vec2 cd = mix(c,d, gl_TessCoord.x);
+    return mix(ab,cd, gl_TessCoord.y);
+}
 
-    // retrieve control point texture coordinates
-    vec2 t00 = TextureCoords[0];
-    vec2 t01 = TextureCoords[1];
-    vec2 t10 = TextureCoords[2];
-    vec2 t11 = TextureCoords[3];
+void main() {
+    vec2 uv   = bilerp(tes_in[0].TexCoord, tes_in[1].TexCoord, tes_in[3].TexCoord, tes_in[2].TexCoord);
+    vec2 grid = bilerp(tes_in[0].GridPos, tes_in[1].GridPos, tes_in[3].GridPos, tes_in[2].GridPos);
 
-    vec2 t0 = (t01 - t00) * u + t00;
-    vec2 t1 = (t11 - t10) * u + t10;
-    vec2 texCoord = (t1 - t0) * v + t0;
+    float h = texture(heightMap, uv).r * heightScale;
+    vec3 pos = vec3(grid.x * terrainScale.x, h, grid.y * terrainScale.y);
 
-    Height = texture(heightMap, texCoord).y * 64.0 - 16.0;
+    float eps = 1.0 / textureSize(heightMap,0).x;
+    float hL = texture(heightMap, uv + vec2(-eps,0)).r * heightScale;
+    float hR = texture(heightMap, uv + vec2( eps,0)).r * heightScale;
+    float hD = texture(heightMap, uv + vec2(0,-eps)).r * heightScale;
+    float hU = texture(heightMap, uv + vec2(0, eps)).r * heightScale;
+    vec3 n = normalize(vec3((hL-hR) * terrainScale.x, 2.0 * eps, (hD-hU) * terrainScale.y));
 
-    vec4 p00 = gl_in[0].gl_Position;
-    vec4 p01 = gl_in[1].gl_Position;
-    vec4 p10 = gl_in[2].gl_Position;
-    vec4 p11 = gl_in[3].gl_Position;
+    tes_out.worldPos = pos;
+    tes_out.normal = n;
+    tes_out.uv = uv;
 
-    // compute patch surface normal
-    vec4 uVec = p01 - p00;
-    vec4 vVec = p10 - p00;
-    vec4 normal = normalize( vec4(cross(vVec.xyz, uVec.xyz), 0) );
-
-
-    vec4 p0 = (p01 - p00) * u + p00;
-    vec4 p1 = (p11 - p10) * u + p10;
-    vec4 p = (p1 - p0) * v + p0;
-
-    // displace point along normal
-    p += normal * Height;
-
-    // output patch point position in clip space
-    gl_Position = projection * view * model * p;
+    gl_Position = projection * view * model * vec4(pos,1.0);
 }
