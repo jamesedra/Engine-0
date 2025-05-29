@@ -27,6 +27,8 @@ public:
 	Shader(const char* vertexPath, const char* geometryPath, const char* fragmentPath);
 	// compute shader
 	Shader(const char* computePath);
+	// tessellation shader
+	Shader(const char* vertexPath, const char* tesCtrlPath, const char* tesEvalPath, const char* fragmentPath);
 
 	// use and activate the shader
 	void use();
