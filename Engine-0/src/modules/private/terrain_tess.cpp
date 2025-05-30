@@ -20,8 +20,8 @@ void TessTerrain::InitializePatches()
 	};
 	std::vector<PatchData> pverts;
 	pverts.reserve(width * depth);
-	float repeat = float(width - 1) * 0.25f;
-
+	// float repeat = float(width - 1) * 0.25f;
+	float repeat = 1.0f;
 	for (int z = 0; z < depth; z++)
 	{
 		for (int x = 0; x < width; x++)
@@ -33,9 +33,9 @@ void TessTerrain::InitializePatches()
 	}
 
 	// indices
-	for (int z = 0; z < depth; z++)
+	for (int z = 0; z < depth - 1; z++)
 	{
-		for (int x = 0; x < width; x++)
+		for (int x = 0; x < width - 1; x++)
 		{
 			GLuint a = z * width + x;
 			GLuint b = z * width + (x + 1);
@@ -64,5 +64,18 @@ void TessTerrain::InitializePatches()
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
+void TessTerrain::Render(Shader& shader, Camera& camera)
+{
+	shader.use();
+	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	shader.setFloat("tessFactor", 8.0);
+	shader.setFloat("heightScale", 50.0f);
+	shader.setVec2("terrainScale", glm::vec2(1.0f));
+
+	glBindVertexArray(terrainVAO);
+	glDrawElements(GL_PATCHES, static_cast<GLuint>(indices.size()), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 }

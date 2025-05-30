@@ -20,8 +20,8 @@ vec2 bilerp(vec2 a, vec2 b, vec2 c, vec2 d)
 }
 
 void main() {
-    vec2 uv   = bilerp(tes_in[0].TexCoord, tes_in[1].TexCoord, tes_in[3].TexCoord, tes_in[2].TexCoord);
-    vec2 grid = bilerp(tes_in[0].GridPos, tes_in[1].GridPos, tes_in[3].GridPos, tes_in[2].GridPos);
+    vec2 uv   = bilerp(tes_in[0].TexCoord, tes_in[1].TexCoord, tes_in[2].TexCoord, tes_in[3].TexCoord);
+    vec2 grid = bilerp(tes_in[0].GridPos, tes_in[1].GridPos, tes_in[2].GridPos, tes_in[3].GridPos);
 
     float h = texture(heightMap, uv).r * heightScale;
     vec3 pos = vec3(grid.x * terrainScale.x, h, grid.y * terrainScale.y);
