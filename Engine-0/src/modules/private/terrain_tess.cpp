@@ -41,7 +41,7 @@ void TessTerrain::InitializePatches()
 			GLuint b = z * width + (x + 1);
 			GLuint c = (z + 1) * width + x;
 			GLuint d = (z + 1) * width + (x + 1);
-			indices.insert(indices.end(), { a, b, d, c });
+			indices.insert(indices.end(), { a, b, c, d });
 		}
 	}
 
@@ -70,7 +70,7 @@ void TessTerrain::InitializePatches()
 void TessTerrain::Render(Shader& shader, Camera& camera)
 {
 	shader.use();
-	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	shader.setFloat("tessFactor", 8.0);
 	shader.setFloat("heightScale", 50.0f);
 	shader.setVec2("terrainScale", glm::vec2(1.0f));
