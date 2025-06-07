@@ -102,7 +102,7 @@ int main()
 	Texture terrainAttachment(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
 	terrainFrame.attachTexture2D(terrainAttachment, GL_COLOR_ATTACHMENT0);
 	terrainFrame.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
-	/*
+	
 	GeomipTerrain terrain;
 	terrain.LoadHeightMap("resources/textures/heightmaps/terrain_sample1.png");
 	// terrain.SetHeightScale(100.0f);
@@ -112,23 +112,22 @@ int main()
 	// terrain.Initialize(); // brute force method
 	terrain.GenerateGeomip(65, 1.0f);
 	Shader terrainShader("shaders/terrain/base_terrain.vert", "shaders/terrain/base_terrain.frag");
-	*/
-	
-	TessTerrain terrain;
-	terrain.LoadHeightMap("resources/textures/heightmaps/terrain_sample1.png");
-	terrain.InitializePatches();
-	Shader terrainShader("shaders/terrain/tes_terrain.vert", "shaders/terrain/tes_terrain.tesc", "shaders/terrain/tes_terrain.tese", "shaders/terrain/tes_terrain.frag");
-	Texture tessHeightMap = TextureLoader::CreateTextureFromImport("resources/textures/heightmaps/terrain_sample1.png");
-	glBindTexture(GL_TEXTURE_2D, tessHeightMap.id);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glPatchParameteri(GL_PATCH_VERTICES, 4);
 	Texture terrainGrass = TextureLoader::CreateTextureFromImport("resources/textures/pbr/grass/albedo.png");
 	terrainGrass.setTexFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
 	terrainGrass.setTexWrap(GL_REPEAT);
 	Texture terrainRock = TextureLoader::CreateTextureFromImport("resources/textures/pbr/wall/albedo.png");
 	terrainRock.setTexFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
 	terrainRock.setTexWrap(GL_REPEAT);
+	
+	//TessTerrain terrain;
+	//terrain.LoadHeightMap("resources/textures/heightmaps/terrain_sample1.png");
+	//terrain.InitializePatches();
+	//Shader terrainShader("shaders/terrain/tes_terrain.vert", "shaders/terrain/tes_terrain.tesc", "shaders/terrain/tes_terrain.tese", "shaders/terrain/tes_terrain.frag");
+	//Texture tessHeightMap = TextureLoader::CreateTextureFromImport("resources/textures/heightmaps/terrain_sample1.png");
+	//glBindTexture(GL_TEXTURE_2D, tessHeightMap.id);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	//glPatchParameteri(GL_PATCH_VERTICES, 4);
 
 	// Render pipeline
 	Renderer renderer;
@@ -339,17 +338,17 @@ int main()
 		terrainShader.setMat4("projection", proj);
 		terrainShader.setMat4("view", view);
 		terrainShader.setMat4("model", model);
-		// terrainShader.setInt("grassTex", 0);
-		// terrainShader.setInt("rockTex", 1);
+		terrainShader.setInt("grassTex", 0);
+		terrainShader.setInt("rockTex", 1);
 		terrainShader.setInt("heightMap", 0);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, tessHeightMap.id);
 		// glActiveTexture(GL_TEXTURE0);
-		// glBindTexture(GL_TEXTURE_2D, terrainGrass.id);
-		// glActiveTexture(GL_TEXTURE1);
-		// glBindTexture(GL_TEXTURE_2D, terrainRock.id);
+		 // glBindTexture(GL_TEXTURE_2D, tessHeightMap.id);
+		 glActiveTexture(GL_TEXTURE0);
+		 glBindTexture(GL_TEXTURE_2D, terrainGrass.id);
+		 glActiveTexture(GL_TEXTURE1);
+		 glBindTexture(GL_TEXTURE_2D, terrainRock.id);
 		terrain.Render(terrainShader, camera);
-		// terrainGrass.genMipMap();
+		terrainGrass.genMipMap();
 		terrainFrame.unbind();
 
 		/*
