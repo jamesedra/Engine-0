@@ -5,20 +5,27 @@
 #include "shader.h"
 #include "model.h"
 
+// when the textures are already in the texture library
+// we only care about the type and id
+struct RegisteredTextureData
+{
+    std::string key; // key for texture library
+    std::string type;
+    unsigned int id;
+};
+
 struct Material
 {
     // uniform name : uniform value
 	std::unordered_map<std::string, UniformValue> uniforms;
-
-    std::vector<TextureMetadata> modelTextures;
+    std::vector<RegisteredTextureData> matTextures;
+    // std::vector<TextureMetadata> materialTextures; // to be fully deprecated
 
     Material(
         Shader& shader, 
         std::vector<TextureMetadata> texture_data, 
         bool includeTransforms = false, 
-        bool includeTextureUniforms = true) 
-        : 
-        modelTextures(std::move(texture_data))
+        bool includeTextureUniforms = true)
     {
         uniforms = InitializeMaterialComponent(shader.ID, includeTransforms, includeTextureUniforms);
 
@@ -30,25 +37,67 @@ struct Material
         unsigned int roughnessNr = 1;
         unsigned int aoNr = 1;
 
-        for (size_t i = 0; i < modelTextures.size(); i++)
+        for (size_t i = 0; i < texture_data.size(); i++)
         {
-            auto& mt = modelTextures[i];
-            TextureLibrary::Register(mt.path, mt.id, mt.width, mt.height);
+            auto& td = texture_data[i];
+            TextureLibrary::Register(td.path, td.id, td.width, td.height);
+            // since this is auto attachment, make path as the key
+            RegisteredTextureData mt = { td.path, td.type, td.id };
+            matTextures.push_back(mt);
 
             std::string number;
-            if (mt.type == "texture_diffuse") number = std::to_string(diffuseNr);
-            else if (mt.type == "texture_specular") number = std::to_string(specularNr);
-            else if (mt.type == "texture_normal") number = std::to_string(normalNr);
-            else if (mt.type == "texture_roughness") number = std::to_string(roughnessNr);
-            else if (mt.type == "texture_metallic") number = std::to_string(metallicNr);
-            else if (mt.type == "texture_ao") number = std::to_string(aoNr);
+            if (mt.type == "texture_diffuse") number = std::to_string(diffuseNr++);
+            else if (mt.type == "texture_specular") number = std::to_string(specularNr++);
+            else if (mt.type == "texture_normal") number = std::to_string(normalNr++);
+            else if (mt.type == "texture_roughness") number = std::to_string(roughnessNr++);
+            else if (mt.type == "texture_metallic") number = std::to_string(metallicNr++);
+            else if (mt.type == "texture_ao") number = std::to_string(aoNr++);
             std::string uniformName = "material." + mt.type + number;
 
             // override if uniform name exists
             auto it = uniforms.find(uniformName);
             if (it != uniforms.end() && it->second.type == UniformValue::Type::Sampler2D)
             {
-                it->second = UniformValue::Sampler2D(mt.path);
+                it->second = UniformValue::Sampler2D(mt.key);
+            }
+        }
+    }
+
+    Material(
+        Shader& shader,
+        std::vector<RegisteredTextureData> texture_data,
+        bool includeTransforms = false,
+        bool includeTextureUniforms = true)
+        :
+        matTextures(std::move(texture_data))
+    {
+        uniforms = InitializeMaterialComponent(shader.ID, includeTransforms, includeTextureUniforms);
+
+        unsigned int diffuseNr = 1;
+        unsigned int specularNr = 1;
+        unsigned int normalNr = 1;
+        unsigned int metallicNr = 1;
+        unsigned int roughnessNr = 1;
+        unsigned int aoNr = 1;
+
+        for (size_t i = 0; i < matTextures.size(); i++)
+        {
+            auto& mt = matTextures[i];
+
+            std::string number;
+            if (mt.type == "texture_diffuse") number = std::to_string(diffuseNr++);
+            else if (mt.type == "texture_specular") number = std::to_string(specularNr++);
+            else if (mt.type == "texture_normal") number = std::to_string(normalNr++);
+            else if (mt.type == "texture_roughness") number = std::to_string(roughnessNr++);
+            else if (mt.type == "texture_metallic") number = std::to_string(metallicNr++);
+            else if (mt.type == "texture_ao") number = std::to_string(aoNr++);
+            std::string uniformName = "material." + mt.type + number;
+
+            // override if uniform name exists
+            auto it = uniforms.find(uniformName);
+            if (it != uniforms.end() && it->second.type == UniformValue::Type::Sampler2D)
+            {
+                it->second = UniformValue::Sampler2D(mt.key);
             }
         }
     }
@@ -90,6 +139,7 @@ struct Material
                     shader.setInt(name, textureUnit);
                     glActiveTexture(GL_TEXTURE0 + textureUnit);
                     auto& tex = TextureLibrary::GetTexture(value.texturePath);
+                    tex.genMipMap(); // test
                     glBindTexture(GL_TEXTURE_2D, tex.id);
                     textureUnit++;
                     break;
@@ -133,10 +183,10 @@ struct Material
         unsigned int roughnessNr = 1;
         unsigned int aoNr = 1;
 
-        for (size_t i = 0; i < modelTextures.size(); i++)
+        for (size_t i = 0; i < matTextures.size(); i++)
         {
-            auto& mt = modelTextures[i];
-            TextureLibrary::Register(mt.path, mt.id, mt.width, mt.height);
+            auto& mt = matTextures[i];
+            // TextureLibrary::Register(mt.path, mt.id, mt.width, mt.height);
 
             std::string number;
             if (mt.type == "texture_diffuse") number = std::to_string(diffuseNr);
@@ -151,7 +201,7 @@ struct Material
             auto it = uniforms.find(uniformName);
             if (it != uniforms.end() && it->second.type == UniformValue::Type::Sampler2D)
             {
-                it->second = UniformValue::Sampler2D(mt.path);
+                it->second = UniformValue::Sampler2D(mt.key);
             }
         }
     }

@@ -3,7 +3,7 @@
 #include "texture.h"
 #include <random>
 
-// NOTE: This is are functions for loaders or automated class creators. Mostly for default values and testing.
+// NOTE: These are functions for loaders or automated class creators. Mostly for default values and testing.
 
 const float PI = 3.1415926f;
 
@@ -404,8 +404,9 @@ public:
 
 	static Texture CreateTextureFromImport(
 		const char* path, 
-		bool flipVertically = false, 
-		TextureColorSpace space = TextureColorSpace::Linear)
+		bool mipmap = false,
+		TextureColorSpace space = TextureColorSpace::Linear,
+		bool flipVertically = false)
 	{
 		stbi_set_flip_vertically_on_load(flipVertically);
 
@@ -435,10 +436,13 @@ public:
 			else if (baseFormat == GL_RGBA)
 				internalFormat = GL_SRGB_ALPHA;
 		}
-
+		
 		Texture tex(width, height, internalFormat, baseFormat, GL_LINEAR, GL_REPEAT, data);
-		tex.genMipMap();
-
+		if (mipmap)
+		{
+			tex.setTexFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
+			tex.genMipMap();
+		}
 		stbi_image_free(data);
 
 		return tex;

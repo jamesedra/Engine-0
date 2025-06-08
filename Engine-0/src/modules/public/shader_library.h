@@ -43,5 +43,7 @@ private:
 		GetLibrary().emplace("PBR Test", std::move(PBRGShader));
 		Shader tintedGShader = Shader("shaders/gbuffer/gbuffer_default.vert", "shaders/gbuffer/gbuffer_tint.frag");
 		GetLibrary().emplace("Lit with Color Tint", std::move(tintedGShader));
+		Shader terrainShader = Shader("shaders/gbuffer/gbuffer_default.vert", "shaders/gbuffer/gbuffer_terrain.frag");
+		GetLibrary().emplace("Landscape Material", std::move(terrainShader));
 	}
 };

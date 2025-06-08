@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -144,8 +144,12 @@
     <ClCompile Include="src\modules\private\mesh.cpp" />
     <ClCompile Include="src\modules\private\model.cpp" />
     <ClCompile Include="src\modules\private\shader.cpp" />
+    <ClCompile Include="src\modules\private\terrain.cpp" />
+    <ClCompile Include="src\modules\private\terrain_tess.cpp" />
     <ClCompile Include="src\modules\private\texture.cpp" />
     <ClCompile Include="src\modules\private\utils.cpp" />
+    <ClCompile Include="src\modules\private\terrain_geomip.cpp" />
+    <ClCompile Include="src\modules\private\terrain_lod_manager.cpp" />
     <ClCompile Include="vendor\imgui\imgui.cpp" />
     <ClCompile Include="vendor\imgui\imgui_demo.cpp" />
     <ClCompile Include="vendor\imgui\imgui_draw.cpp" />
@@ -165,6 +169,7 @@
     <ClInclude Include="src\modules\public\entity_manager.h" />
     <ClInclude Include="src\modules\public\factory.h" />
     <ClInclude Include="src\modules\public\framebuffer.h" />
+    <ClInclude Include="src\modules\public\frustum.h" />
     <ClInclude Include="src\modules\public\ibl_generator.h" />
     <ClInclude Include="src\modules\public\light_system.h" />
     <ClInclude Include="src\modules\public\material.h" />
@@ -180,6 +185,11 @@
     <ClInclude Include="src\modules\public\shader_library.h" />
     <ClInclude Include="src\modules\public\shader_storage_buffer.h" />
     <ClInclude Include="src\modules\public\shader_uniform.h" />
+    <ClInclude Include="src\modules\public\terrain.h" />
+    <ClInclude Include="src\modules\public\terrain_brute.h" />
+    <ClInclude Include="src\modules\public\terrain_geomip.h" />
+    <ClInclude Include="src\modules\public\terrain_lod_manager.h" />
+    <ClInclude Include="src\modules\public\terrain_tess.h" />
     <ClInclude Include="src\modules\public\texture.h" />
     <ClInclude Include="src\modules\public\texture_library.h" />
     <ClInclude Include="src\modules\public\texture_metadata.h" />
@@ -212,6 +222,7 @@
     <None Include="shaders\gbuffer\gbuffer_debug_out.frag" />
     <None Include="shaders\gbuffer\gbuffer_debug_out.vert" />
     <None Include="shaders\gbuffer\gbuffer_pbr.frag" />
+    <None Include="shaders\gbuffer\gbuffer_terrain.frag" />
     <None Include="shaders\gbuffer\gbuffer_tint.frag" />
     <None Include="shaders\IBL\brdf.vert" />
     <None Include="shaders\IBL\brdf.frag" />
@@ -236,6 +247,13 @@
     <None Include="shaders\skybox\skybox_default.vert" />
     <None Include="shaders\ssao\ssao.frag" />
     <None Include="shaders\ssao\ssao_blur.frag" />
+    <None Include="shaders\terrain\base_terrain.frag" />
+    <None Include="shaders\terrain\base_terrain.vert" />
+    <None Include="shaders\terrain\bf_terrain.frag" />
+    <None Include="shaders\terrain\bf_terrain.vert" />
+    <None Include="shaders\terrain\tes_terrain.tesc" />
+    <None Include="shaders\terrain\tes_terrain.tese" />
+    <None Include="shaders\terrain\tes_terrain.vert" />
     <None Include="shaders\tiling_debug.frag" />
     <None Include="shaders\tonemapping\rh_tonemapping.frag" />
   </ItemGroup>

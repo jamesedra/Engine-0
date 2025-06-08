@@ -15,6 +15,10 @@
 #include "modules/public/factory.h"
 #include "modules/public/contexts.h"
 #include "modules/public/ibl_generator.h"
+#include "modules/public/terrain.h"
+#include "modules/public/terrain_brute.h"
+#include "modules/public/terrain_geomip.h"
+#include "modules/public/terrain_tess.h"
 
 constexpr int W_WIDTH = 1600;
 constexpr int W_HEIGHT = 1200;
@@ -80,8 +84,8 @@ int main()
 
 	// Camera settings
 	Camera camera(
-		glm::vec3(8.0f, 8.0f, 8.0f),
-		glm::vec3(-1.0f, -1.0f, -1.0f),
+		glm::vec3(219.647f, 10.6458f, 98.3125f),
+		glm::vec3(0.180914f, -0.120137f, -0.976134f),
 		glm::vec3(0.0f, 1.0f, 0.0f),
 		45.0f
 	);
@@ -116,6 +120,7 @@ int main()
 	MaterialsGroupManager materialsGroupManager;
 	EnvironmentProbeManager probeManager;
 	LightManager lightManager;
+	LandscapeManager landscapeManager;
 
 	// Registries
 	SceneEntityRegistry sceneRegistry;
@@ -131,12 +136,42 @@ int main()
 	transformManager.components[floorEntity].scale = glm::vec3(100.0f, 0.5f, 100.0f);
 	sceneRegistry.Register(floorEntity);
 
+	Entity cubeEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "Cube", "");
+	idManager.components[cubeEntity].ID = "cube";
+	transformManager.components[cubeEntity].position = glm::vec3(220.0f, 3.0f, 63.0f);
+	transformManager.components[cubeEntity].rotation = glm::vec3(-0.5f, 4.0f, 0.0f);
+	transformManager.components[cubeEntity].scale = glm::vec3(3.0f);
+	sceneRegistry.Register(cubeEntity);
+
+	Entity sphereEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "Sphere", "");
+	idManager.components[sphereEntity].ID = "sphere";
+	transformManager.components[sphereEntity].position = glm::vec3(215.0f, 1.5f, 72.5f);
+	transformManager.components[sphereEntity].scale = glm::vec3(2.0f);
+	sceneRegistry.Register(sphereEntity);
+
+	Entity sphere1Entity = WorldObjectFactory::CreateWorldObject(worldContext, "", "Sphere", "");
+	idManager.components[sphere1Entity].ID = "sphere1";
+	transformManager.components[sphere1Entity].position = glm::vec3(230.0f, 4.0f, 42.0f);
+	transformManager.components[sphere1Entity].scale = glm::vec3(3.0f);
+	sceneRegistry.Register(sphere1Entity);
+
+	Entity coneEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "Cone", "");
+	idManager.components[coneEntity].ID = "cone";
+	transformManager.components[coneEntity].position = glm::vec3(245.0f, -1.5f, 54.5f);
+	transformManager.components[coneEntity].rotation = glm::vec3(0.5f, -4.0f, -6.5f);
+	transformManager.components[coneEntity].scale = glm::vec3(3.0f, 6.0f, 3.0f);
+	sceneRegistry.Register(coneEntity);
+
 	Entity backpackEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/backpack/backpack.obj");
 	idManager.components[backpackEntity].ID = "backpack";
 	sceneRegistry.Register(backpackEntity);
 
 	Entity dirLightEntity = WorldObjectFactory::CreateDirectionalLight(entityManager, lightManager, transformManager, idManager, "sun");
 	sceneRegistry.Register(dirLightEntity);
+
+	HeightmapParams heightMap{ "resources/textures/heightmaps/terrain_sample1.png" };
+	Entity landscapeEntity = WorldObjectFactory::CreateLandscape(entityManager, landscapeManager, transformManager, shaderManager, materialsGroupManager, idManager, "landscape", TerrainType::Geomipmap, heightMap, 30.0f);
+	sceneRegistry.Register(landscapeEntity);
 
 	// Point light Objects
 	//for (int i = 0; i < 40; i++)
@@ -148,8 +183,8 @@ int main()
 	//	}
 	//}
 
-	// IBL testing
-	// probe entity test
+	// IBL
+	// probe entities
 	IBLSettings skyboxIBLSettings = ProbeLibrary::GetSettings("resources/textures/eqr_maps/kloofendal_43d_clear_puresky_2k.hdr");
 	Entity skyboxEntity = WorldObjectFactory::CreateSkyProbe(entityManager, probeManager, idManager, "skybox", skyboxIBLSettings, glm::vec3(0.f));
 	sceneRegistry.Register(skyboxEntity);
@@ -202,6 +237,17 @@ int main()
 			ImGui_ImplGlfw_Sleep(10);
 			continue;
 		}
+
+		// camera coords
+		//std::cout << "pos x: " << camera.getCameraPos().x << std::endl;
+		//std::cout << "pos y: " << camera.getCameraPos().y << std::endl;
+		//std::cout << "pos z: " << camera.getCameraPos().z << std::endl;
+		//std::cout << "for x: " << camera.getCameraFront().x << std::endl;
+		//std::cout << "for y: " << camera.getCameraFront().y << std::endl;
+		//std::cout << "for z: " << camera.getCameraFront().z << std::endl;
+		//std::cout << "up x: " << camera.getCameraUp().x << std::endl;
+		//std::cout << "up y: " << camera.getCameraUp().y << std::endl;
+		//std::cout << "up z: " << camera.getCameraUp().z << std::endl;
 
 		processInput(window);
 		
@@ -292,15 +338,14 @@ int main()
 			transformManager, 
 			shaderManager, 
 			assetManager, 
+			landscapeManager,
 			materialsGroupManager, 
 			camera);
 
 		// Shadow pass
-		renderSystem.RenderShadowPass(lightManager, transformManager, sceneRegistry, assetManager);
-
+		renderSystem.RenderShadowPass(lightManager, transformManager, sceneRegistry, assetManager, landscapeManager, camera);
 		// SSAO pass
 		renderSystem.RenderSSAO(camera, frameVAO);
-
 		// deferred shading stage
 		glDisable(GL_DEPTH_TEST);
 
@@ -389,7 +434,7 @@ void processInput(GLFWwindow* window)
 	deltaTime = currentFrame - lastFrame;
 	lastFrame = currentFrame;
 
-	const float cameraSpeed = 12.5f * deltaTime; // Adjust as needed.
+	const float cameraSpeed = 100.0f * deltaTime; // Adjust as needed.
 
 	// Update camera position based on key input:
 	if (gViewportCaptured)

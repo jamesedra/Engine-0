@@ -63,6 +63,18 @@
     <ClCompile Include="lib\stb\stb_image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\modules\private\terrain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\modules\private\terrain_geomip.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\modules\private\terrain_lod_manager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\modules\private\terrain_tess.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="vendor\imgui\imconfig.h">
@@ -194,6 +206,24 @@
     <ClInclude Include="src\modules\public\renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\modules\public\terrain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\public\terrain_geomip.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\public\terrain_brute.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\public\terrain_lod_manager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\public\frustum.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\public\terrain_tess.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\default.vert" />
@@ -234,5 +264,13 @@
     <None Include="shaders\lighting\lighting_tiled.comp" />
     <None Include="shaders\shadowmapping\dir_depth.vert" />
     <None Include="shaders\shadowmapping\dir_depth.frag" />
+    <None Include="shaders\terrain\bf_terrain.vert" />
+    <None Include="shaders\terrain\bf_terrain.frag" />
+    <None Include="shaders\terrain\base_terrain.vert" />
+    <None Include="shaders\terrain\base_terrain.frag" />
+    <None Include="shaders\terrain\tes_terrain.vert" />
+    <None Include="shaders\terrain\tes_terrain.tesc" />
+    <None Include="shaders\terrain\tes_terrain.tese" />
+    <None Include="shaders\gbuffer\gbuffer_terrain.frag" />
   </ItemGroup>
 </Project>

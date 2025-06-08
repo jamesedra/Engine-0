@@ -63,10 +63,10 @@ vec3 FresnelRoughness(float cosTheta, vec3 F0, float roughness);
 float NormalDistribution(float nDotH, float roughness);
 float GeometryEq(float dotProd, float roughness);
 ivec2 FindClosestProbes(vec3 fragPos);
-float DirShadowContribution(vec2 LightTexCoord, float DistToLight);
+float DirShadowContribution(vec2 LightTexCoord, float DepthN);
 
 const float PI = 3.14159265359;
-const float g_MinVariance = 1e-4;
+const float g_MinVariance = 1e-7;
 
 void main() {
 	// deferred attachment unpacking
@@ -174,19 +174,17 @@ void main() {
 		vec3 radiance = dirLight.color_intensity.rgb * dirLight.color_intensity.a;
 
 
+		vec3 Lo_dir = (DiffuseBRDF + SpecBRDF) * radiance * nDotL;
 
-		Lo += (DiffuseBRDF + SpecBRDF) * radiance * nDotL;
+		// Directional shadow mapping
+		vec4 fragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0);
+		vec3 ndc = fragPosLightSpace.xyz / fragPosLightSpace.w;
+		vec2 lightTexCoord = ndc.xy * 0.5 + 0.5;
+		float depth = ndc.z * 0.5 + 0.5;
+		float shadow = DirShadowContribution(lightTexCoord, depth);
+
+		Lo = Lo + shadow * Lo_dir;
 	}
-
-	// Directional shadow mapping
-	vec4 fragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0);
-	vec3 ndc = fragPosLightSpace.xyz / fragPosLightSpace.w;
-	vec2 lightTexCoord = ndc.xy * 0.5 + 0.5;
-	float depth = ndc.z * 0.5 + 0.5;
-	// tentative
-	float shadow = DirShadowContribution(lightTexCoord, depth);
-
-	Lo *= shadow;
 
 	// IBL
 	vec3 R = reflect(-v, n);
@@ -295,7 +293,7 @@ float linstep(float min, float max, float v) {
 
 float ChebyshevUpperBound(vec2 moments, float t) {
 	float variance = moments.y - (moments.x * moments.x);
-	variance = max(variance, g_MinVariance);
+	variance = clamp(variance, g_MinVariance, 0.0005);
 	float d = t - moments.x;
 	float p_max = variance / (variance + d * d);
 
@@ -304,17 +302,21 @@ float ChebyshevUpperBound(vec2 moments, float t) {
 	float bleedStart = 0.2;
 	float bleedEnd = 0.8;
 
-	return linstep(bleedStart, bleedEnd, p);
+	return clamp(p, 0.0, 1.0);
+	// return smoothstep(bleedStart, bleedEnd, p);
 }
 
-float DirShadowContribution(vec2 LightTexCoord, float DistToLight) {
-	float penumbraUV = dirLightSizeUV * DistToLight;
+float DirShadowContribution(vec2 LightTexCoord, float DepthN) {
+	float constRadiusPx = 2.0;
+
+	float penumbraUV = dirLightSizeUV * DepthN;
 	float texel = penumbraUV * vsmSize;
 	float maxLod = floor(log2(vsmSize));
 	float lod = clamp(log2(max(texel, 1.0)), 0.0, maxLod);
+	// float lod = clamp(log2(constRadiusPx), 0.0, maxLod);
 	vec2 moments = textureLod(dirVSM, LightTexCoord, lod).xy;
 
-	return ChebyshevUpperBound(moments, DistToLight);
+	return ChebyshevUpperBound(moments, DepthN);
 }
 
 ivec2 FindClosestProbes(vec3 fragPos) {

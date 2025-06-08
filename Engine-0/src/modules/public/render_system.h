@@ -21,6 +21,7 @@ public:
 		TransformManager& transformManager,
 		ShaderManager& shaderManager,
 		AssetManager& assetManager,
+		LandscapeManager& landscapeManager,
 		MaterialsGroupManager& materialsGroupManager,
 		Camera& camera
 	)
@@ -33,19 +34,18 @@ public:
 
 		for (Entity entity : sceneRegistry.GetAll())
 		{
-			AssetComponent* assetComp = assetManager.GetComponent(entity);
+			
 			ShaderComponent* shaderComp = shaderManager.GetComponent(entity);
 			TransformComponent* transformComp = transformManager.GetComponent(entity);
 			MaterialsGroupComponent* materialsGroupComp = materialsGroupManager.GetComponent(entity);
 
-			if (!assetComp || !transformComp || !shaderComp || !materialsGroupComp)
+			if (!transformComp || !shaderComp || !materialsGroupComp)
 				continue;
 
 			Shader* shader = shaderComp->shader;
 			shader->use();
 
 			glm::mat4 model = glm::mat4(1.0f);
-
 			if (transformComp)
 			{
 				model = glm::translate(model, transformComp->position);
@@ -61,16 +61,31 @@ public:
 			int HEIGHT = 1200;
 			shader->setMat4("projection", camera.getProjectionMatrix(WIDTH, HEIGHT, 0.1f, 2500.0f));
 
-			Asset& asset = AssetLibrary::GetAsset(assetComp->assetName);
-			auto& parts = asset.parts;
+			AssetComponent* assetComp = assetManager.GetComponent(entity);
+			if (assetComp)
+			{
+				Asset& asset = AssetLibrary::GetAsset(assetComp->assetName);
+				auto& parts = asset.parts;
 
+				for (auto& group : materialsGroupComp->materialsGroup)
+				{
+					group.material.ApplyShaderUniforms(*shader);
+					for (size_t index : group.assetPartsIndices)
+					{
+						parts[index].mesh.Draw(*shader);
+					}
+				}
+				continue; // no need to check for landscape
+			}
+			
+			LandscapeComponent* landComp = landscapeManager.GetLandscapeComponent(entity);
+			HeightGenComponent* genComp = landscapeManager.GetHeightGenComponent(entity);
+
+			if (!landComp || !genComp) continue;
 			for (auto& group : materialsGroupComp->materialsGroup)
 			{
 				group.material.ApplyShaderUniforms(*shader);
-				for (size_t index : group.assetPartsIndices)
-				{
-					parts[index].mesh.Draw(*shader);
-				}
+				landComp->terrain->Render(*shader, camera);
 			}
 		}
 		renderer.getGBuffer().unbind();
@@ -80,7 +95,9 @@ public:
 		LightManager& lightManager, 
 		TransformManager& transformManager,
 		SceneEntityRegistry& sceneRegistry,
-		AssetManager& assetManager
+		AssetManager& assetManager,
+		LandscapeManager& landscapeManager,
+		Camera& camera
 		)
 	{
 		// tentative, assume there is only one directional light.
@@ -104,6 +121,9 @@ public:
 
 		glViewport(0, 0, sa.shadow_width, sa.shadow_height);
 
+		glEnable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(2.0f, 4.0f);
+
 		glCullFace(GL_FRONT);
 		glEnable(GL_DEPTH_TEST);
 		sa.shadowBuffer.bind();
@@ -115,8 +135,9 @@ public:
 		{
 			AssetComponent* assetComp = assetManager.GetComponent(entity);
 			TransformComponent* transformComp = transformManager.GetComponent(entity);
+			LandscapeComponent* landComp = landscapeManager.GetLandscapeComponent(entity);
 
-			if (!assetComp || !transformComp) continue;
+			if ((!assetComp && !landComp)|| !transformComp) continue;
 
 			glm::mat4 model = glm::mat4(1.0f);
 			model = glm::translate(model, transformComp->position);
@@ -127,17 +148,23 @@ public:
 
 			sa.shadowShader.setMat4("model", model);
 
-			Asset& asset = AssetLibrary::GetAsset(assetComp->assetName);
-			auto& parts = asset.parts;
-
-			for (MeshData& md : parts) md.mesh.Draw(sa.shadowShader);
+			if (assetComp)
+			{
+				Asset& asset = AssetLibrary::GetAsset(assetComp->assetName);
+				auto& parts = asset.parts;
+				for (MeshData& md : parts) md.mesh.Draw(sa.shadowShader);
+			}
+			else if (landComp)
+			{
+				landComp->terrain->Render(sa.shadowShader, camera);
+			}
 		}
 		sa.shadowBuffer.unbind();
 		renderer.getShadowMoments().genMipMap(); // rebuild mipchain
 
 		glDisable(GL_DEPTH_TEST);
 		glCullFace(GL_BACK);
-
+		glDisable(GL_POLYGON_OFFSET_FILL);
 		int WIDTH = 1600;
 		int HEIGHT = 1200;
 		glViewport(0, 0, WIDTH, HEIGHT);

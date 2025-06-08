@@ -2,13 +2,37 @@
 #include <filesystem>
 #include "../../common.h"
 #include "contexts.h"
+#include "component_manager.h"
 #include "shader_library.h"
 #include "asset_library.h"
+
+#include "terrain_brute.h"
+#include "terrain_geomip.h"
+#include "terrain_tess.h"
+
+#include "material.h"
+
 #include <map>
 
 // NOTE: this is a tentative header for testing purposes.
 // A "Factory" is used to create a combination of components that will be tied from a certain entity. 
 // Factories would only help with the creation of it. Adding/removing/editing components that are tied to an entity would be from a different implementation.
+
+// helper on class creation for terrain child types
+static std::unique_ptr<Terrain> CreateTerrain(TerrainType type)
+{
+    switch (type)
+    {
+    case TerrainType::Brute:
+        return std::make_unique<BruteForceTerrain>();
+    case TerrainType::Geomipmap:
+        return std::make_unique<GeomipTerrain>();
+    case TerrainType::Tessellated:
+        return std::make_unique<TessTerrain>();
+    default:
+        throw std::invalid_argument{ "Unknown TerrainType" };
+    }
+}
 
 class WorldObjectFactory
 {
@@ -176,6 +200,77 @@ public:
 
         idManager.components[entity].ID = name;
         probeManager.AddSkyProbe(entity, probeComp);
+
+        return entity;
+    }
+
+    static Entity CreateLandscape(
+        EntityManager& entityManager,
+        LandscapeManager& landscapeManager,
+        TransformManager& transformManager,
+        ShaderManager& shaderManager,
+        MaterialsGroupManager& materialsGroupManager,
+        IDManager& idManager,
+        std::string name,
+        TerrainType terrainType,
+        HeightGenParams heightParams,
+        float heightScale
+    )
+    {
+        Entity entity = entityManager.CreateEntity();
+
+        TransformComponent transformComp;
+        transformComp.position = glm::vec3(0.0f, 0.0f, 0.0f);
+        transformComp.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+        transformComp.scale = glm::vec3(1.0f);
+        transformManager.components[entity] = transformComp;
+
+        auto terrainPtr = CreateTerrain(terrainType);
+        // initial generation of height data
+        if (std::holds_alternative<FaultGenParams>(heightParams))
+        {
+            // TODO
+        }
+        else if (std::holds_alternative<MidpointGenParams>(heightParams))
+        {
+            // TODO
+        }
+        else if (std::holds_alternative<HeightmapParams>(heightParams))
+        {
+            auto& params = std::get<HeightmapParams>(heightParams);
+            terrainPtr->LoadHeightMap(params.filename.c_str());
+        }
+
+        terrainPtr->SetHeightScale(heightScale);
+        terrainPtr->Initialize();
+        LandscapeComponent landComp{ std::move(terrainPtr) };
+        HeightGenComponent genComp{ std::move(heightParams), heightScale, false };
+
+        ShaderComponent shaderComp;
+        shaderComp.shaderName = "Landscape Material";
+        shaderComp.shader = &ShaderLibrary::GetShader(shaderComp.shaderName);
+        shaderManager.components[entity] = shaderComp;
+
+        std::vector<RegisteredTextureData> terrainTextures = {
+            {"Grass Albedo","texture_diffuse", TextureLibrary::GetTexture("Grass Albedo").id},
+            {"Rock Albedo", "texture_diffuse", TextureLibrary::GetTexture("Rock Albedo").id},
+            {"Grass Normal", "texture_normal", TextureLibrary::GetTexture("Grass Normal").id},
+            {"Rock Normal", "texture_normal", TextureLibrary::GetTexture("Rock Normal").id},
+            {"Grass Roughness", "texture_roughness", TextureLibrary::GetTexture("Grass Roughness").id},
+            {"Rock Roughness", "texture_roughness", TextureLibrary::GetTexture("Rock Roughness").id},
+            {"Grass AO", "texture_ao", TextureLibrary::GetTexture("Grass AO").id},
+            {"Rock AO", "texture_ao", TextureLibrary::GetTexture("Rock AO").id},
+        };
+
+        Material material(*shaderComp.shader, terrainTextures);
+        MaterialsGroup matGroup{ material, {} };
+        MaterialsGroupComponent matGroupComp{ {matGroup} };
+        materialsGroupManager.components[entity] = matGroupComp;
+
+        landscapeManager.landscapeComponents[entity] = std::move(landComp);
+        landscapeManager.heightGenComponents[entity] = std::move(genComp);
+
+        idManager.components[entity] = name;
 
         return entity;
     }
