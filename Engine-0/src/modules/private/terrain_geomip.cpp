@@ -1,5 +1,10 @@
 #include "../public/terrain_geomip.h"
 
+void GeomipTerrain::Initialize()
+{
+	GenerateGeomip(65, 1);
+}
+
 void GeomipTerrain::GenerateGeomip(int patchSize, int worldScale)
 {
 	int width = heightData.width;
@@ -48,10 +53,10 @@ void GeomipTerrain::GenerateGeomip(int patchSize, int worldScale)
 	this->maxLOD = lodManager.InitLODManager(patchSize, numPatchesX, numPatchesZ, worldScale);
 	lodInfo.resize(maxLOD + 1);
 
-	Initialize();
+	InitBuffers();
 }
 
-void GeomipTerrain::Initialize()
+void GeomipTerrain::InitBuffers()
 {
 	// vertices
 	InitHeightVertexData();
@@ -248,12 +253,12 @@ void GeomipTerrain::Render(Shader& shader, Camera& camera)
 			glm::vec3 patchCenter = glm::vec3(wx + wPatchSize * 0.5f, heightScale * 0.5f, wz + wPatchSize * 0.5f);
 
 			// cull if sphere is outside the frustum
-			//if (!frustum.IsPatchSphereInFrustum(patchCenter, patchRad))
-			//{
-			//	printf("0");
-			//	continue;
-			//}
-			//else printf("1");
+			if (!frustum.IsPatchSphereInFrustum(patchCenter, patchRad))
+			{
+				// printf("0");
+				continue;
+			}
+			// else printf("1");
 
 			const LODManager::PatchLOD& patchLOD = lodManager.GetPatchLOD(patchX, patchZ);
 			// core LOD level

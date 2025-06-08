@@ -6,8 +6,9 @@
 class GeomipTerrain : public Terrain
 {
 public:
+	void Initialize() override;
 	void GenerateGeomip(int patchSize, int worldScale = 1.0f);
-	void Initialize();
+	void InitBuffers();
 	void Render(Shader& shader, Camera& camera) override;
 
 private:

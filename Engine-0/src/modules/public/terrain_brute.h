@@ -4,7 +4,7 @@
 class BruteForceTerrain : public Terrain
 {
 public:
-	void Initialize()
+	void Initialize() override
 	{
 		if (heightData.data.empty() || heightData.width == 0 || heightData.depth == 0)
 		{

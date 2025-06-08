@@ -119,3 +119,22 @@ public:
 	}
 };
 
+class LandscapeManager
+{
+	public:
+		std::unordered_map<Entity, LandscapeComponent> landscapeComponents;
+		std::unordered_map<Entity, HeightGenComponent> heightGenComponents;
+
+		LandscapeComponent* GetLandscapeComponent(Entity entity)
+		{
+			auto it = landscapeComponents.find(entity);
+			return (it != landscapeComponents.end()) ? &it->second : nullptr;
+		}
+
+		HeightGenComponent* GetHeightGenComponent(Entity entity)
+		{
+			auto it = heightGenComponents.find(entity);
+			return (it != heightGenComponents.end()) ? &it->second : nullptr;
+		}
+};
+

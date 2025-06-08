@@ -103,14 +103,7 @@ int main()
 	terrainFrame.attachTexture2D(terrainAttachment, GL_COLOR_ATTACHMENT0);
 	terrainFrame.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 	
-	GeomipTerrain terrain;
-	terrain.LoadHeightMap("resources/textures/heightmaps/terrain_sample1.png");
-	// terrain.SetHeightScale(100.0f);
-	// terrain.GenerateFaultHeightData(250, 0.5f, 2049, 2049);
-	// terrain.GenerateMidpointDispHeightData(1.2f, 128);
-	terrain.SetHeightScale(30.0f);
-	// terrain.Initialize(); // brute force method
-	terrain.GenerateGeomip(65, 1.0f);
+
 	Shader terrainShader("shaders/terrain/base_terrain.vert", "shaders/terrain/base_terrain.frag");
 	Texture terrainGrass = TextureLoader::CreateTextureFromImport("resources/textures/pbr/grass/albedo.png");
 	terrainGrass.setTexFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
@@ -152,6 +145,7 @@ int main()
 	MaterialsGroupManager materialsGroupManager;
 	EnvironmentProbeManager probeManager;
 	LightManager lightManager;
+	LandscapeManager landscapeManager;
 
 	// Registries
 	SceneEntityRegistry sceneRegistry;
@@ -174,6 +168,9 @@ int main()
 	Entity dirLightEntity = WorldObjectFactory::CreateDirectionalLight(entityManager, lightManager, transformManager, idManager, "sun");
 	sceneRegistry.Register(dirLightEntity);
 
+	HeightmapParams heightMap{ "resources/textures/heightmaps/terrain_sample1.png" };
+	Entity landscapeEntity = WorldObjectFactory::CreateLandscape(entityManager, landscapeManager, idManager, "landscape", TerrainType::Geomipmap, heightMap, 30.0f);
+
 	// Point light Objects
 	//for (int i = 0; i < 40; i++)
 	//{
@@ -184,8 +181,8 @@ int main()
 	//	}
 	//}
 
-	// IBL testing
-	// probe entity test
+	// IBL
+	// probe entities
 	IBLSettings skyboxIBLSettings = ProbeLibrary::GetSettings("resources/textures/eqr_maps/kloofendal_43d_clear_puresky_2k.hdr");
 	Entity skyboxEntity = WorldObjectFactory::CreateSkyProbe(entityManager, probeManager, idManager, "skybox", skyboxIBLSettings, glm::vec3(0.f));
 	sceneRegistry.Register(skyboxEntity);
@@ -343,11 +340,12 @@ int main()
 		terrainShader.setInt("heightMap", 0);
 		// glActiveTexture(GL_TEXTURE0);
 		 // glBindTexture(GL_TEXTURE_2D, tessHeightMap.id);
-		 glActiveTexture(GL_TEXTURE0);
-		 glBindTexture(GL_TEXTURE_2D, terrainGrass.id);
-		 glActiveTexture(GL_TEXTURE1);
-		 glBindTexture(GL_TEXTURE_2D, terrainRock.id);
-		terrain.Render(terrainShader, camera);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, terrainGrass.id);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, terrainRock.id);
+		landscapeManager.GetLandscapeComponent(landscapeEntity)->terrain->Render(terrainShader, camera);
+
 		terrainGrass.genMipMap();
 		terrainFrame.unbind();
 

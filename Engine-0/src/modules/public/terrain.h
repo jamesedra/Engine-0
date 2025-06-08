@@ -3,6 +3,13 @@
 #include "shader.h"
 #include "camera.h"
 
+enum class TerrainType
+{
+	Brute,
+	Geomipmap,
+	Tessellated
+};
+
 struct HeightData
 {
 	std::vector<float> data; // height data, ranging from 0 to 1
@@ -26,6 +33,7 @@ public:
 	}
 
 	virtual void Render(Shader& shader, Camera& camera) = 0;
+	virtual void Initialize() = 0;
 	
 	// Height data generation
 	bool LoadHeightMap(const char* filename);

@@ -2,13 +2,35 @@
 #include <filesystem>
 #include "../../common.h"
 #include "contexts.h"
+#include "component_manager.h"
 #include "shader_library.h"
 #include "asset_library.h"
+
+#include "terrain_brute.h"
+#include "terrain_geomip.h"
+#include "terrain_tess.h"
+
 #include <map>
 
 // NOTE: this is a tentative header for testing purposes.
 // A "Factory" is used to create a combination of components that will be tied from a certain entity. 
 // Factories would only help with the creation of it. Adding/removing/editing components that are tied to an entity would be from a different implementation.
+
+// helper on class creation for terrain child types
+static std::unique_ptr<Terrain> CreateTerrain(TerrainType type)
+{
+    switch (type)
+    {
+    case TerrainType::Brute:
+        return std::make_unique<BruteForceTerrain>();
+    case TerrainType::Geomipmap:
+        return std::make_unique<GeomipTerrain>();
+    case TerrainType::Tessellated:
+        return std::make_unique<TessTerrain>();
+    default:
+        throw std::invalid_argument{ "Unknown TerrainType" };
+    }
+}
 
 class WorldObjectFactory
 {
@@ -176,6 +198,48 @@ public:
 
         idManager.components[entity].ID = name;
         probeManager.AddSkyProbe(entity, probeComp);
+
+        return entity;
+    }
+
+
+    static Entity CreateLandscape(
+        EntityManager& entityManager,
+        LandscapeManager& landscapeManager,
+        IDManager& idManager,
+        std::string name,
+        TerrainType terrainType,
+        HeightGenParams heightParams,
+        float heightScale
+    )
+    {
+        Entity entity = entityManager.CreateEntity();
+        auto terrainPtr = CreateTerrain(terrainType);
+        
+        // initial generation of height data
+        if (std::holds_alternative<FaultGenParams>(heightParams))
+        {
+            // TODO
+        }
+        else if (std::holds_alternative<MidpointGenParams>(heightParams))
+        {
+            // TODO
+        }
+        else if (std::holds_alternative<HeightmapParams>(heightParams))
+        {
+            auto& params = std::get<HeightmapParams>(heightParams);
+            terrainPtr->LoadHeightMap(params.filename.c_str());
+        }
+
+        terrainPtr->SetHeightScale(heightScale);
+        terrainPtr->Initialize();
+        LandscapeComponent landComp{ std::move(terrainPtr) };
+        HeightGenComponent genComp{ std::move(heightParams), heightScale, false };
+
+        landscapeManager.landscapeComponents[entity] = std::move(landComp);
+        landscapeManager.heightGenComponents[entity] = std::move(genComp);
+
+        idManager.components[entity] = name;
 
         return entity;
     }

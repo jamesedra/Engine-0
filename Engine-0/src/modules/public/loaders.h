@@ -3,7 +3,7 @@
 #include "texture.h"
 #include <random>
 
-// NOTE: This is are functions for loaders or automated class creators. Mostly for default values and testing.
+// NOTE: These are functions for loaders or automated class creators. Mostly for default values and testing.
 
 const float PI = 3.1415926f;
 

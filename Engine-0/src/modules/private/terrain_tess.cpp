@@ -1,6 +1,6 @@
 #include "../public/terrain_tess.h"
 
-void TessTerrain::InitializePatches()
+void TessTerrain::Initialize()
 {
 	int width = heightData.width;
 	int depth = heightData.depth;

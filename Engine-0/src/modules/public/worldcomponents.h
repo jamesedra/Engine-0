@@ -1,11 +1,13 @@
 #pragma once
 
 #include <unordered_map>
+#include <variant>
 #include "mesh.h"
 #include "material.h"
 #include "shader.h"
 #include "shader_uniform.h"
 #include "ibl_generator.h"
+#include "terrain.h"
 
 // NOTE: This is a temporary header file used to store all needed components in one place first.
 // As of the moment, this will mostly prioritize components that will be used for the render system I am building. Which is basically what OpenGL will render in the viewport window.
@@ -64,15 +66,55 @@ struct EnvironmentProbeComponent
 
 struct PointLightComponent
 {
-    glm::vec3 color;
-    float intensity;
-    float radius;
+    glm::vec3 color = glm::vec3(0.0f, 0.0f, 0.0f);
+    float intensity = 0.0f;
+    float radius = 0.0f;
     bool enabled = true;
 };
 
 struct DirectionalLightComponent
 {
-    glm::vec3 color;
-    float intensity;
+    glm::vec3 color = glm::vec3(0.0f, 0.0f, 0.0f);
+    float intensity = 0.0f;
     bool enabled = true;
+};
+
+// Terrain component and subcomponents
+// since a Terrain's height can be any one of its generators, we will have
+// subcomponents to make this work
+
+struct FaultGenParams
+{
+    int iterations;
+    float filter;
+    int width = -1;
+    int depth = -1;
+};
+
+struct MidpointGenParams
+{
+    float roughness;
+    int size = -1;
+};
+
+struct HeightmapParams
+{
+    std::string filename;
+};
+
+using HeightGenParams = 
+    std::variant<FaultGenParams, 
+                 MidpointGenParams, 
+                 HeightmapParams>;
+
+struct HeightGenComponent
+{
+    HeightGenParams params;
+    float heightScale = 1.0f;
+    bool regenerate = true;
+};
+
+struct LandscapeComponent
+{
+    std::unique_ptr<Terrain> terrain;
 };
