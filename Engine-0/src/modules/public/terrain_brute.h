@@ -41,7 +41,7 @@ public:
 		PopulateBufferData();
 	}
 
-	void Render(Shader& shader, Camera& camera) override
+	void Render(Shader& shader, Camera& camera, glm::mat4& model) override
 	{
 		shader.use();
 		glBindVertexArray(terrainVAO);

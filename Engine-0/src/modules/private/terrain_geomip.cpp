@@ -221,10 +221,10 @@ int GeomipTerrain::AddTriangle(int index, int indexC, int index1, int index2)
 	return index + 3;
 }
 
-void GeomipTerrain::Render(Shader& shader, Camera& camera)
+void GeomipTerrain::Render(Shader& shader, Camera& camera, glm::mat4& model)
 {
 	shader.use();
-	lodManager.UpdateLOD(camera.getCameraPos());
+	lodManager.UpdateLOD(camera.getCameraPos(), model);
 	glBindVertexArray(terrainVAO);
 
 	glEnable(GL_CULL_FACE);
@@ -239,6 +239,8 @@ void GeomipTerrain::Render(Shader& shader, Camera& camera)
 
 	Frustum frustum(viewProj);
 
+	float scale = glm::length(glm::vec3(model[0]));
+
 	// traverse all patches
 	for (int patchZ = 0; patchZ < numPatchesZ; patchZ++)
 	{
@@ -252,8 +254,13 @@ void GeomipTerrain::Render(Shader& shader, Camera& camera)
 			// since height is just based on range 0-1 * heightScale, max height is heightScale
 			glm::vec3 patchCenter = glm::vec3(wx + wPatchSize * 0.5f, heightScale * 0.5f, wz + wPatchSize * 0.5f);
 
+			float patchRadLocal = wPatchSize * glm::sqrt(2.0f) * 0.5f;
+
+			glm::vec3 patchCenterWorld = glm::vec3(model * glm::vec4(patchCenter, 1.0f));
+			float patchRadWorld = patchRadLocal * scale;
+
 			// cull if sphere is outside the frustum
-			if (!frustum.IsPatchSphereInFrustum(patchCenter, patchRad))
+			if (!frustum.IsPatchSphereInFrustum(patchCenterWorld, patchRadWorld))
 			{
 				// printf("0");
 				continue;

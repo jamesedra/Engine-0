@@ -19,10 +19,11 @@ int LODManager::InitLODManager(int patchSize, int numPatchesX, int numPatchesZ, 
  * Calculates the core LOD for a patch based on the distance from campos to the patch's center
  * Matches the ring LOD of every patch to the core LOD of its neighbors
  */
-void LODManager::UpdateLOD(const glm::vec3& camPos)
+void LODManager::UpdateLOD(const glm::vec3& camPos, glm::mat4& model)
 {
 	// std::cout << "x=" << camPos.x << " y=" << camPos.y << " z=" << camPos.z << std::endl;
-	UpdateLODMapPass1(camPos);
+	glm::vec3 camLocal = glm::vec3(glm::inverse(model) * glm::vec4(camPos, 1.0f));
+	UpdateLODMapPass1(camLocal);
 	UpdateLODMapPass2();
 }
 

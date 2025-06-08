@@ -82,10 +82,9 @@ int main()
 	std::cout << "OpenGL " << maj << "." << min << " context\n";
 	bool HasCompute = maj > 4 || (maj == 4 && min >= 3);
 
-	// Camera settings
 	Camera camera(
-		glm::vec3(219.647f, 10.6458f, 98.3125f),
-		glm::vec3(0.180914f, -0.120137f, -0.976134f),
+		glm::vec3(2.10f, 9.43f, 39.18f),
+		glm::vec3(0.25f, -0.07f, -0.97f),
 		glm::vec3(0.0f, 1.0f, 0.0f),
 		45.0f
 	);
@@ -140,34 +139,34 @@ int main()
 	//sceneRegistry.Register(probeEntity);
 
 	// World Objects
-	Entity floorEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "");
-	idManager.components[floorEntity].ID = "floor";
-	transformManager.components[floorEntity].position = glm::vec3(0.0f, -2.0f, 0.0f);
-	transformManager.components[floorEntity].scale = glm::vec3(100.0f, 0.5f, 100.0f);
-	sceneRegistry.Register(floorEntity);
+	//Entity floorEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "");
+	//idManager.components[floorEntity].ID = "floor";
+	//transformManager.components[floorEntity].position = glm::vec3(0.0f, -2.0f, 0.0f);
+	//transformManager.components[floorEntity].scale = glm::vec3(100.0f, 0.5f, 100.0f);
+	//sceneRegistry.Register(floorEntity);
 
 	Entity cubeEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "Cube", "");
 	idManager.components[cubeEntity].ID = "cube";
-	transformManager.components[cubeEntity].position = glm::vec3(220.0f, 3.0f, 63.0f);
+	transformManager.components[cubeEntity].position = glm::vec3(0.0f, 3.0f, -4.5f);
 	transformManager.components[cubeEntity].rotation = glm::vec3(-0.5f, 4.0f, 0.0f);
 	transformManager.components[cubeEntity].scale = glm::vec3(3.0f);
 	sceneRegistry.Register(cubeEntity);
 
 	Entity sphereEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "Sphere", "");
 	idManager.components[sphereEntity].ID = "sphere";
-	transformManager.components[sphereEntity].position = glm::vec3(215.0f, 1.5f, 72.5f);
+	transformManager.components[sphereEntity].position = glm::vec3(-5.0f, 1.5f, 5.0f);
 	transformManager.components[sphereEntity].scale = glm::vec3(2.0f);
 	sceneRegistry.Register(sphereEntity);
 
 	Entity sphere1Entity = WorldObjectFactory::CreateWorldObject(worldContext, "", "Sphere", "");
 	idManager.components[sphere1Entity].ID = "sphere1";
-	transformManager.components[sphere1Entity].position = glm::vec3(230.0f, 4.0f, 42.0f);
+	transformManager.components[sphere1Entity].position = glm::vec3(10.0f, 4.0f, -25.5f);
 	transformManager.components[sphere1Entity].scale = glm::vec3(3.0f);
 	sceneRegistry.Register(sphere1Entity);
 
 	Entity coneEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "Cone", "");
 	idManager.components[coneEntity].ID = "cone";
-	transformManager.components[coneEntity].position = glm::vec3(245.0f, -3.5f, 54.5f);
+	transformManager.components[coneEntity].position = glm::vec3(25.0f, -3.5f, -13.0f);
 	transformManager.components[coneEntity].rotation = glm::vec3(0.5f, -4.0f, -6.5f);
 	transformManager.components[coneEntity].scale = glm::vec3(3.0f, 6.0f, 3.0f);
 	sceneRegistry.Register(coneEntity);
@@ -183,13 +182,26 @@ int main()
 	Entity landscapeEntity = WorldObjectFactory::CreateLandscape(entityManager, landscapeManager, transformManager, shaderManager, materialsGroupManager, idManager, "landscape", TerrainType::Geomipmap, heightMap, 30.0f);
 	sceneRegistry.Register(landscapeEntity);
 
+	// landscape transform override
+	transformManager.GetComponent(landscapeEntity)->position = glm::vec3(-220.0f, 0.0f, -67.5f);
+
 	// Point light Objects
+	//for (int i = 0; i < 50; i++)
+	//{
+	//	for (int j = 0; j < 50; j++)
+	//	{
+	//		Entity lightEntity = WorldObjectFactory::CreatePointLight(entityManager, lightManager, transformManager, idManager, "light " + std::to_string(i) + std::to_string(j), 
+	//			glm::vec3(200.0f + (i*1.8f), 4.0f, 40.0f + (j*1.8f)), glm::vec3(i / 50.0f, (i*j) / 2500.0f, j / 50.0f), 20.0f);
+	//		sceneRegistry.Register(lightEntity);
+	//	}
+	//}
+
 	for (int i = 0; i < 50; i++)
 	{
 		for (int j = 0; j < 50; j++)
 		{
-			Entity lightEntity = WorldObjectFactory::CreatePointLight(entityManager, lightManager, transformManager, idManager, "light " + std::to_string(i) + std::to_string(j), 
-				glm::vec3(200.0f + (i*1.8f), 4.0f, 40.0f + (j*1.8f)), glm::vec3(i / 50.0f, (i*j) / 2500.0f, j / 50.0f), 20.0f);
+			Entity lightEntity = WorldObjectFactory::CreatePointLight(entityManager, lightManager, transformManager, idManager, "light " + std::to_string(i) + std::to_string(j),
+				glm::vec3(-20.0f + (i * 1.8f), 4.0f, -27.5f + (j * 1.8f)), glm::vec3(i / 50.0f, (i * j) / 2500.0f, j / 50.0f), 20.0f);
 			sceneRegistry.Register(lightEntity);
 		}
 	}

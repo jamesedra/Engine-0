@@ -32,7 +32,7 @@ public:
 		if (!heightData.data.empty()) UnloadHeightData();
 	}
 
-	virtual void Render(Shader& shader, Camera& camera) = 0;
+	virtual void Render(Shader& shader, Camera& camera, glm::mat4& model) = 0;
 	virtual void Initialize() = 0;
 	
 	// Height data generation

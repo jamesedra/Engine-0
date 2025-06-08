@@ -9,7 +9,7 @@ public:
 	void Initialize() override;
 	void GenerateGeomip(int patchSize, int worldScale = 1.0f);
 	void InitBuffers();
-	void Render(Shader& shader, Camera& camera) override;
+	void Render(Shader& shader, Camera& camera, glm::mat4& model) override;
 
 private:
 	LODManager lodManager;	// decides the LOD per patch (collection of triangle fans)

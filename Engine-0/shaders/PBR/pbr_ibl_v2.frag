@@ -69,10 +69,10 @@ const float PI = 3.14159265359;
 const float g_MinVariance = 1e-7;
 
 void main() {
+
 	// deferred attachment unpacking
 	vec3 fragPos = texture(gPosition, TexCoords).rgb;
 	vec3 n = normalize(texture(gNormal, TexCoords).rgb);
-
 	vec4 ar = texture(gAlbedoRoughness, TexCoords);
 	vec3 albedo = ar.rgb;
 	float roughness = ar.a;
@@ -91,7 +91,7 @@ void main() {
     int tileID = tile.y * tileCount.x + tile.x;
 
 	uint offset = tileInfo[tileID].x;
-	uint count  = tileInfo[tileID].y;
+	uint count  = min(tileInfo[tileID].y, uint(MAX_LIGHTS_PER_TILE));
 
 	vec3 F0 = mix(vec3(0.04), albedo, metallic);
 	vec3 Lo = vec3(0.0); // outgoing radiance

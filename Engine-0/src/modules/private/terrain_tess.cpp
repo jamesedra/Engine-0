@@ -67,7 +67,7 @@ void TessTerrain::Initialize()
 	glBindVertexArray(0);
 }
 
-void TessTerrain::Render(Shader& shader, Camera& camera)
+void TessTerrain::Render(Shader& shader, Camera& camera, glm::mat4& model)
 {
 	shader.use();
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

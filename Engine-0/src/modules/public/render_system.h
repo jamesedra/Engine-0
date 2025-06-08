@@ -85,7 +85,7 @@ public:
 			for (auto& group : materialsGroupComp->materialsGroup)
 			{
 				group.material.ApplyShaderUniforms(*shader);
-				landComp->terrain->Render(*shader, camera);
+				landComp->terrain->Render(*shader, camera, model);
 			}
 		}
 		renderer.getGBuffer().unbind();
@@ -156,7 +156,7 @@ public:
 			}
 			else if (landComp)
 			{
-				landComp->terrain->Render(sa.shadowShader, camera);
+				landComp->terrain->Render(sa.shadowShader, camera, model);
 			}
 		}
 		sa.shadowBuffer.unbind();

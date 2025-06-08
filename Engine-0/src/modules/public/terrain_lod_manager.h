@@ -9,7 +9,7 @@ class LODManager
 {
 public:
 	int InitLODManager(int patchSize, int numPatchesX, int numPatchesZ, float worldScale);
-	void UpdateLOD(const glm::vec3& camPos);
+	void UpdateLOD(const glm::vec3& camPos, glm::mat4& model);
 
 	struct PatchLOD
 	{
