@@ -67,11 +67,14 @@ private:
 		PresetD.eqrMapPath = "resources/textures/eqr_maps/newport_loft.hdr";
 		IBLSettings PresetE{};
 		PresetE.eqrMapPath = "resources/textures/eqr_maps/rogland_clear_night_2k.hdr";
+		IBLSettings PresetF{};
+		PresetF.eqrMapPath = "resources/textures/eqr_maps/nightsky.hdr";
 
 		GetLibrary().emplace(PresetA.eqrMapPath, std::move(PresetA));
 		GetLibrary().emplace(PresetB.eqrMapPath, std::move(PresetB));
 		GetLibrary().emplace(PresetC.eqrMapPath, std::move(PresetC));
 		GetLibrary().emplace(PresetD.eqrMapPath, std::move(PresetD));
 		GetLibrary().emplace(PresetE.eqrMapPath, std::move(PresetE));
+		GetLibrary().emplace(PresetF.eqrMapPath, std::move(PresetF));
 	}
 };

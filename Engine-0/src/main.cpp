@@ -129,6 +129,16 @@ int main()
 	WorldContext worldContext(&entityManager, &transformManager, &shaderManager, &assetManager, &materialsGroupManager);
 	OutlinerContext outlinerContext(&sceneRegistry, &idManager);
 	
+	// IBL
+	// probe entities
+	IBLSettings skyboxIBLSettings = ProbeLibrary::GetSettings("resources/textures/eqr_maps/kloofendal_43d_clear_puresky_2k.hdr");
+	Entity skyboxEntity = WorldObjectFactory::CreateSkyProbe(entityManager, probeManager, idManager, "skybox", skyboxIBLSettings, glm::vec3(0.f));
+	sceneRegistry.Register(skyboxEntity);
+
+	//IBLSettings probeIBLSettings = ProbeLibrary::GetSettings("resources/textures/eqr_maps/newport_loft.hdr");
+	//Entity probeEntity = WorldObjectFactory::CreateEnvironmentProbe(entityManager, probeManager, idManager, "probe", probeIBLSettings, glm::vec3(0.f), 50.0f);
+	//sceneRegistry.Register(probeEntity);
+
 	// World Objects
 	Entity floorEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "");
 	idManager.components[floorEntity].ID = "floor";
@@ -157,7 +167,7 @@ int main()
 
 	Entity coneEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "Cone", "");
 	idManager.components[coneEntity].ID = "cone";
-	transformManager.components[coneEntity].position = glm::vec3(245.0f, -1.5f, 54.5f);
+	transformManager.components[coneEntity].position = glm::vec3(245.0f, -3.5f, 54.5f);
 	transformManager.components[coneEntity].rotation = glm::vec3(0.5f, -4.0f, -6.5f);
 	transformManager.components[coneEntity].scale = glm::vec3(3.0f, 6.0f, 3.0f);
 	sceneRegistry.Register(coneEntity);
@@ -174,24 +184,18 @@ int main()
 	sceneRegistry.Register(landscapeEntity);
 
 	// Point light Objects
-	//for (int i = 0; i < 40; i++)
-	//{
-	//	for (int j = 0; j < 40; j++)
-	//	{
-	//		Entity lightEntity = WorldObjectFactory::CreatePointLight(entityManager, lightManager, transformManager, idManager, "light " + std::to_string(i) + std::to_string(j), glm::vec3(i*5, 0.0f, j*5));
-	//		sceneRegistry.Register(lightEntity);
-	//	}
-	//}
+	for (int i = 0; i < 50; i++)
+	{
+		for (int j = 0; j < 50; j++)
+		{
+			Entity lightEntity = WorldObjectFactory::CreatePointLight(entityManager, lightManager, transformManager, idManager, "light " + std::to_string(i) + std::to_string(j), 
+				glm::vec3(200.0f + (i*1.8f), 4.0f, 40.0f + (j*1.8f)), glm::vec3(i / 50.0f, (i*j) / 2500.0f, j / 50.0f), 20.0f);
+			sceneRegistry.Register(lightEntity);
+		}
+	}
+	// Entity lightEntity = WorldObjectFactory::CreatePointLight(entityManager, lightManager, transformManager, idManager, "light0", glm::vec3(0, 0.0f, 0), glm::vec3(1.0f), 50.0f);
+	// sceneRegistry.Register(lightEntity);
 
-	// IBL
-	// probe entities
-	IBLSettings skyboxIBLSettings = ProbeLibrary::GetSettings("resources/textures/eqr_maps/kloofendal_43d_clear_puresky_2k.hdr");
-	Entity skyboxEntity = WorldObjectFactory::CreateSkyProbe(entityManager, probeManager, idManager, "skybox", skyboxIBLSettings, glm::vec3(0.f));
-	sceneRegistry.Register(skyboxEntity);
-
-	//IBLSettings probeIBLSettings = ProbeLibrary::GetSettings("resources/textures/eqr_maps/newport_loft.hdr");
-	//Entity probeEntity = WorldObjectFactory::CreateEnvironmentProbe(entityManager, probeManager, idManager, "probe", probeIBLSettings, glm::vec3(0.f), 50.0f);
-	//sceneRegistry.Register(probeEntity);
 
 	// Systems
 	LightSystem lightSystem(W_WIDTH, W_HEIGHT);

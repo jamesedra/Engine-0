@@ -1,7 +1,7 @@
 ﻿#version 450 core
 
 #define MAX_LIGHTS 1600
-#define MAX_LIGHTS_PER_TILE 64
+#define MAX_LIGHTS_PER_TILE 256
 
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
@@ -29,6 +29,7 @@ uniform ivec2 tileCount;
 uniform int tileSize;
 uniform int lightCount;
 
+const float SQRT2 = 1.41421356237; // for diagonal guard band
 void main() {
 	ivec2 tile = ivec2(gl_WorkGroupID.xy);
 	int tileID = tile.y * tileCount.x + tile.x;
@@ -45,20 +46,30 @@ void main() {
 
         float dist2 = dot(vp, vp);
         float maxDist = 100.0;
-        if (dist2 > maxDist*maxDist) continue;
+        //if (dist2 > maxDist*maxDist) continue;
 
         // convert to pixel coordinates
         vec4 cp = projection * vec4(vp,1.0);
         if (cp.w <= 0.0) continue;
 
         float ndcZ = cp.z / cp.w;
-        if (ndcZ > 1.0) continue;  
+        if (ndcZ > 1.0) continue;
+
+        float r  = lights[i].pos_radius.w;
+
+        float slopeX = projection[0][0]; // cot(fovX/2)
+        float slopeY = projection[1][1]; // cot(fovY/2)
+
+        float pxR_X = (r / -vp.z) * slopeX * (float(screenSize.x) * 0.5);
+        float pxR_Y = (r / -vp.z) * slopeY * (float(screenSize.y) * 0.5);
+
+        float pxR   = max(pxR_X, pxR_Y);
+
+        pxR  = (pxR * SQRT2) + float(tileSize);
+        pxR  = float(tileSize) * ceil(pxR / float(tileSize));
 
         vec2 ndc = cp.xy / cp.w;
-
         vec2 px  = (ndc * 0.5 + 0.5) * screenSize; // light center
-        float r  = lights[i].pos_radius.w;
-        float pxR = (r / abs(vp.z)) * projection[1][1] * (screenSize.y * 0.5); // light radius
 
         // find tile bounds
         ivec2 minT = ivec2(floor((px - pxR) / tileSize));
@@ -67,7 +78,7 @@ void main() {
         minT = clamp(minT, ivec2(0), tileCount - 1);
         maxT = clamp(maxT, ivec2(0), tileCount - 1);
 
-        if (tile.x < minT.x || tile.x >= maxT.x || tile.y < minT.y || tile.y >= maxT.y) continue;
+        if (tile.x < minT.x || tile.x > maxT.x || tile.y < minT.y || tile.y > maxT.y) continue;
 
         uint count = atomicAdd(tileInfo[tileID].y, 1u);
         if (count < MAX_LIGHTS_PER_TILE) {

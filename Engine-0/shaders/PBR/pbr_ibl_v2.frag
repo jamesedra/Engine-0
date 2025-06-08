@@ -1,7 +1,7 @@
 ﻿#version 450 core
 
 #define MAX_LIGHTS 1600
-#define MAX_LIGHTS_PER_TILE 64
+#define MAX_LIGHTS_PER_TILE 256
 #define MAX_PROBES 4
 
 out vec4 FragColor;
@@ -111,15 +111,12 @@ void main() {
 		vec3 h = normalize(v + l);
 
 		// lighting helper, tentative
-		float distance = length(lightPos - fragPos);
-		if (distance > lightRadius) continue;
+		float dist = length(lightPos - fragPos);
+		if (dist > lightRadius) continue;
 
-		float radius2 = lightRadius * lightRadius;
-		float dist2   = dot(lightPos - fragPos, lightPos - fragPos);
-		// attenuation testing
-		// float attenuation = dist2 < radius2 ? 1.0 : clamp(radius2 / dist2, 0.0, 1.0);
-		// float attenuation = clamp(radius2 / (distance * distance), 0.0, 1.0);
-		float attenuation = 1.0 - (distance / lightRadius);
+		float radius = lightRadius;
+		float attenuation = clamp(1.0 - dist / radius, 0.0, 1.0);
+		attenuation = (attenuation * attenuation) / (dist * dist + 1e-2);
 
 		// Dot product setup
 		float nDotL = max(dot(n, l), 0.0);
@@ -261,7 +258,6 @@ void main() {
 	vec3 color = ambient + Lo;
 
 	FragColor = vec4(color, 1.0);
-	
 }
 
 // uses Fresnel-Schlick approximation
@@ -276,14 +272,19 @@ vec3 FresnelRoughness(float cosTheta, vec3 F0, float roughness) {
 
 // uses TrowBridge-Reitz GGX
 float NormalDistribution(float nDotH, float roughness) {
-    float a2 = roughness * roughness;
-    float denom = (nDotH * nDotH * (a2 - 1.0) + 1.0);
-    return a2 / (PI * (denom * denom));
+    float a = roughness * roughness;
+	float a2 = a * a;
+	float NdotH2 = nDotH * nDotH;
+	return a2 / (PI * pow(NdotH2 * (a2 - 1.0) + 1.0, 2.0));
+
+    // float denom = (nDotH * nDotH * (a2 - 1.0) + 1.0);
+    // return a2 / (PI * (denom * denom));
 }
 
 // uses Schlick-Beckman GGX
 float GeometryEq(float dotProd, float roughness) {
-	float k = (roughness + 1.0) * (roughness + 1.0) / 8.0;
+	float k = (roughness + 1.0);
+	k = k * k * 0.125;
 	return dotProd / (dotProd * (1.0 - k) + k);
 }
 

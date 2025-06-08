@@ -5,7 +5,7 @@
 #include "shader_storage_buffer.h"
 
 static constexpr int MAX_LIGHTS = 1600;
-static constexpr int MAX_LIGHTS_PER_TILE = 64;
+static constexpr int MAX_LIGHTS_PER_TILE = 256;
 
 // mirror struct from comp shader
 struct GPULight
