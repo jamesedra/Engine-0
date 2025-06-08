@@ -46,12 +46,12 @@ struct Material
             matTextures.push_back(mt);
 
             std::string number;
-            if (mt.type == "texture_diffuse") number = std::to_string(diffuseNr);
-            else if (mt.type == "texture_specular") number = std::to_string(specularNr);
-            else if (mt.type == "texture_normal") number = std::to_string(normalNr);
-            else if (mt.type == "texture_roughness") number = std::to_string(roughnessNr);
-            else if (mt.type == "texture_metallic") number = std::to_string(metallicNr);
-            else if (mt.type == "texture_ao") number = std::to_string(aoNr);
+            if (mt.type == "texture_diffuse") number = std::to_string(diffuseNr++);
+            else if (mt.type == "texture_specular") number = std::to_string(specularNr++);
+            else if (mt.type == "texture_normal") number = std::to_string(normalNr++);
+            else if (mt.type == "texture_roughness") number = std::to_string(roughnessNr++);
+            else if (mt.type == "texture_metallic") number = std::to_string(metallicNr++);
+            else if (mt.type == "texture_ao") number = std::to_string(aoNr++);
             std::string uniformName = "material." + mt.type + number;
 
             // override if uniform name exists
@@ -85,12 +85,12 @@ struct Material
             auto& mt = matTextures[i];
 
             std::string number;
-            if (mt.type == "texture_diffuse") number = std::to_string(diffuseNr);
-            else if (mt.type == "texture_specular") number = std::to_string(specularNr);
-            else if (mt.type == "texture_normal") number = std::to_string(normalNr);
-            else if (mt.type == "texture_roughness") number = std::to_string(roughnessNr);
-            else if (mt.type == "texture_metallic") number = std::to_string(metallicNr);
-            else if (mt.type == "texture_ao") number = std::to_string(aoNr);
+            if (mt.type == "texture_diffuse") number = std::to_string(diffuseNr++);
+            else if (mt.type == "texture_specular") number = std::to_string(specularNr++);
+            else if (mt.type == "texture_normal") number = std::to_string(normalNr++);
+            else if (mt.type == "texture_roughness") number = std::to_string(roughnessNr++);
+            else if (mt.type == "texture_metallic") number = std::to_string(metallicNr++);
+            else if (mt.type == "texture_ao") number = std::to_string(aoNr++);
             std::string uniformName = "material." + mt.type + number;
 
             // override if uniform name exists
@@ -139,6 +139,7 @@ struct Material
                     shader.setInt(name, textureUnit);
                     glActiveTexture(GL_TEXTURE0 + textureUnit);
                     auto& tex = TextureLibrary::GetTexture(value.texturePath);
+                    tex.genMipMap(); // test
                     glBindTexture(GL_TEXTURE_2D, tex.id);
                     textureUnit++;
                     break;

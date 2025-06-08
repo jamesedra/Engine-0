@@ -97,30 +97,6 @@ int main()
 	viewportFrame.attachTexture2D(viewportOutTexture, GL_COLOR_ATTACHMENT0);
 	viewportFrame.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 
-	// TEST: terrain framebuffer
-	Framebuffer terrainFrame(W_WIDTH, W_HEIGHT);
-	Texture terrainAttachment(W_WIDTH, W_HEIGHT, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE);
-	terrainFrame.attachTexture2D(terrainAttachment, GL_COLOR_ATTACHMENT0);
-	terrainFrame.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
-	
-	Shader terrainShader("shaders/terrain/base_terrain.vert", "shaders/terrain/base_terrain.frag");
-	Texture terrainGrass = TextureLoader::CreateTextureFromImport("resources/textures/pbr/grass/albedo.png");
-	terrainGrass.setTexFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
-	terrainGrass.setTexWrap(GL_REPEAT);
-	Texture terrainRock = TextureLoader::CreateTextureFromImport("resources/textures/pbr/wall/albedo.png");
-	terrainRock.setTexFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
-	terrainRock.setTexWrap(GL_REPEAT);
-	
-	//TessTerrain terrain;
-	//terrain.LoadHeightMap("resources/textures/heightmaps/terrain_sample1.png");
-	//terrain.InitializePatches();
-	//Shader terrainShader("shaders/terrain/tes_terrain.vert", "shaders/terrain/tes_terrain.tesc", "shaders/terrain/tes_terrain.tese", "shaders/terrain/tes_terrain.frag");
-	//Texture tessHeightMap = TextureLoader::CreateTextureFromImport("resources/textures/heightmaps/terrain_sample1.png");
-	//glBindTexture(GL_TEXTURE_2D, tessHeightMap.id);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	//glPatchParameteri(GL_PATCH_VERTICES, 4);
-
 	// Render pipeline
 	Renderer renderer;
 	renderer.Initialize(W_WIDTH, W_HEIGHT);
@@ -169,6 +145,7 @@ int main()
 
 	HeightmapParams heightMap{ "resources/textures/heightmaps/terrain_sample1.png" };
 	Entity landscapeEntity = WorldObjectFactory::CreateLandscape(entityManager, landscapeManager, transformManager, shaderManager, materialsGroupManager, idManager, "landscape", TerrainType::Geomipmap, heightMap, 30.0f);
+	sceneRegistry.Register(landscapeEntity);
 
 	// Point light Objects
 	//for (int i = 0; i < 40; i++)
@@ -278,10 +255,7 @@ int main()
 
 			ImGui::SetCursorScreenPos({ pos.x + offset_x, pos.y + offset_y });
 
-			// ImGui::Image(getBufferOut(renderer, tex_type), {display_width, display_height}, {0,1}, {1,0}, ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
-
-			// TEST
-			ImGui::Image(terrainAttachment.id, { display_width, display_height }, { 0,1 }, { 1,0 }, ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
+			ImGui::Image(getBufferOut(renderer, tex_type), {display_width, display_height}, {0,1}, {1,0}, ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
 
 			bool imageHovered = ImGui::IsItemHovered();
 			if (imageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
@@ -321,50 +295,20 @@ int main()
 			propertiesWindow.EndRender();
 		}
 
-		// TEST
-		terrainFrame.bind();
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glViewport(0, 0, W_WIDTH, W_HEIGHT);
-		terrainShader.use();
-		glm::mat4 proj = camera.getProjectionMatrix(W_WIDTH, W_HEIGHT, 0.1f, 2500.0f);
-		glm::mat4 view = camera.getViewMatrix();
-		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-		model = glm::scale(model, glm::vec3(1.0f));
-		terrainShader.setMat4("projection", proj);
-		terrainShader.setMat4("view", view);
-		terrainShader.setMat4("model", model);
-		terrainShader.setInt("grassTex", 0);
-		terrainShader.setInt("rockTex", 1);
-		terrainShader.setInt("heightMap", 0);
-		// glActiveTexture(GL_TEXTURE0);
-		 // glBindTexture(GL_TEXTURE_2D, tessHeightMap.id);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, terrainGrass.id);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, terrainRock.id);
-		landscapeManager.GetLandscapeComponent(landscapeEntity)->terrain->Render(terrainShader, camera);
-
-		terrainGrass.genMipMap();
-		terrainFrame.unbind();
-
-		/*
-		* Commented out for now
 		// GBuffer pass
 		renderSystem.RenderGeometry(
 			sceneRegistry, 
 			transformManager, 
 			shaderManager, 
 			assetManager, 
+			landscapeManager,
 			materialsGroupManager, 
 			camera);
 
 		// Shadow pass
-		renderSystem.RenderShadowPass(lightManager, transformManager, sceneRegistry, assetManager);
-
+		renderSystem.RenderShadowPass(lightManager, transformManager, sceneRegistry, assetManager, landscapeManager, camera);
 		// SSAO pass
 		renderSystem.RenderSSAO(camera, frameVAO);
-
 		// deferred shading stage
 		glDisable(GL_DEPTH_TEST);
 
@@ -405,7 +349,6 @@ int main()
 			renderSystem.RenderBufferPass(frameVAO);
 		}
 		glEnable(GL_DEPTH_TEST);
-		*/
 		
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

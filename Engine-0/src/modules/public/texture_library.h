@@ -51,19 +51,19 @@ private:
 		Texture whiteTexture = TextureLoader::CreateWhiteTexture();
 		Texture blackTexture = TextureLoader::CreateBlackTexture();
 		Texture normalTexture = TextureLoader::CreateNormalTexture();
-		Texture importedTexture = TextureLoader::CreateTextureFromImport("resources/textures/brickwall.jpg");
+		Texture importedTexture = TextureLoader::CreateTextureFromImport("resources/textures/brickwall.jpg", false, TextureColorSpace::sRGB);
 
-		Texture rockAlbedo = TextureLoader::CreateTextureFromImport("resources/textures/pbr/rock/albedo.png");
-		Texture rockNormal = TextureLoader::CreateTextureFromImport("resources/textures/pbr/rock/normal.png");
-		Texture rockRoughness = TextureLoader::CreateTextureFromImport("resources/textures/pbr/rock/roughness.png");
-		Texture rockAO = TextureLoader::CreateTextureFromImport("resources/textures/pbr/rock/ao.png");
-		Texture rockDisplacement = TextureLoader::CreateTextureFromImport("resources/textures/pbr/rock/displacement.png");
+		Texture rockAlbedo = TextureLoader::CreateTextureFromImport("resources/textures/pbr/rock/albedo.png", true, TextureColorSpace::sRGB);
+		Texture rockNormal = TextureLoader::CreateTextureFromImport("resources/textures/pbr/rock/normal.png", true);
+		Texture rockRoughness = TextureLoader::CreateTextureFromImport("resources/textures/pbr/rock/roughness.png", true);
+		Texture rockAO = TextureLoader::CreateTextureFromImport("resources/textures/pbr/rock/ao.png", true);
+		Texture rockDisplacement = TextureLoader::CreateTextureFromImport("resources/textures/pbr/rock/displacement.png", true);
 
-		Texture grassAlbedo = TextureLoader::CreateTextureFromImport("resources/textures/pbr/grass1/albedo.png");
-		Texture grassNormal = TextureLoader::CreateTextureFromImport("resources/textures/pbr/grass1/normal.png");
-		Texture grassRoughness = TextureLoader::CreateTextureFromImport("resources/textures/pbr/grass1/roughness.png");
-		Texture grassAO = TextureLoader::CreateTextureFromImport("resources/textures/pbr/grass1/ao.png");
-		Texture grassDisplacement = TextureLoader::CreateTextureFromImport("resources/textures/pbr/grass1/displacement.png");
+		Texture grassAlbedo = TextureLoader::CreateTextureFromImport("resources/textures/pbr/grass1/albedo.png", true, TextureColorSpace::sRGB);
+		Texture grassNormal = TextureLoader::CreateTextureFromImport("resources/textures/pbr/grass1/normal.png", true);
+		Texture grassRoughness = TextureLoader::CreateTextureFromImport("resources/textures/pbr/grass1/roughness.png", true);
+		Texture grassAO = TextureLoader::CreateTextureFromImport("resources/textures/pbr/grass1/ao.png", true);
+		Texture grassDisplacement = TextureLoader::CreateTextureFromImport("resources/textures/pbr/grass1/displacement.png", true);
 
 		GetLibrary().emplace("White Texture - Default", std::move(whiteTexture));
 		GetLibrary().emplace("Black Texture - Default", std::move(blackTexture));

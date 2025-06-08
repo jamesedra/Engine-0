@@ -268,7 +268,7 @@ public:
 					auto& materialsGroup = materialsGroupComp->materialsGroup;
 					for (unsigned int i = 0; i < materialsGroup.size(); i++)
 					{
-						std::string header = assetComp->assetName + " submesh " + std::to_string(i);
+						std::string header = "Submesh " + std::to_string(i);
 						if (ImGui::TreeNode(header.c_str()))
 						{
 							auto& uniforms = materialsGroup[i].material.uniforms;
