@@ -103,7 +103,6 @@ int main()
 	terrainFrame.attachTexture2D(terrainAttachment, GL_COLOR_ATTACHMENT0);
 	terrainFrame.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 	
-
 	Shader terrainShader("shaders/terrain/base_terrain.vert", "shaders/terrain/base_terrain.frag");
 	Texture terrainGrass = TextureLoader::CreateTextureFromImport("resources/textures/pbr/grass/albedo.png");
 	terrainGrass.setTexFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
@@ -169,7 +168,7 @@ int main()
 	sceneRegistry.Register(dirLightEntity);
 
 	HeightmapParams heightMap{ "resources/textures/heightmaps/terrain_sample1.png" };
-	Entity landscapeEntity = WorldObjectFactory::CreateLandscape(entityManager, landscapeManager, idManager, "landscape", TerrainType::Geomipmap, heightMap, 30.0f);
+	Entity landscapeEntity = WorldObjectFactory::CreateLandscape(entityManager, landscapeManager, transformManager, shaderManager, materialsGroupManager, idManager, "landscape", TerrainType::Geomipmap, heightMap, 30.0f);
 
 	// Point light Objects
 	//for (int i = 0; i < 40; i++)

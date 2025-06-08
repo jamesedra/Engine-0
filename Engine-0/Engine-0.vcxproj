@@ -222,6 +222,7 @@
     <None Include="shaders\gbuffer\gbuffer_debug_out.frag" />
     <None Include="shaders\gbuffer\gbuffer_debug_out.vert" />
     <None Include="shaders\gbuffer\gbuffer_pbr.frag" />
+    <None Include="shaders\gbuffer\gbuffer_terrain.frag" />
     <None Include="shaders\gbuffer\gbuffer_tint.frag" />
     <None Include="shaders\IBL\brdf.vert" />
     <None Include="shaders\IBL\brdf.frag" />

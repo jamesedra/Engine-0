@@ -10,6 +10,8 @@
 #include "terrain_geomip.h"
 #include "terrain_tess.h"
 
+#include "material.h"
+
 #include <map>
 
 // NOTE: this is a tentative header for testing purposes.
@@ -202,10 +204,12 @@ public:
         return entity;
     }
 
-
     static Entity CreateLandscape(
         EntityManager& entityManager,
         LandscapeManager& landscapeManager,
+        TransformManager& transformManager,
+        ShaderManager& shaderManager,
+        MaterialsGroupManager& materialsGroupManager,
         IDManager& idManager,
         std::string name,
         TerrainType terrainType,
@@ -214,8 +218,14 @@ public:
     )
     {
         Entity entity = entityManager.CreateEntity();
+
+        TransformComponent transformComp;
+        transformComp.position = glm::vec3(0.0f, 0.0f, 0.0f);
+        transformComp.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+        transformComp.scale = glm::vec3(1.0f);
+        transformManager.components[entity] = transformComp;
+
         auto terrainPtr = CreateTerrain(terrainType);
-        
         // initial generation of height data
         if (std::holds_alternative<FaultGenParams>(heightParams))
         {
@@ -235,6 +245,27 @@ public:
         terrainPtr->Initialize();
         LandscapeComponent landComp{ std::move(terrainPtr) };
         HeightGenComponent genComp{ std::move(heightParams), heightScale, false };
+
+        ShaderComponent shaderComp;
+        shaderComp.shaderName = "Landscape Material";
+        shaderComp.shader = &ShaderLibrary::GetShader(shaderComp.shaderName);
+        shaderManager.components[entity] = shaderComp;
+
+        std::vector<RegisteredTextureData> terrainTextures = {
+            {"Grass Albedo","texture_diffuse", TextureLibrary::GetTexture("Grass Albedo").id},
+            {"Rock Albedo", "texture_diffuse", TextureLibrary::GetTexture("Rock Albedo").id},
+            {"Grass Normal", "texture_normal", TextureLibrary::GetTexture("Grass Normal").id},
+            {"Rock Normal", "texture_normal", TextureLibrary::GetTexture("Rock Normal").id},
+            {"Grass Roughness", "texture_roughness", TextureLibrary::GetTexture("Grass Roughness").id},
+            {"Rock Roughness", "texture_roughness", TextureLibrary::GetTexture("Rock Roughness").id},
+            {"Grass AO", "texture_ao", TextureLibrary::GetTexture("Grass AO").id},
+            {"Rock AO", "texture_ao", TextureLibrary::GetTexture("Rock AO").id},
+        };
+
+        Material material(*shaderComp.shader, terrainTextures);
+        MaterialsGroup matGroup{ material, {} };
+        MaterialsGroupComponent matGroupComp{ {matGroup} };
+        materialsGroupManager.components[entity] = matGroupComp;
 
         landscapeManager.landscapeComponents[entity] = std::move(landComp);
         landscapeManager.heightGenComponents[entity] = std::move(genComp);

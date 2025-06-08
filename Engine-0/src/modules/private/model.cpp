@@ -143,6 +143,7 @@ std::vector<TextureMetadata> Model::loadMaterialTextures(aiMaterial* mat, aiText
 				: TextureColorSpace::Linear;
 
 			texID = TextureFromFile(fullpath.c_str(), directory, width, height, space);
+			// this might not be needed
 			TextureLibrary::Register(fullpath, texID, width, height);
 		}
 		TextureMetadata texture;

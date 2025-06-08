@@ -270,5 +270,7 @@
     <None Include="shaders\terrain\base_terrain.frag" />
     <None Include="shaders\terrain\tes_terrain.vert" />
     <None Include="shaders\terrain\tes_terrain.tesc" />
+    <None Include="shaders\terrain\tes_terrain.tese" />
+    <None Include="shaders\gbuffer\gbuffer_terrain.frag" />
   </ItemGroup>
 </Project>
