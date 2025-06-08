@@ -84,8 +84,8 @@ int main()
 
 	// Camera settings
 	Camera camera(
-		glm::vec3(8.0f, 40.0f, 8.0f),
-		glm::vec3(-1.0f, -1.0f, -1.0f),
+		glm::vec3(219.647f, 10.6458f, 98.3125f),
+		glm::vec3(0.180914f, -0.120137f, -0.976134f),
 		glm::vec3(0.0f, 1.0f, 0.0f),
 		45.0f
 	);
@@ -135,6 +135,32 @@ int main()
 	transformManager.components[floorEntity].position = glm::vec3(0.0f, -2.0f, 0.0f);
 	transformManager.components[floorEntity].scale = glm::vec3(100.0f, 0.5f, 100.0f);
 	sceneRegistry.Register(floorEntity);
+
+	Entity cubeEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "Cube", "");
+	idManager.components[cubeEntity].ID = "cube";
+	transformManager.components[cubeEntity].position = glm::vec3(220.0f, 3.0f, 63.0f);
+	transformManager.components[cubeEntity].rotation = glm::vec3(-0.5f, 4.0f, 0.0f);
+	transformManager.components[cubeEntity].scale = glm::vec3(3.0f);
+	sceneRegistry.Register(cubeEntity);
+
+	Entity sphereEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "Sphere", "");
+	idManager.components[sphereEntity].ID = "sphere";
+	transformManager.components[sphereEntity].position = glm::vec3(215.0f, 1.5f, 72.5f);
+	transformManager.components[sphereEntity].scale = glm::vec3(2.0f);
+	sceneRegistry.Register(sphereEntity);
+
+	Entity sphere1Entity = WorldObjectFactory::CreateWorldObject(worldContext, "", "Sphere", "");
+	idManager.components[sphere1Entity].ID = "sphere1";
+	transformManager.components[sphere1Entity].position = glm::vec3(230.0f, 4.0f, 42.0f);
+	transformManager.components[sphere1Entity].scale = glm::vec3(3.0f);
+	sceneRegistry.Register(sphere1Entity);
+
+	Entity coneEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "Cone", "");
+	idManager.components[coneEntity].ID = "cone";
+	transformManager.components[coneEntity].position = glm::vec3(245.0f, -1.5f, 54.5f);
+	transformManager.components[coneEntity].rotation = glm::vec3(0.5f, -4.0f, -6.5f);
+	transformManager.components[coneEntity].scale = glm::vec3(3.0f, 6.0f, 3.0f);
+	sceneRegistry.Register(coneEntity);
 
 	Entity backpackEntity = WorldObjectFactory::CreateWorldObject(worldContext, "", "", "resources/objects/backpack/backpack.obj");
 	idManager.components[backpackEntity].ID = "backpack";
@@ -211,6 +237,17 @@ int main()
 			ImGui_ImplGlfw_Sleep(10);
 			continue;
 		}
+
+		// camera coords
+		//std::cout << "pos x: " << camera.getCameraPos().x << std::endl;
+		//std::cout << "pos y: " << camera.getCameraPos().y << std::endl;
+		//std::cout << "pos z: " << camera.getCameraPos().z << std::endl;
+		//std::cout << "for x: " << camera.getCameraFront().x << std::endl;
+		//std::cout << "for y: " << camera.getCameraFront().y << std::endl;
+		//std::cout << "for z: " << camera.getCameraFront().z << std::endl;
+		//std::cout << "up x: " << camera.getCameraUp().x << std::endl;
+		//std::cout << "up y: " << camera.getCameraUp().y << std::endl;
+		//std::cout << "up z: " << camera.getCameraUp().z << std::endl;
 
 		processInput(window);
 		
