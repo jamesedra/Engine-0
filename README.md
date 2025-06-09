@@ -12,7 +12,7 @@ The system uses a custom variant of the entity component system (ECS) architectu
 - Libraries: Static libraries that stores references of instanced classes which can be retrieved globally
 - Loaders: Static functions that create classes for said components
 
-### Deferred Rendering Pipeline:
+### Deferred Rendering:
    1. Geometry pass
    2. PBR lighting
    3. Image-based lighting (IBL)
@@ -34,6 +34,8 @@ Other features include frustum culling and difference height data generation typ
 Brute force and tessellation based terrain were also implemented.
 
 ### Environment Probe System
+Used mainly for IBL via nearest probes selection blending
 
 ### Tiled Shading for Lighting System
+
 ### GUI - ImGUI
