@@ -1,5 +1,6 @@
 # Engine-0
 This is an OpenGL graphics engine made for learning how graphics engines can be built and structured.
+
 ![cover](https://github.com/user-attachments/assets/c66d94d6-789a-4c7e-b344-a765250ad3c4)
 
 
@@ -30,24 +31,28 @@ The system uses a custom variant of the entity component system (ECS) architectu
 Material pipeline is mainly used in the geometry pass, includes albedo, roughness, metallic, normal, and AO maps. 
 These are configurable (eg. terrain uses multiple maps for the auto material) as long as a proper geometry shader is used and implemented.
 
+<img src="https://github.com/user-attachments/assets/4f9ef92e-c12e-47a2-a82f-c85313c88bdb" width="50%"><img src="https://github.com/user-attachments/assets/3e31f426-c5cd-489e-81ff-19e6a38dad20" width="50%">
+
 ### Asset Loading
 Assimp is used to load assets and parsed as a mesh data set. Due to the material pipeline, textures are also packaged and used as default values based on the texture type.
-
-<img src="https://github.com/user-attachments/assets/4f9ef92e-c12e-47a2-a82f-c85313c88bdb" width="50%"><img src="https://github.com/user-attachments/assets/3e31f426-c5cd-489e-81ff-19e6a38dad20" width="50%">
 
 ### Terrain System
 Mainly uses Geomipmapping with patch-based LOD based on world-space camera distance and per patch bounding box.
 
+<img src="https://github.com/user-attachments/assets/dbf7499d-7eee-4aef-8ce8-9b2474b291a9" width="100%">
+
 Other features include frustum culling and difference height data generation types (heightmap loading, fault generation, midpoint displacement)
 
 Brute force and tessellation based terrain were also implemented.
+
+### Tiled Shading for Lighting System
+
+<img src="https://github.com/user-attachments/assets/0c09ef3e-5337-496f-8b46-ce50f698d0ea" width="100%">
+
+Tiled shading is based in forward+ light culling via compute shaders. Supports point lights to reduces lighting calculations.
 
 ### Environment Probe System
 Used mainly for IBL via nearest probes selection blending
 
 <img src="https://github.com/user-attachments/assets/11ca78fa-84aa-4e66-a5c9-e5a7f08b670e" width="50%"><img src="https://github.com/user-attachments/assets/d2d8005f-5dae-4a59-a281-ac16eb8bea33" width="50%">
 
-
-### Tiled Shading for Lighting System
-
-### GUI - ImGUI
