@@ -3,8 +3,6 @@ This is an OpenGL graphics engine made for learning how graphics engines can be 
 
 ![cover](https://github.com/user-attachments/assets/c66d94d6-789a-4c7e-b344-a765250ad3c4)
 
-
-
 ## Features
 ### System Architecture
 The system uses a custom variant of the entity component system (ECS) architecture. Modules are listed below:
@@ -22,7 +20,7 @@ The system uses a custom variant of the entity component system (ECS) architectu
    3. Image-based lighting (IBL)
    4. Skybox
    5. Directional shadows (VSM)
-   7. Post-processing (HDR, SSAO, Gamma, Tone-mapping, SSAO)
+   7. Post-processing (HDR, SSAO, Gamma, Tone-mapping, Custom pass)
 
 <img src="https://github.com/user-attachments/assets/cc4ca711-54e8-43b2-91e7-a4f1689d1b46" width="100%">
 <img src="https://github.com/user-attachments/assets/bf19ac3c-a4e0-47b0-8c3c-ee9ef8c8e602" width="100%">
@@ -41,7 +39,7 @@ Mainly uses Geomipmapping with patch-based LOD based on world-space camera dista
 
 <img src="https://github.com/user-attachments/assets/dbf7499d-7eee-4aef-8ce8-9b2474b291a9" width="100%">
 
-Other features include frustum culling and difference height data generation types (heightmap loading, fault generation, midpoint displacement)
+Other features include frustum culling and difference height data generation types. (heightmap loading, fault generation, midpoint displacement)
 
 Brute force and tessellation based terrain were also implemented.
 
@@ -52,7 +50,7 @@ Brute force and tessellation based terrain were also implemented.
 Tiled shading is based in forward+ light culling via compute shaders. Supports point lights to reduces lighting calculations.
 
 ### Environment Probe System
-Used mainly for IBL via nearest probes selection blending
+Used mainly for IBL via nearest probes selection blending:
 
 <img src="https://github.com/user-attachments/assets/11ca78fa-84aa-4e66-a5c9-e5a7f08b670e" width="50%"><img src="https://github.com/user-attachments/assets/d2d8005f-5dae-4a59-a281-ac16eb8bea33" width="50%">
 
