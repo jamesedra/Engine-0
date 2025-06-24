@@ -1,5 +1,5 @@
 # Engine-0
-This is an OpenGL graphics engine made for learning how graphics engines can be built and structured.
+This is an OpenGL ECS graphics engine for learning how graphics engines can be built and structured.
 
 ![cover](https://github.com/user-attachments/assets/c66d94d6-789a-4c7e-b344-a765250ad3c4)
 
@@ -47,10 +47,10 @@ Brute force and tessellation based terrain were also implemented.
 
 <img src="https://github.com/user-attachments/assets/0c09ef3e-5337-496f-8b46-ce50f698d0ea" width="100%">
 
-Tiled shading is based in forward+ light culling via compute shaders. Supports point lights to reduces lighting calculations.
+Tiled shading is based in forward+ light culling via compute shaders. Supports point lights to reduce lighting calculations.
 
 ### Environment Probe System
-Used mainly for IBL via nearest probes selection blending:
+Used mainly for IBL via nearest probes selection blending.
 
 <img src="https://github.com/user-attachments/assets/11ca78fa-84aa-4e66-a5c9-e5a7f08b670e" width="50%"><img src="https://github.com/user-attachments/assets/d2d8005f-5dae-4a59-a281-ac16eb8bea33" width="50%">
 
